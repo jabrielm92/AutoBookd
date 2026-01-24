@@ -196,16 +196,18 @@ class DiscoveryEngine:
         """Find companies hiring for roles AI could automate"""
         leads = []
         
-        # Use Google Jobs via SerpAPI-style search (DuckDuckGo fallback)
-        job_keywords = ['data entry hiring', 'administrative assistant needed', 'receptionist job']
+        # Search for companies that are hiring (not job board results)
+        job_keywords = [
+            'company hiring data entry',
+            'small business needs receptionist',
+            'local company administrative assistant'
+        ]
         
         for keyword in job_keywords[:2]:  # Limit queries
             try:
-                # Use DuckDuckGo to find job postings
-                search_query = f"{keyword} site:indeed.com OR site:linkedin.com"
                 url = "https://html.duckduckgo.com/html/"
                 
-                data = {'q': search_query}
+                data = {'q': keyword}
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
@@ -216,26 +218,39 @@ class DiscoveryEngine:
                     soup = BeautifulSoup(response.text, 'html.parser')
                     results = soup.find_all('div', class_='result')
                     
-                    for result in results[:3]:
+                    for result in results[:5]:
                         title_elem = result.find('a', class_='result__a')
                         snippet_elem = result.find('a', class_='result__snippet')
                         
                         if title_elem:
                             title = title_elem.get_text(strip=True)
-                            # Try to extract company name
-                            company_match = re.search(r'at\s+([^-|]+)', title) or re.search(r'-\s*([^-]+?)\s*-', title)
-                            company = company_match.group(1).strip() if company_match else title[:50]
+                            link = title_elem.get('href', '')
+                            snippet = snippet_elem.get_text(strip=True) if snippet_elem else ''
+                            
+                            # Skip job boards and aggregators
+                            skip_domains = [
+                                'indeed.com', 'linkedin.com', 'glassdoor', 'ziprecruiter',
+                                'monster.com', 'careerbuilder', 'simplyhired', 'salary.com',
+                                'joblist', 'jobs.com', 'jooble', 'talent.com'
+                            ]
+                            if any(domain in link.lower() for domain in skip_domains):
+                                continue
+                            
+                            # Skip generic results
+                            skip_titles = ['jobs', 'job search', 'salary', 'career', 'hiring near']
+                            if any(skip in title.lower() for skip in skip_titles):
+                                continue
                             
                             lead = {
                                 'source': 'job_posting',
-                                'source_id': title_elem.get('href', '')[:200],
-                                'business_name': company,
+                                'source_id': link[:200],
+                                'business_name': title[:80],
                                 'category': 'Hiring Signal',
-                                'pain_signal': f"Hiring for: {keyword.replace(' hiring', '').replace(' needed', '').replace(' job', '')}",
-                                'pain_detail': snippet_elem.get_text(strip=True)[:500] if snippet_elem else '',
-                                'source_url': title_elem.get('href', ''),
-                                'job_title': title[:100],
-                                'intent_score': 45  # Base score for hiring automatable roles
+                                'pain_signal': 'Hiring for automatable role',
+                                'pain_detail': snippet[:500],
+                                'source_url': link,
+                                'website': link,
+                                'intent_score': 50
                             }
                             
                             leads.append(lead)
