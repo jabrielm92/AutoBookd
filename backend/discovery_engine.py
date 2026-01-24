@@ -134,58 +134,58 @@ class DiscoveryEngine:
         leads = []
         
         subreddits = [
-            'smallbusiness', 'entrepreneur', 'startups', 'business',
-            'automation', 'artificial', 'SaaS', 'consulting'
+            'smallbusiness', 'entrepreneur', 'startups', 'business'
         ]
         
-        search_terms = [
-            'need automation', 'AI for business', 'automate my business',
-            'too much manual work', 'looking for AI solution',
-            'chatbot recommendation', 'streamline operations'
-        ]
-        
-        for subreddit in subreddits[:3]:  # Limit to avoid rate limits
+        # Use old.reddit.com which is more scraping-friendly
+        for subreddit in subreddits[:2]:  # Limit to avoid rate limits
             try:
-                # Use Reddit JSON API (no auth needed for public data)
-                url = f"https://www.reddit.com/r/{subreddit}/search.json"
+                # Use RSS feed instead of JSON API (more reliable)
+                url = f"https://www.reddit.com/r/{subreddit}/search.rss"
                 
-                for term in search_terms[:2]:
+                search_terms = ['need automation', 'AI for business', 'automate my']
+                
+                for term in search_terms[:1]:  # One term per subreddit
                     params = {
                         'q': term,
-                        'restrict_sr': 'true',
-                        't': 'week',
-                        'limit': 10
+                        'restrict_sr': 'on',
+                        't': 'month',
+                        'sort': 'new'
                     }
-                    headers = {'User-Agent': 'AutoBookedAI/1.0'}
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
                     
-                    response = await self.http_client.get(url, params=params, headers=headers)
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        posts = data.get('data', {}).get('children', [])
+                    try:
+                        response = await self.http_client.get(url, params=params, headers=headers, timeout=10.0)
                         
-                        for post in posts:
-                            post_data = post.get('data', {})
+                        if response.status_code == 200:
+                            # Parse RSS feed
+                            import feedparser
+                            feed = feedparser.parse(response.text)
                             
-                            # Extract lead signal
-                            lead = {
-                                'source': 'reddit',
-                                'source_id': post_data.get('id'),
-                                'business_name': f"Reddit User: {post_data.get('author', 'unknown')}",
-                                'category': 'Intent Signal',
-                                'pain_signal': post_data.get('title', ''),
-                                'pain_detail': post_data.get('selftext', '')[:500],
-                                'source_url': f"https://reddit.com{post_data.get('permalink', '')}",
-                                'subreddit': subreddit,
-                                'intent_score': self._calculate_intent_score(
-                                    post_data.get('title', '') + ' ' + post_data.get('selftext', '')
-                                )
-                            }
-                            
-                            if lead['intent_score'] >= 30:
-                                leads.append(lead)
+                            for entry in feed.entries[:5]:
+                                title = entry.get('title', '')
+                                summary = entry.get('summary', '')
+                                
+                                lead = {
+                                    'source': 'reddit',
+                                    'source_id': entry.get('id', entry.get('link', '')),
+                                    'business_name': f"Reddit: {title[:50]}",
+                                    'category': 'Intent Signal',
+                                    'pain_signal': title,
+                                    'pain_detail': summary[:500],
+                                    'source_url': entry.get('link', ''),
+                                    'subreddit': subreddit,
+                                    'intent_score': self._calculate_intent_score(title + ' ' + summary)
+                                }
+                                
+                                if lead['intent_score'] >= 20:
+                                    leads.append(lead)
+                    except Exception as e:
+                        logger.debug(f"Reddit RSS error: {e}")
                     
-                    await asyncio.sleep(2)  # Rate limit respect
+                    await asyncio.sleep(3)  # Rate limit respect
                     
             except Exception as e:
                 logger.error(f"Reddit discovery error for r/{subreddit}: {e}")
