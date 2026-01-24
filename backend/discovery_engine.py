@@ -196,45 +196,51 @@ class DiscoveryEngine:
         """Find companies hiring for roles AI could automate"""
         leads = []
         
-        # Use Indeed RSS feeds (free, no API key needed)
-        base_url = "https://www.indeed.com/rss"
+        # Use Google Jobs via SerpAPI-style search (DuckDuckGo fallback)
+        job_keywords = ['data entry hiring', 'administrative assistant needed', 'receptionist job']
         
-        job_keywords = PAIN_KEYWORDS['job_signals']
-        
-        for keyword in job_keywords[:5]:  # Limit queries
+        for keyword in job_keywords[:2]:  # Limit queries
             try:
-                params = {
-                    'q': keyword,
-                    'l': 'United States',
-                    'sort': 'date'
+                # Use DuckDuckGo to find job postings
+                search_query = f"{keyword} site:indeed.com OR site:linkedin.com"
+                url = "https://html.duckduckgo.com/html/"
+                
+                data = {'q': search_query}
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
                 
-                response = await self.http_client.get(base_url, params=params)
+                response = await self.http_client.post(url, data=data, headers=headers, timeout=10.0)
                 
                 if response.status_code == 200:
-                    feed = feedparser.parse(response.text)
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    results = soup.find_all('div', class_='result')
                     
-                    for entry in feed.entries[:5]:
-                        # Extract company info
-                        title = entry.get('title', '')
-                        company_match = re.search(r'-\s*(.+?)\s*-', title)
-                        company = company_match.group(1) if company_match else 'Unknown Company'
+                    for result in results[:3]:
+                        title_elem = result.find('a', class_='result__a')
+                        snippet_elem = result.find('a', class_='result__snippet')
                         
-                        lead = {
-                            'source': 'job_posting',
-                            'source_id': entry.get('id', entry.get('link', '')),
-                            'business_name': company.strip(),
-                            'category': 'Hiring Signal',
-                            'pain_signal': f"Hiring for: {keyword}",
-                            'pain_detail': entry.get('summary', '')[:500],
-                            'source_url': entry.get('link', ''),
-                            'job_title': title,
-                            'intent_score': 40  # Base score for hiring automatable roles
-                        }
-                        
-                        leads.append(lead)
+                        if title_elem:
+                            title = title_elem.get_text(strip=True)
+                            # Try to extract company name
+                            company_match = re.search(r'at\s+([^-|]+)', title) or re.search(r'-\s*([^-]+?)\s*-', title)
+                            company = company_match.group(1).strip() if company_match else title[:50]
+                            
+                            lead = {
+                                'source': 'job_posting',
+                                'source_id': title_elem.get('href', '')[:200],
+                                'business_name': company,
+                                'category': 'Hiring Signal',
+                                'pain_signal': f"Hiring for: {keyword.replace(' hiring', '').replace(' needed', '').replace(' job', '')}",
+                                'pain_detail': snippet_elem.get_text(strip=True)[:500] if snippet_elem else '',
+                                'source_url': title_elem.get('href', ''),
+                                'job_title': title[:100],
+                                'intent_score': 45  # Base score for hiring automatable roles
+                            }
+                            
+                            leads.append(lead)
                 
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 
             except Exception as e:
                 logger.error(f"Job discovery error for {keyword}: {e}")
