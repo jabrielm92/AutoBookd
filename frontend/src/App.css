@@ -1,34 +1,189 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* AutoBooked AI - Custom Styles */
+
+/* Sidebar */
+.sidebar {
+  @apply fixed left-0 top-0 h-screen w-64 bg-card border-r border-border flex flex-col;
+  transition: transform 0.3s ease;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.sidebar-collapsed {
+  @apply w-16;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Main content */
+.main-content {
+  @apply ml-64 min-h-screen;
+  transition: margin-left 0.3s ease;
 }
 
-.App-link {
-    color: #61dafb;
+.main-content-expanded {
+  @apply ml-16;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Cards */
+.stat-card {
+  @apply bg-card rounded-xl p-6 border border-border shadow-sm hover:shadow-md transition-shadow;
+}
+
+.stat-card-value {
+  @apply text-3xl font-bold text-foreground;
+}
+
+.stat-card-label {
+  @apply text-sm text-muted-foreground mt-1;
+}
+
+/* Pipeline kanban */
+.pipeline-column {
+  @apply flex-1 min-w-[280px] max-w-[320px] bg-muted/50 rounded-xl p-4;
+}
+
+.pipeline-card {
+  @apply bg-card rounded-lg p-4 border border-border shadow-sm hover:shadow-md transition-all cursor-pointer;
+}
+
+.pipeline-card:hover {
+  @apply border-primary/50;
+}
+
+/* Score badge */
+.score-badge {
+  @apply inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm;
+}
+
+.score-badge-high {
+  @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400;
+}
+
+.score-badge-medium {
+  @apply bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400;
+}
+
+.score-badge-low {
+  @apply bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400;
+}
+
+/* Table styles */
+.data-table {
+  @apply w-full border-collapse;
+}
+
+.data-table th {
+  @apply text-left text-xs font-medium text-muted-foreground uppercase tracking-wider py-3 px-4 bg-muted/50;
+}
+
+.data-table td {
+  @apply py-4 px-4 border-t border-border;
+}
+
+.data-table tbody tr:hover {
+  @apply bg-muted/30;
+}
+
+/* Conversation bubbles */
+.message-bubble {
+  @apply max-w-[80%] rounded-2xl px-4 py-2;
+}
+
+.message-outbound {
+  @apply bg-primary text-primary-foreground ml-auto rounded-br-md;
+}
+
+.message-inbound {
+  @apply bg-muted text-foreground mr-auto rounded-bl-md;
+}
+
+/* Status indicator */
+.status-indicator {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-indicator-active {
+  @apply bg-emerald-500;
+}
+
+.status-indicator-inactive {
+  @apply bg-gray-400;
+}
+
+/* System control button */
+.system-control-btn {
+  @apply relative px-6 py-3 rounded-full font-semibold transition-all;
+}
+
+.system-control-btn-start {
+  @apply bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30;
+}
+
+.system-control-btn-stop {
+  @apply bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30;
+}
+
+/* Niche card */
+.niche-card {
+  @apply bg-card rounded-xl p-5 border border-border hover:border-primary/30 transition-all;
+}
+
+/* Empty state */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-16 text-center;
+}
+
+.empty-state-icon {
+  @apply w-16 h-16 text-muted-foreground/50 mb-4;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-pulse bg-muted rounded;
+}
+
+/* Metric trend */
+.metric-trend-up {
+  @apply text-emerald-500;
+}
+
+.metric-trend-down {
+  @apply text-red-500;
+}
+
+/* Lead detail panel */
+.detail-panel {
+  @apply fixed right-0 top-0 h-screen w-[480px] bg-card border-l border-border shadow-xl z-50;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.detail-panel-open {
+  transform: translateX(0);
+}
+
+/* Form sections */
+.form-section {
+  @apply space-y-4 p-6 border-b border-border;
+}
+
+.form-section-title {
+  @apply text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4;
+}
+
+/* Quick actions */
+.quick-action {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors cursor-pointer;
+}
+
+/* Dashboard grid */
+.dashboard-grid {
+  @apply grid gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Chart container */
+.chart-container {
+  @apply bg-card rounded-xl p-6 border border-border;
+}
+
+/* Notification badge */
+.notification-badge {
+  @apply absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center;
 }
