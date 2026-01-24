@@ -249,52 +249,77 @@ class DiscoveryEngine:
     
     async def discover_from_maps(self, industry: str, location: str) -> List[Dict]:
         """
-        Basic Google Maps discovery (will be enhanced with SerpAPI later)
-        For now, uses Google search to find business listings
+        Search for businesses by industry and location
+        Uses DuckDuckGo search to find businesses
         """
         leads = []
         
         # Get industry keywords
         keywords = INDUSTRIES.get(industry, [])
         
-        for keyword in keywords[:2]:
+        for keyword in keywords[:3]:  # Limit keywords per industry
             try:
-                # Use DuckDuckGo HTML search (more scraping-friendly)
-                search_query = f"{keyword} near {location} reviews"
-                url = f"https://html.duckduckgo.com/html/"
+                # Search for businesses with reviews or complaints
+                search_queries = [
+                    f"{keyword} {location} reviews",
+                    f"{keyword} near {location} slow response",
+                    f"best {keyword} {location}"
+                ]
                 
-                data = {'q': search_query}
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                
-                response = await self.http_client.post(url, data=data, headers=headers)
-                
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    results = soup.find_all('div', class_='result')
+                for search_query in search_queries[:1]:  # One query per keyword
+                    url = "https://html.duckduckgo.com/html/"
                     
-                    for result in results[:5]:
-                        title_elem = result.find('a', class_='result__a')
-                        snippet_elem = result.find('a', class_='result__snippet')
+                    data = {'q': search_query}
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                    
+                    response = await self.http_client.post(url, data=data, headers=headers, timeout=10.0)
+                    
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        results = soup.find_all('div', class_='result')
                         
-                        if title_elem:
-                            lead = {
-                                'source': 'web_search',
-                                'source_id': title_elem.get('href', ''),
-                                'business_name': title_elem.get_text(strip=True)[:100],
-                                'category': keyword,
-                                'city': location,
-                                'pain_signal': 'Discovered via search',
-                                'pain_detail': snippet_elem.get_text(strip=True)[:500] if snippet_elem else '',
-                                'source_url': title_elem.get('href', ''),
-                                'intent_score': 20  # Base score, will be enriched
-                            }
+                        for result in results[:5]:
+                            title_elem = result.find('a', class_='result__a')
+                            snippet_elem = result.find('a', class_='result__snippet')
                             
-                            leads.append(lead)
-                
-                await asyncio.sleep(2)
+                            if title_elem:
+                                title = title_elem.get_text(strip=True)
+                                snippet = snippet_elem.get_text(strip=True) if snippet_elem else ''
+                                link = title_elem.get('href', '')
+                                
+                                # Skip aggregator sites
+                                skip_domains = ['yelp.com', 'yellowpages', 'facebook.com', 'angi.com', 'thumbtack', 'homeadvisor']
+                                if any(domain in link.lower() for domain in skip_domains):
+                                    continue
+                                
+                                # Calculate intent score based on snippet content
+                                intent_score = 25  # Base score
+                                for pain_word in ['slow', 'never', 'waiting', 'no response', 'frustrated']:
+                                    if pain_word in snippet.lower():
+                                        intent_score += 15
+                                
+                                lead = {
+                                    'source': 'web_search',
+                                    'source_id': link[:200],
+                                    'business_name': title[:100],
+                                    'category': keyword,
+                                    'city': location.split(',')[0].strip() if ',' in location else location,
+                                    'state': location.split(',')[1].strip() if ',' in location else '',
+                                    'pain_signal': f'Found via search: {keyword} in {location}',
+                                    'pain_detail': snippet[:500],
+                                    'source_url': link,
+                                    'website': link,
+                                    'intent_score': min(intent_score, 70)
+                                }
+                                
+                                leads.append(lead)
+                    
+                    await asyncio.sleep(2)
                 
             except Exception as e:
-                logger.error(f"Maps discovery error for {keyword} in {location}: {e}")
+                logger.error(f"Web search error for {keyword} in {location}: {e}")
         
         return leads
     
