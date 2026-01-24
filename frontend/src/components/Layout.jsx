@@ -25,7 +25,7 @@ const navItems = [
   { path: '/leads', icon: Users, label: 'Leads' },
   { path: '/pipeline', icon: Kanban, label: 'Pipeline' },
   { path: '/conversations', icon: MessageSquare, label: 'Conversations' },
-  { path: '/niches', icon: Target, label: 'Niches' },
+  { path: '/discovery', icon: Target, label: 'Discovery' },
   { path: '/bookings', icon: Calendar, label: 'Bookings' },
   { path: '/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/settings', icon: Settings, label: 'Settings' },
