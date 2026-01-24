@@ -98,8 +98,11 @@ class AutonomousController:
         
         while self.is_running:
             try:
+                # Refresh config each cycle
+                discovery_config = await self._get_discovery_config()
+                self.discovery_engine.config = discovery_config
                 await self.discovery_engine._run_discovery_cycle()
-                await asyncio.sleep(config.get('cycle_interval_seconds', 300))
+                await asyncio.sleep(discovery_config.get('cycle_interval_seconds', 300))
             except asyncio.CancelledError:
                 break
             except Exception as e:
