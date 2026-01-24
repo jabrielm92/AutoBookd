@@ -6,7 +6,7 @@ import Dashboard from "@/pages/Dashboard";
 import Leads from "@/pages/Leads";
 import Pipeline from "@/pages/Pipeline";
 import Conversations from "@/pages/Conversations";
-import Niches from "@/pages/Niches";
+import Discovery from "@/pages/Discovery";
 import Bookings from "@/pages/Bookings";
 import Settings from "@/pages/Settings";
 import Analytics from "@/pages/Analytics";
@@ -21,7 +21,7 @@ function App() {
             <Route path="leads" element={<Leads />} />
             <Route path="pipeline" element={<Pipeline />} />
             <Route path="conversations" element={<Conversations />} />
-            <Route path="niches" element={<Niches />} />
+            <Route path="discovery" element={<Discovery />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
