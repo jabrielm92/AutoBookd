@@ -3,25 +3,22 @@ import {
   Settings as SettingsIcon,
   Key,
   Mail,
-  Phone,
   Calendar,
-  CreditCard,
   Save,
   Eye,
   EyeOff,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  User
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { getConfig, updateConfig } from '@/lib/api';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const [config, setConfig] = useState(null);
@@ -60,12 +57,6 @@ export default function Settings() {
     setShowKeys(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const maskValue = (value) => {
-    if (!value) return '';
-    if (value.length <= 8) return '••••••••';
-    return value.substring(0, 4) + '••••••••' + value.substring(value.length - 4);
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -91,6 +82,46 @@ export default function Settings() {
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
+
+      {/* Sender Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Sender Information
+          </CardTitle>
+          <CardDescription>Your details for outreach emails</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Your Name</Label>
+              <Input
+                value={config?.sender_name || ''}
+                onChange={(e) => setConfig({...config, sender_name: e.target.value})}
+                placeholder="John Smith"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Company Name</Label>
+              <Input
+                value={config?.sender_company || ''}
+                onChange={(e) => setConfig({...config, sender_company: e.target.value})}
+                placeholder="ARI Solutions"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>From Email Address</Label>
+            <Input
+              value={config?.from_email || ''}
+              onChange={(e) => setConfig({...config, from_email: e.target.value})}
+              placeholder="outreach@yourdomain.com"
+            />
+            <p className="text-xs text-muted-foreground">Must be a verified domain in Resend</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* System Settings */}
       <Card>
@@ -186,6 +217,7 @@ export default function Settings() {
                 {showKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">Used for AI-powered message personalization and lead scoring</p>
           </div>
 
           <Separator />
@@ -224,55 +256,7 @@ export default function Settings() {
                 {showKeys.resend ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
-          </div>
-
-          <Separator />
-
-          {/* Twilio */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Twilio (SMS)
-              {config?.twilio_account_sid ? (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Configured
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  Not Set
-                </Badge>
-              )}
-            </Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Account SID</Label>
-                <Input
-                  type={showKeys.twilio_sid ? 'text' : 'password'}
-                  value={config?.twilio_account_sid || ''}
-                  onChange={(e) => setConfig({...config, twilio_account_sid: e.target.value})}
-                  placeholder="AC..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Auth Token</Label>
-                <Input
-                  type={showKeys.twilio_token ? 'text' : 'password'}
-                  value={config?.twilio_auth_token || ''}
-                  onChange={(e) => setConfig({...config, twilio_auth_token: e.target.value})}
-                  placeholder="Auth token"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Phone Number</Label>
-              <Input
-                value={config?.twilio_phone_number || ''}
-                onChange={(e) => setConfig({...config, twilio_phone_number: e.target.value})}
-                placeholder="+1234567890"
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">Used for sending outreach emails. Get a key at resend.com</p>
           </div>
 
           <Separator />
@@ -311,6 +295,7 @@ export default function Settings() {
                 {showKeys.calendly ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">Used for calendar booking integration</p>
           </div>
         </CardContent>
       </Card>
@@ -323,16 +308,17 @@ export default function Settings() {
               <AlertCircle className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold">Need API Keys?</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                After build completion, provide your API keys for:
-              </p>
+              <h3 className="font-semibold">How the Autonomous System Works</h3>
               <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                <li>• <strong>OpenAI</strong>: AI-powered messaging and scoring</li>
-                <li>• <strong>Resend</strong>: Email outreach delivery</li>
-                <li>• <strong>Twilio</strong>: SMS messaging</li>
-                <li>• <strong>Calendly</strong>: Calendar booking integration</li>
+                <li>1. <strong>Discovery Engine</strong> finds leads from Reddit, job postings, and web searches</li>
+                <li>2. <strong>AI Scoring</strong> evaluates each lead for AI consulting opportunity</li>
+                <li>3. <strong>Outreach Engine</strong> sends personalized emails via Resend</li>
+                <li>4. <strong>Follow-up Engine</strong> automatically follows up with non-responders</li>
+                <li>5. <strong>Learning Loop</strong> optimizes based on what converts</li>
               </ul>
+              <p className="text-sm text-muted-foreground mt-3">
+                Press <strong>Start System</strong> in the sidebar to begin autonomous operation.
+              </p>
             </div>
           </div>
         </CardContent>
