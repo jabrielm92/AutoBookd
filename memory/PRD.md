@@ -1,82 +1,145 @@
 # AutoBooked AI - Product Requirements Document
 
 ## Original Problem Statement
-Build an autonomous AI Lead-to-Calendar Engine that:
-1. Discovers and scrapes leads (Google Maps, lead databases)
-2. Enriches leads with AI-powered scoring
-3. Runs multi-channel outreach (Email, SMS, LinkedIn)
-4. Qualifies leads through AI conversations
-5. Books meetings automatically on calendar
+Build an autonomous AI Lead-to-Calendar Engine for AI consulting that:
+1. **Discovers leads automatically** from Reddit, job postings, web searches (no capital required)
+2. Scores leads based on AI consulting opportunity signals
+3. Sends personalized email outreach via Resend
+4. Follows up automatically
+5. Books meetings on calendar
+
+## Target Market
+- **Primary Industries**: Professional services, Home services, Field services
+- **Pain Signals**: Businesses showing signs of needing AI/automation
+- **Scope**: Toggle between local businesses or anywhere
 
 ## Architecture
 
 ### Backend (FastAPI + MongoDB)
-- **Models**: Lead, Conversation, Niche, Booking, SystemConfig, MessageVariant, EmailDomain
-- **Lead Scoring**: 0-100 rubric (Business Viability, Digital Weakness, Pain Signals, Reachability, Competitive Landscape)
-- **Conversation State Machine**: Uncontacted → Outreach Sent → Engaged → Discovery → Qualified → Calendar Offered → Booked
-- **API Routes**: /api/leads, /api/conversations, /api/niches, /api/bookings, /api/analytics, /api/config
+```
+/app/backend/
+├── server.py              # Main API with all routes
+├── discovery_engine.py    # Autonomous lead discovery
+├── outreach_engine.py     # Email outreach + follow-ups
+├── autonomous_controller.py  # Orchestrates all engines
+└── .env                   # API keys
+```
 
 ### Frontend (React + TailwindCSS + Shadcn)
-- Dashboard with KPIs and queues
-- Leads management with bulk import
-- Kanban pipeline view (drag & drop)
-- Conversation viewer
-- Niche management
-- Calendar/Bookings
-- Analytics with charts
-- Settings for API keys
+```
+/app/frontend/src/
+├── pages/
+│   ├── Dashboard.jsx      # KPIs, queues, pipeline overview
+│   ├── Leads.jsx          # Lead management, bulk import
+│   ├── Pipeline.jsx       # Kanban drag-drop
+│   ├── Conversations.jsx  # Message threads
+│   ├── Discovery.jsx      # Configure autonomous discovery
+│   ├── Bookings.jsx       # Calendar management
+│   ├── Analytics.jsx      # Charts and metrics
+│   └── Settings.jsx       # API keys, sender info
+├── components/Layout.jsx  # Sidebar, system control
+└── lib/api.js             # API client
+```
 
-## User Personas
-1. **Agency Owner**: Manages multiple niches, needs dashboard overview
-2. **Sales Rep**: Uses pipeline view, manages conversations
-3. **Admin**: Configures system settings, API keys
+## Discovery Sources (Zero Capital)
 
-## What's Been Implemented (Phase 1 - Jan 24, 2025)
+| Source | How It Works | Intent Signal |
+|--------|--------------|---------------|
+| **Reddit** | Mines r/smallbusiness, r/entrepreneur for AI/automation questions | Direct intent |
+| **Job Postings** | Finds companies hiring for automatable roles (data entry, admin) | Hiring signal |
+| **Web Search** | DuckDuckGo search by industry + location | Industry targeting |
+| **Google Maps** | Coming soon with SerpAPI | Local businesses |
+
+## Lead Scoring (AI Consulting Specific)
+
+```
+Intent Score (0-100):
+├── AI Intent Keywords: +15 each (need automation, AI tools, etc.)
+├── Pain Keywords: +10 each (slow response, manual process, etc.)
+├── Hiring Signal: +40 (hiring for automatable roles)
+├── Review Pain: +10-20 (complaints about response time, etc.)
+└── Competitive Landscape: ±20 (no competitor tools detected)
+```
+
+## Conversation State Machine
+
+```
+UNCONTACTED → OUTREACH_SENT → ENGAGED → DISCOVERY → QUALIFIED → CALENDAR_OFFERED → BOOKED
+                    ↓                                                    ↓
+               (no reply)                                            STALLED
+                    ↓                                                    ↓
+            Follow-up (max 2)                                    RE-ENGAGE (30 days)
+                    ↓
+             DISQUALIFIED
+```
+
+## What's Been Implemented (Jan 24, 2025)
 
 ### Core Features
-- [x] Lead CRUD with bulk import (CSV format)
-- [x] AI-based lead scoring (95-point rubric implemented)
-- [x] Conversation state machine
-- [x] Niche management with performance tracking
-- [x] Calendar booking system (built-in)
-- [x] Analytics dashboard with charts
-- [x] System config with API key management
-- [x] Start/Stop system control
-- [x] Priority & follow-up queues
+- [x] Autonomous Discovery Engine (Reddit, Jobs, Web Search)
+- [x] AI-based lead scoring for AI consulting opportunities
+- [x] Email outreach via Resend (personalized by pain signal)
+- [x] Automatic follow-up engine
 - [x] Pipeline kanban with drag-drop
+- [x] Bookings calendar
+- [x] Analytics dashboard
+- [x] System start/stop control
+- [x] Configurable discovery sources, industries, locations
 
-### Data Models Ready
-- Lead scoring breakdown tracks: high_ticket_category, independent_business, active_business, no_online_booking, no_crm_detected, low_review_count, negative_reviews, recent_activity, email_found, owner_language, no_competitor
+### API Keys Required
+- **OpenAI**: AI-powered personalization (optional but recommended)
+- **Resend**: Email delivery (required for outreach)
+- **Calendly**: Calendar booking sync (optional)
+
+## Deployment Ready
+- **Backend**: Railway (FastAPI + MongoDB)
+- **Frontend**: Vercel (React)
+- **Domain**: arisolutionsinc.com
 
 ## Prioritized Backlog
 
-### P0 (Next Phase - Integrations)
-- [ ] OpenAI integration for AI-generated messages
-- [ ] Resend integration for email outreach
-- [ ] Twilio integration for SMS
-- [ ] Calendly API integration
-- [ ] Google Calendar sync
+### P0 - Ready for Integration
+- [ ] Add OpenAI key for AI personalization
+- [ ] Add Resend key for email delivery
+- [ ] Configure sender name/email in Settings
+- [ ] Add target locations in Discovery
 
-### P1 (Automation)
-- [ ] Background worker for autonomous outreach
-- [ ] Sentiment analysis for replies
-- [ ] Auto-qualification logic
+### P1 - Enhanced Discovery
+- [ ] SerpAPI for reliable Google Maps scraping
+- [ ] Apollo.io for richer lead data
+- [ ] LinkedIn intent monitoring (manual mode)
+
+### P2 - Advanced Automation
+- [ ] Sentiment analysis on replies
 - [ ] A/B testing message variants
-
-### P2 (Advanced)
-- [ ] Google Maps scraping with Playwright
-- [ ] Lead enrichment APIs (Apollo, ZoomInfo)
 - [ ] Domain reputation management
-- [ ] Niche auto-expansion logic
+- [ ] Calendly webhook for booking sync
 
-## Tech Stack
-- Backend: FastAPI, MongoDB (Motor), Python 3.x
-- Frontend: React 19, TailwindCSS, Shadcn/UI, Recharts
-- Deployment: Railway (backend), Vercel (frontend), MongoDB Atlas
+## How to Use
 
-## Next Tasks
-1. Integrate OpenAI for message generation
-2. Connect Resend for email delivery
-3. Setup Twilio for SMS
-4. Calendly API for booking sync
-5. Build background worker for autonomous mode
+1. **Configure Discovery** (/discovery)
+   - Toggle Local/Anywhere scope
+   - Add target locations if local
+   - Select industries to target
+   - Add custom pain keywords
+
+2. **Add API Keys** (/settings)
+   - Resend key for emails
+   - OpenAI key for AI personalization (optional)
+   - Your name and email address
+
+3. **Start System** (sidebar button)
+   - Discovery runs every 5 minutes
+   - Outreach sends to qualified leads
+   - Follow-ups sent after 3 days
+
+4. **Monitor Progress** (/dashboard, /analytics)
+   - Track leads discovered
+   - Watch reply and booking rates
+   - Optimize based on what converts
+
+## Next Actions
+1. Provide Resend API key to enable email outreach
+2. Configure discovery with target locations/industries
+3. Press Start System to begin autonomous operation
+4. (Later) Add SerpAPI for Google Maps scraping
