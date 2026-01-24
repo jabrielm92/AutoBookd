@@ -185,9 +185,9 @@ class SystemConfig(BaseModel):
     priority_score_threshold: int = 80
     openai_api_key: Optional[str] = None
     resend_api_key: Optional[str] = None
-    twilio_account_sid: Optional[str] = None
-    twilio_auth_token: Optional[str] = None
-    twilio_phone_number: Optional[str] = None
+    from_email: Optional[str] = None
+    sender_name: Optional[str] = None
+    sender_company: Optional[str] = "ARI Solutions"
     calendly_api_key: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -200,11 +200,33 @@ class SystemConfigUpdate(BaseModel):
     priority_score_threshold: Optional[int] = None
     openai_api_key: Optional[str] = None
     resend_api_key: Optional[str] = None
-    twilio_account_sid: Optional[str] = None
-    twilio_auth_token: Optional[str] = None
-    twilio_phone_number: Optional[str] = None
+    from_email: Optional[str] = None
+    sender_name: Optional[str] = None
+    sender_company: Optional[str] = None
     calendly_api_key: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
+
+class DiscoveryConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = "discovery_config"
+    enabled_sources: List[str] = Field(default_factory=lambda: ['reddit', 'jobs', 'web_search'])
+    industries: List[str] = Field(default_factory=lambda: ['professional_services', 'home_services', 'field_services'])
+    locations: List[str] = Field(default_factory=list)
+    scope: str = "any"  # 'local' or 'any'
+    cycle_interval_seconds: int = 300
+    max_leads_per_cycle: int = 50
+    min_intent_score: int = 30
+    custom_keywords: List[str] = Field(default_factory=list)
+
+class DiscoveryConfigUpdate(BaseModel):
+    enabled_sources: Optional[List[str]] = None
+    industries: Optional[List[str]] = None
+    locations: Optional[List[str]] = None
+    scope: Optional[str] = None
+    cycle_interval_seconds: Optional[int] = None
+    max_leads_per_cycle: Optional[int] = None
+    min_intent_score: Optional[int] = None
+    custom_keywords: Optional[List[str]] = None
 
 class Analytics(BaseModel):
     total_leads: int = 0
@@ -326,22 +348,110 @@ async def update_config(update: SystemConfigUpdate):
     return config
 
 @api_router.post("/system/start")
-async def start_system():
+async def start_system(background_tasks: BackgroundTasks):
+    from autonomous_controller import get_controller
+    controller = get_controller(db)
+    
+    if controller.is_running:
+        return {"status": "already_running", "message": "System is already running"}
+    
+    # Start autonomous system in background
+    background_tasks.add_task(controller.start)
+    
     await db.system_config.update_one(
         {"id": "system_config"},
         {"$set": {"is_running": True, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
-    return {"status": "running", "message": "Autonomous system started"}
+    return {"status": "running", "message": "Autonomous system started - Discovery, Outreach, and Learning engines activated"}
 
 @api_router.post("/system/stop")
 async def stop_system():
+    from autonomous_controller import get_controller
+    controller = get_controller(db)
+    
+    await controller.stop()
+    
     await db.system_config.update_one(
         {"id": "system_config"},
         {"$set": {"is_running": False, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
     return {"status": "stopped", "message": "Autonomous system stopped"}
+
+@api_router.get("/system/status")
+async def get_system_status():
+    from autonomous_controller import get_controller
+    controller = get_controller(db)
+    
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    discovery_stats = await db.discovery_stats.find_one({"id": "stats"}, {"_id": 0})
+    metrics = await db.system_metrics.find_one({"id": "metrics"}, {"_id": 0})
+    
+    return {
+        "is_running": controller.is_running,
+        "config": config,
+        "discovery_stats": discovery_stats,
+        "metrics": metrics
+    }
+
+# ----- Discovery Config -----
+@api_router.get("/discovery/config")
+async def get_discovery_config():
+    config = await db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
+    if not config:
+        config = DiscoveryConfig().model_dump()
+        await db.discovery_config.insert_one(config)
+    return config
+
+@api_router.put("/discovery/config")
+async def update_discovery_config(update: DiscoveryConfigUpdate):
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    
+    await db.discovery_config.update_one(
+        {"id": "discovery_config"},
+        {"$set": update_data},
+        upsert=True
+    )
+    config = await db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
+    return config
+
+@api_router.post("/discovery/run-now")
+async def run_discovery_now(background_tasks: BackgroundTasks):
+    """Manually trigger one discovery cycle"""
+    from discovery_engine import DiscoveryEngine
+    
+    config = await db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
+    system_config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    
+    engine = DiscoveryEngine(db, system_config.get('openai_api_key') if system_config else None)
+    engine.config = config or {}
+    
+    background_tasks.add_task(engine._run_discovery_cycle)
+    
+    return {"status": "started", "message": "Discovery cycle triggered"}
+
+@api_router.get("/discovery/stats")
+async def get_discovery_stats():
+    stats = await db.discovery_stats.find_one({"id": "stats"}, {"_id": 0})
+    return stats or {"total_discovered": 0, "cycles_run": 0}
+
+@api_router.get("/discovery/sources")
+async def get_available_sources():
+    """Get available discovery sources and industries"""
+    return {
+        "sources": [
+            {"id": "reddit", "name": "Reddit Intent Mining", "description": "Find people asking about AI/automation"},
+            {"id": "jobs", "name": "Job Posting Signals", "description": "Find companies hiring for automatable roles"},
+            {"id": "web_search", "name": "Web Search", "description": "Search for businesses by industry and location"},
+            {"id": "google_maps", "name": "Google Maps", "description": "Coming soon - requires SerpAPI key"}
+        ],
+        "industries": [
+            {"id": "professional_services", "name": "Professional Services", "keywords": ["accounting", "legal", "consulting", "financial advisor"]},
+            {"id": "home_services", "name": "Home Services", "keywords": ["plumber", "electrician", "HVAC", "roofing", "landscaping"]},
+            {"id": "field_services", "name": "Field Services", "keywords": ["property management", "construction", "maintenance", "inspection"]}
+        ]
+    }
 
 # ----- Leads -----
 @api_router.post("/leads", response_model=Lead)
