@@ -15,6 +15,14 @@ export const getConfig = () => api.get('/config');
 export const updateConfig = (data) => api.put('/config', data);
 export const startSystem = () => api.post('/system/start');
 export const stopSystem = () => api.post('/system/stop');
+export const getSystemStatus = () => api.get('/system/status');
+
+// Discovery
+export const getDiscoveryConfig = () => api.get('/discovery/config');
+export const updateDiscoveryConfig = (data) => api.put('/discovery/config', data);
+export const runDiscoveryNow = () => api.post('/discovery/run-now');
+export const getDiscoveryStats = () => api.get('/discovery/stats');
+export const getDiscoverySources = () => api.get('/discovery/sources');
 
 // Leads
 export const getLeads = (params) => api.get('/leads', { params });
