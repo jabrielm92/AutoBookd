@@ -24,6 +24,7 @@ class EmailSender:
         self.api_key = api_key or os.environ.get('RESEND_API_KEY')
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.base_url = "https://api.resend.com"
+        self.test_mode = False
     
     async def send_email(
         self,
@@ -42,12 +43,24 @@ class EmailSender:
             {
                 "success": bool,
                 "message_id": str | None,
-                "error": str | None
+                "error": str | None,
+                "test_mode": bool
             }
         """
+        # Test mode - simulate sending without actually sending
+        if self.test_mode:
+            test_id = f"test_{uuid.uuid4().hex[:12]}"
+            logger.info(f"[TEST MODE] Would send email to {to_email}: {subject}")
+            return {
+                "success": True,
+                "message_id": test_id,
+                "error": None,
+                "test_mode": True
+            }
+        
         if not self.api_key:
             logger.error("Resend API key not configured")
-            return {"success": False, "error": "no_api_key"}
+            return {"success": False, "error": "no_api_key", "test_mode": False}
         
         try:
             # Format from address
@@ -81,7 +94,8 @@ class EmailSender:
                 return {
                     "success": True,
                     "message_id": data.get("id"),
-                    "error": None
+                    "error": None,
+                    "test_mode": False
                 }
             else:
                 error_msg = response.text
@@ -89,7 +103,8 @@ class EmailSender:
                 return {
                     "success": False,
                     "message_id": None,
-                    "error": error_msg
+                    "error": error_msg,
+                    "test_mode": False
                 }
                 
         except Exception as e:
@@ -97,7 +112,8 @@ class EmailSender:
             return {
                 "success": False,
                 "message_id": None,
-                "error": str(e)
+                "error": str(e),
+                "test_mode": False
             }
     
     async def close(self):

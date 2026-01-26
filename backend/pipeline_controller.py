@@ -383,12 +383,14 @@ class PipelineController:
         while self.is_running:
             try:
                 config = await self._get_config()
+                test_mode = config.get("test_mode", False)
                 
-                if not config.get("resend_api_key"):
+                if not config.get("resend_api_key") and not test_mode:
                     await asyncio.sleep(60)
                     continue
                 
-                self.email_sender.api_key = config["resend_api_key"]
+                self.email_sender.api_key = config.get("resend_api_key")
+                self.email_sender.test_mode = test_mode
                 
                 # Check daily limit
                 today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -403,7 +405,7 @@ class PipelineController:
                     continue
                 
                 # Process due sequences first
-                sequence_stats = await self.sequence_manager.process_due_sequences()
+                sequence_stats = await self.sequence_manager.process_due_sequences(test_mode=test_mode)
                 
                 if sequence_stats["sent"] > 0:
                     # Update daily stats
@@ -452,7 +454,7 @@ class PipelineController:
                         }}
                     )
                     
-                    logger.info(f"Created sequence for {lead['business_name']}")
+                    logger.info(f"Created sequence for {lead['business_name']}" + (" [TEST MODE]" if test_mode else ""))
                 
                 await asyncio.sleep(60)
                 
