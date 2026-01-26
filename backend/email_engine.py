@@ -18,13 +18,57 @@ logger = logging.getLogger(__name__)
 
 
 class EmailSender:
-    """Send emails via Resend"""
+    """Send emails via Resend with open/click tracking"""
     
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.environ.get('RESEND_API_KEY')
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.base_url = "https://api.resend.com"
         self.test_mode = False
+        self.tracking_base_url = os.environ.get('TRACKING_BASE_URL', '')
+    
+    def _inject_tracking(self, body: str, tracking_id: str, is_html: bool = False) -> tuple:
+        """
+        Inject tracking pixel and wrap links for click tracking
+        Returns (text_body, html_body)
+        """
+        import base64
+        import re
+        
+        if not self.tracking_base_url:
+            return body, None
+        
+        # Create tracking pixel HTML
+        pixel_url = f"{self.tracking_base_url}/api/track/open/{tracking_id}"
+        tracking_pixel = f'<img src="{pixel_url}" width="1" height="1" style="display:none" alt="" />'
+        
+        # Wrap links for click tracking
+        def wrap_link(match):
+            original_url = match.group(1)
+            encoded_url = base64.urlsafe_b64encode(original_url.encode()).decode()
+            tracked_url = f"{self.tracking_base_url}/api/track/click/{tracking_id}?url={encoded_url}"
+            return f'href="{tracked_url}"'
+        
+        # Convert plain text to basic HTML
+        html_body = body.replace('\n', '<br>\n')
+        
+        # Wrap any links in the body
+        html_body = re.sub(r'href="([^"]+)"', wrap_link, html_body)
+        
+        # Also handle plain text URLs (convert to clickable links)
+        url_pattern = r'(https?://[^\s<>"]+)'
+        def make_tracked_link(match):
+            original_url = match.group(1)
+            encoded_url = base64.urlsafe_b64encode(original_url.encode()).decode()
+            tracked_url = f"{self.tracking_base_url}/api/track/click/{tracking_id}?url={encoded_url}"
+            return f'<a href="{tracked_url}">{original_url}</a>'
+        
+        html_body = re.sub(url_pattern, make_tracked_link, html_body)
+        
+        # Add tracking pixel at the end
+        html_body = f"<html><body>{html_body}{tracking_pixel}</body></html>"
+        
+        return body, html_body
     
     async def send_email(
         self,
@@ -34,7 +78,8 @@ class EmailSender:
         from_email: str,
         from_name: str = None,
         reply_to: str = None,
-        tags: List[str] = None
+        tags: List[str] = None,
+        tracking_id: str = None
     ) -> Dict[str, Any]:
         """
         Send an email via Resend
