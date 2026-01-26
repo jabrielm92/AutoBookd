@@ -99,6 +99,7 @@ class EmailSender:
             return {
                 "success": True,
                 "message_id": test_id,
+                "tracking_id": tracking_id,
                 "error": None,
                 "test_mode": True
             }
@@ -111,12 +112,22 @@ class EmailSender:
             # Format from address
             from_address = f"{from_name} <{from_email}>" if from_name else from_email
             
+            # Inject tracking if tracking_id provided
+            text_body = body
+            html_body = None
+            if tracking_id and self.tracking_base_url:
+                text_body, html_body = self._inject_tracking(body, tracking_id)
+            
             payload = {
                 "from": from_address,
                 "to": [to_email],
                 "subject": subject,
-                "text": body
+                "text": text_body
             }
+            
+            # Add HTML version with tracking if available
+            if html_body:
+                payload["html"] = html_body
             
             if reply_to:
                 payload["reply_to"] = reply_to
