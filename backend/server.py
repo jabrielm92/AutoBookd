@@ -66,12 +66,17 @@ class Lead(BaseModel):
     lead_score: int = 0
     score_breakdown: Dict[str, int] = Field(default_factory=dict)
     status: LeadStatus = LeadStatus.UNCONTACTED
+    pipeline_stage: Optional[str] = None
     niche_id: Optional[str] = None
     competitor_detected: Optional[str] = None
     pain_points: List[str] = Field(default_factory=list)
     context: Dict[str, Any] = Field(default_factory=dict)
     last_contacted_at: Optional[datetime] = None
     follow_up_count: int = 0
+    email_opens: int = 0
+    email_clicks: int = 0
+    last_email_opened_at: Optional[str] = None
+    last_email_clicked_at: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
