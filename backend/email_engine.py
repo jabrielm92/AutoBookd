@@ -160,7 +160,7 @@ class SequenceManager:
         
         return sequence_id
     
-    async def process_due_sequences(self) -> Dict[str, int]:
+    async def process_due_sequences(self, test_mode: bool = False) -> Dict[str, int]:
         """
         Process all sequences that have emails due
         
@@ -175,7 +175,10 @@ class SequenceManager:
             "next_send_at": {"$lte": now.isoformat()}
         }).to_list(50)
         
-        stats = {"processed": 0, "sent": 0, "errors": 0}
+        stats = {"processed": 0, "sent": 0, "errors": 0, "test_mode": test_mode}
+        
+        # Set test mode on email sender
+        self.email_sender.test_mode = test_mode
         
         for sequence in due_sequences:
             stats["processed"] += 1
