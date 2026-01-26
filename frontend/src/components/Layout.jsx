@@ -215,18 +215,6 @@ export default function Layout() {
                     TEST
                   </div>
                 )}
-                {isRunning && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsProgressModalOpen(true)}
-                    className="gap-1.5 text-xs"
-                    data-testid="view-activity-btn"
-                  >
-                    <Activity className="w-3.5 h-3.5" />
-                    View Activity
-                  </Button>
-                )}
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
                   isRunning 
@@ -242,29 +230,43 @@ export default function Layout() {
               </div>
 
               {/* System Toggle */}
-              {isRunning ? (
-                <Button
-                  onClick={handleStop}
-                  disabled={loading}
-                  size="sm"
-                  data-testid="system-stop-btn"
-                  className="gap-2 font-medium bg-red-500 hover:bg-red-600 text-white"
-                >
-                  <Square className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Stop</span>
-                </Button>
-              ) : (
-                <Button
-                  onClick={openStartModal}
-                  disabled={loading}
-                  size="sm"
-                  data-testid="system-start-btn"
-                  className="gap-2 font-medium bg-emerald-500 hover:bg-emerald-600 text-white"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Start</span>
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {isRunning ? (
+                  <Button
+                    onClick={handleStop}
+                    disabled={loading}
+                    size="sm"
+                    data-testid="system-stop-btn"
+                    className="gap-2 font-medium bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    <Square className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Stop</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={openStartModal}
+                    disabled={loading}
+                    size="sm"
+                    data-testid="system-start-btn"
+                    className="gap-2 font-medium bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Start</span>
+                  </Button>
+                )}
+                {isRunning && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsProgressModalOpen(true)}
+                    className="gap-1.5 text-xs"
+                    data-testid="view-activity-btn"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Activity</span>
+                  </Button>
+                )}
+              </div>
 
               {/* Mobile Menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
