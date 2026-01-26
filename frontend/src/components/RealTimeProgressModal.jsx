@@ -66,11 +66,15 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
   };
 
   useEffect(() => {
+    let interval;
     if (isOpen && isRunning) {
-      fetchActivities();
-      const interval = setInterval(fetchActivities, 2000);
-      return () => clearInterval(interval);
+      // Initial fetch after a microtask to avoid synchronous setState
+      Promise.resolve().then(fetchActivities);
+      interval = setInterval(fetchActivities, 2000);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isOpen, isRunning]);
 
   useEffect(() => {
