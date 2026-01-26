@@ -155,6 +155,7 @@ class PipelineController:
                             break
                         
                         logger.info(f"Scraping: {keyword} in {location}")
+                        await self._log_activity("scrape", f"Searching for {keyword} in {location}", "info")
                         
                         leads = await self.maps_scraper.search_businesses(
                             keyword=keyword,
@@ -197,6 +198,7 @@ class PipelineController:
                             scraped_today += 1
                             
                             logger.info(f"Saved lead: {lead['business_name']}")
+                            await self._log_activity("scrape", f"Found: {lead['business_name']}", "success", lead['business_name'])
                         
                         # Update daily stats
                         await self.db.daily_scrape_stats.update_one(
