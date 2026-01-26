@@ -129,7 +129,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Scraped</p>
-                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_scraped || analytics?.total_leads || 0}</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{pipelineCounts.scraped || analytics?.total_leads || 0}</p>
               </div>
               <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30">
                 <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -147,13 +147,15 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Enriched</p>
-                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_enriched || 0}</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{pipelineCounts.enriched || 0}</p>
               </div>
               <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-900/30">
                 <Mail className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">{metrics.scrape_to_enrich_rate || 0}% conversion</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
+              {pipelineCounts.scraped ? Math.round((pipelineCounts.enriched / pipelineCounts.scraped) * 100) : 0}% conversion
+            </p>
           </CardContent>
         </Card>
 
@@ -166,7 +168,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Contacted</p>
-                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_contacted || 0}</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{pipelineCounts.in_sequence || 0}</p>
               </div>
               <div className="p-2.5 rounded-lg bg-cyan-50 dark:bg-cyan-900/30">
                 <MessageSquare className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
@@ -174,7 +176,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1 mt-3">
               <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{analytics?.reply_rate || metrics.reply_rate || 0}%</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{analytics?.reply_rate || 0}%</span>
               <span className="text-xs text-slate-400 dark:text-slate-500">reply rate</span>
             </div>
           </CardContent>
