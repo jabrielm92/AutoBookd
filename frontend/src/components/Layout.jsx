@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -11,12 +11,13 @@ import {
   Settings,
   Play,
   Square,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
-  TestTube
+  Menu,
+  X,
+  TestTube,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { getConfig, startSystem, stopSystem, getSystemStatus } from '@/lib/api';
 import { toast } from 'sonner';
@@ -33,11 +34,11 @@ const navItems = [
 ];
 
 export default function Layout() {
-  const [collapsed, setCollapsed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStatus();
@@ -63,133 +64,158 @@ export default function Layout() {
       if (isRunning) {
         await stopSystem();
         setIsRunning(false);
-        toast.success('System stopped');
+        toast.success('Pipeline stopped');
       } else {
-        // Get test_mode from config before starting
         const { data: config } = await getConfig();
         const useTestMode = config.test_mode || false;
         await startSystem(useTestMode);
         setIsRunning(true);
         setTestMode(useTestMode);
-        toast.success(useTestMode ? 'System started in TEST MODE' : 'System started');
+        toast.success(useTestMode ? 'Pipeline started (Test Mode)' : 'Pipeline started');
       }
     } catch (error) {
-      toast.error('Failed to toggle system');
+      toast.error('Failed to toggle pipeline');
     } finally {
       setLoading(false);
     }
   };
 
+  const NavLinks = ({ mobile = false }) => (
+    <>
+      {navItems.map((item) => (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          onClick={() => mobile && setMobileOpen(false)}
+          className={({ isActive }) => cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+            isActive 
+              ? "bg-slate-900 text-white" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100",
+            mobile && "w-full"
+          )}
+          data-testid={`nav-${item.label.toLowerCase()}`}
+        >
+          <item.icon className="w-4 h-4" />
+          {item.label}
+        </NavLink>
+      ))}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-40 transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
-      )}>
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-border">
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-lg">AutoBooked</span>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollapsed(!collapsed)}
-            className="h-8 w-8"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
-
-        {/* System Control */}
-        <div className="p-4 border-b border-border">
-          <Button
-            onClick={handleSystemToggle}
-            disabled={loading}
-            data-testid="system-toggle-btn"
-            className={cn(
-              "w-full justify-center gap-2 font-semibold transition-all",
-              isRunning 
-                ? "bg-red-500 hover:bg-red-600 text-white" 
-                : "bg-emerald-500 hover:bg-emerald-600 text-white"
-            )}
-          >
-            {isRunning ? (
-              <>
-                <Square className="w-4 h-4" />
-                {!collapsed && "Stop System"}
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                {!collapsed && "Start System"}
-              </>
-            )}
-          </Button>
-          {!collapsed && (
-            <div className="mt-2 flex flex-col items-center gap-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className={cn(
-                  "w-2 h-2 rounded-full",
-                  isRunning ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
-                )} />
-                {isRunning ? "Running" : "Stopped"}
-              </div>
-              {isRunning && testMode && (
-                <div className="flex items-center gap-1 text-xs text-amber-600 font-medium">
-                  <TestTube className="w-3 h-3" />
-                  TEST MODE
+      {/* Top Navbar */}
+      <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-8">
+              <NavLink to="/" className="flex items-center gap-2" data-testid="logo">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
                 </div>
-              )}
+                <span className="font-bold text-lg tracking-tight">AutoBookd</span>
+              </NavLink>
+
+              {/* Desktop Nav */}
+              <div className="hidden lg:flex items-center gap-1">
+                <NavLinks />
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-                isActive 
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                collapsed && "justify-center"
-              )}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && <span className="font-medium">{item.label}</span>}
-            </NavLink>
-          ))}
-        </nav>
+            {/* Right Section */}
+            <div className="flex items-center gap-3">
+              {/* System Status */}
+              <div className="hidden sm:flex items-center gap-2">
+                {isRunning && testMode && (
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-medium">
+                    <TestTube className="w-3 h-3" />
+                    TEST
+                  </div>
+                )}
+                <div className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
+                  isRunning 
+                    ? "bg-emerald-100 text-emerald-700" 
+                    : "bg-slate-100 text-slate-600"
+                )}>
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    isRunning ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                  )} />
+                  {isRunning ? "Active" : "Idle"}
+                </div>
+              </div>
 
-        {/* Footer */}
-        {!collapsed && (
-          <div className="p-4 border-t border-border">
-            <div className="text-xs text-muted-foreground text-center">
-              ARI Solutions Inc.
+              {/* System Toggle */}
+              <Button
+                onClick={handleSystemToggle}
+                disabled={loading}
+                size="sm"
+                data-testid="system-toggle-btn"
+                className={cn(
+                  "gap-2 font-medium",
+                  isRunning 
+                    ? "bg-red-500 hover:bg-red-600 text-white" 
+                    : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                )}
+              >
+                {isRunning ? (
+                  <>
+                    <Square className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Stop</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Start</span>
+                  </>
+                )}
+              </Button>
+
+              {/* Mobile Menu */}
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild className="lg:hidden">
+                  <Button variant="ghost" size="icon" data-testid="mobile-menu-btn">
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <div className="flex flex-col gap-6 mt-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-bold text-lg">AutoBookd</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <NavLinks mobile />
+                    </div>
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-slate-500">ARI Solutions Inc.</p>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
-        )}
-      </aside>
+        </div>
+      </nav>
 
       {/* Main Content */}
-      <main className={cn(
-        "min-h-screen transition-all duration-300",
-        collapsed ? "ml-16" : "ml-64"
-      )}>
-        <div className="p-6">
-          <Outlet context={{ isRunning, testMode, fetchConfig }} />
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Outlet context={{ isRunning, testMode, fetchConfig, navigate }} />
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <p className="text-xs text-slate-500 text-center">
+            © 2025 ARI Solutions Inc. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
