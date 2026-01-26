@@ -1,72 +1,57 @@
 import { useState, useEffect } from 'react';
 import { 
   Search,
-  Radar,
-  Globe,
   MapPin,
-  Briefcase,
-  MessageSquare,
-  Play,
-  Pause,
-  RefreshCw,
   Plus,
   X,
+  Play,
+  RefreshCw,
   Zap,
-  TrendingUp,
+  CheckCircle,
   Clock,
-  CheckCircle
+  Mail,
+  FileText,
+  Send,
+  BarChart3
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 
-const sourceIcons = {
-  reddit: MessageSquare,
-  jobs: Briefcase,
-  web_search: Globe,
-  google_maps: MapPin
-};
-
 export default function Discovery() {
   const [config, setConfig] = useState(null);
-  const [sources, setSources] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [newLocation, setNewLocation] = useState('');
+  const [scraping, setScraping] = useState(false);
   const [newKeyword, setNewKeyword] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [manualKeyword, setManualKeyword] = useState('');
+  const [manualLocation, setManualLocation] = useState('');
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchData, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
-      const [configRes, sourcesRes, statsRes] = await Promise.all([
-        api.get('/discovery/config'),
-        api.get('/discovery/sources'),
-        api.get('/discovery/stats')
+      const [configRes, analyticsRes] = await Promise.all([
+        api.get('/scrape/config'),
+        api.get('/pipeline/analytics')
       ]);
       setConfig(configRes.data);
-      setSources(sourcesRes.data);
-      setStats(statsRes.data);
+      setAnalytics(analyticsRes.data);
     } catch (error) {
-      toast.error('Failed to load discovery settings');
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -75,43 +60,43 @@ export default function Discovery() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put('/discovery/config', config);
-      toast.success('Discovery settings saved');
+      await api.put('/scrape/config', config);
+      toast.success('Configuration saved');
     } catch (error) {
-      toast.error('Failed to save settings');
+      toast.error('Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleRunNow = async () => {
-    setRunning(true);
+  const handleScrapeNow = async () => {
+    if (!manualKeyword || !manualLocation) {
+      toast.error('Enter keyword and location');
+      return;
+    }
+    
+    setScraping(true);
     try {
-      await api.post('/discovery/run-now');
-      toast.success('Discovery cycle started');
-      // Refresh stats after a delay
-      setTimeout(fetchData, 5000);
+      const { data } = await api.post(`/scrape/now?keyword=${encodeURIComponent(manualKeyword)}&location=${encodeURIComponent(manualLocation)}&limit=20`);
+      toast.success(`Scraped ${data.scraped} leads, saved ${data.saved} new`);
+      fetchData();
     } catch (error) {
-      toast.error('Failed to start discovery');
+      toast.error('Scraping failed');
     } finally {
-      setRunning(false);
+      setScraping(false);
     }
   };
 
-  const toggleSource = (sourceId) => {
-    const current = config?.enabled_sources || [];
-    const updated = current.includes(sourceId)
-      ? current.filter(s => s !== sourceId)
-      : [...current, sourceId];
-    setConfig({ ...config, enabled_sources: updated });
+  const addKeyword = () => {
+    if (!newKeyword.trim()) return;
+    const keywords = [...(config?.keywords || []), newKeyword.trim()];
+    setConfig({ ...config, keywords });
+    setNewKeyword('');
   };
 
-  const toggleIndustry = (industryId) => {
-    const current = config?.industries || [];
-    const updated = current.includes(industryId)
-      ? current.filter(i => i !== industryId)
-      : [...current, industryId];
-    setConfig({ ...config, industries: updated });
+  const removeKeyword = (kw) => {
+    const keywords = (config?.keywords || []).filter(k => k !== kw);
+    setConfig({ ...config, keywords });
   };
 
   const addLocation = () => {
@@ -126,22 +111,10 @@ export default function Discovery() {
     setConfig({ ...config, locations });
   };
 
-  const addKeyword = () => {
-    if (!newKeyword.trim()) return;
-    const keywords = [...(config?.custom_keywords || []), newKeyword.trim()];
-    setConfig({ ...config, custom_keywords: keywords });
-    setNewKeyword('');
-  };
-
-  const removeKeyword = (kw) => {
-    const keywords = (config?.custom_keywords || []).filter(k => k !== kw);
-    setConfig({ ...config, custom_keywords: keywords });
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Discovery Engine</h1>
+        <h1 className="text-2xl font-bold">Pipeline</h1>
         <div className="grid gap-6">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="h-48 skeleton rounded-xl" />
@@ -151,299 +124,276 @@ export default function Discovery() {
     );
   }
 
+  const metrics = analytics?.metrics || {};
+  const funnel = analytics?.funnel || {};
+  const deliverability = analytics?.deliverability || {};
+
   return (
-    <div className="space-y-6 max-w-4xl" data-testid="discovery-page">
+    <div className="space-y-6" data-testid="discovery-page">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Discovery Engine</h1>
-          <p className="text-muted-foreground">Configure autonomous lead discovery</p>
+          <h1 className="text-2xl font-bold">Lead Pipeline</h1>
+          <p className="text-muted-foreground">Scrape → Enrich → Research → Send → Book</p>
         </div>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={handleRunNow}
-            disabled={running}
-          >
-            <RefreshCw className={cn("w-4 h-4 mr-2", running && "animate-spin")} />
-            {running ? 'Running...' : 'Run Now'}
+          <Button variant="outline" onClick={fetchData}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Saving...' : 'Save Config'}
           </Button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Pipeline Funnel */}
+      <div className="grid grid-cols-5 gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Search className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats?.total_discovered || 0}</p>
-                <p className="text-sm text-muted-foreground">Leads Discovered</p>
-              </div>
-            </div>
+          <CardContent className="pt-6 text-center">
+            <Search className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+            <p className="text-3xl font-bold">{metrics.total_scraped || 0}</p>
+            <p className="text-sm text-muted-foreground">Scraped</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <Zap className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats?.cycles_run || 0}</p>
-                <p className="text-sm text-muted-foreground">Cycles Run</p>
-              </div>
-            </div>
+          <CardContent className="pt-6 text-center">
+            <Mail className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+            <p className="text-3xl font-bold">{metrics.total_enriched || 0}</p>
+            <p className="text-sm text-muted-foreground">Enriched</p>
+            <p className="text-xs text-muted-foreground mt-1">{metrics.scrape_to_enrich_rate || 0}% rate</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <Clock className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">
-                  {stats?.last_cycle_at 
-                    ? new Date(stats.last_cycle_at).toLocaleString() 
-                    : 'Never'}
-                </p>
-                <p className="text-sm text-muted-foreground">Last Run</p>
-              </div>
+          <CardContent className="pt-6 text-center">
+            <FileText className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+            <p className="text-3xl font-bold">{metrics.total_ready || 0}</p>
+            <p className="text-sm text-muted-foreground">Ready</p>
+            <p className="text-xs text-muted-foreground mt-1">{metrics.enrich_to_ready_rate || 0}% rate</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <Send className="w-8 h-8 mx-auto mb-2 text-cyan-500" />
+            <p className="text-3xl font-bold">{metrics.total_contacted || 0}</p>
+            <p className="text-sm text-muted-foreground">Contacted</p>
+            <p className="text-xs text-muted-foreground mt-1">{metrics.reply_rate || 0}% reply</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <CheckCircle className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
+            <p className="text-3xl font-bold">{metrics.total_booked || 0}</p>
+            <p className="text-sm text-muted-foreground">Booked</p>
+            <p className="text-xs text-muted-foreground mt-1">{metrics.booking_rate || 0}% rate</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Manual Scrape */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            Quick Scrape (Google Maps via SerpAPI)
+          </CardTitle>
+          <CardDescription>Test scraping with a single search</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Label className="text-xs text-muted-foreground">Keyword</Label>
+              <Input
+                placeholder="e.g., accounting firm"
+                value={manualKeyword}
+                onChange={(e) => setManualKeyword(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs text-muted-foreground">Location</Label>
+              <Input
+                placeholder="e.g., Philadelphia, PA"
+                value={manualLocation}
+                onChange={(e) => setManualLocation(e.target.value)}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={handleScrapeNow} disabled={scraping}>
+                {scraping ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4 mr-2" />
+                )}
+                Scrape Now
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Uses 1 SerpAPI credit per search. You have 250 free credits.
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-6">
+        {/* Keywords */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Target Keywords</CardTitle>
+            <CardDescription>Business types to search for</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="e.g., law firm"
+                value={newKeyword}
+                onChange={(e) => setNewKeyword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
+              />
+              <Button onClick={addKeyword} size="icon">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(config?.keywords || []).map((kw, i) => (
+                <Badge key={i} variant="secondary" className="flex items-center gap-1 py-1">
+                  {kw}
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                    onClick={() => removeKeyword(kw)}
+                  />
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Locations */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Target Locations</CardTitle>
+            <CardDescription>Cities to search in</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="e.g., Austin, TX"
+                value={newLocation}
+                onChange={(e) => setNewLocation(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addLocation()}
+              />
+              <Button onClick={addLocation} size="icon">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(config?.locations || []).map((loc, i) => (
+                <Badge key={i} variant="secondary" className="flex items-center gap-1 py-1">
+                  <MapPin className="w-3 h-3" />
+                  {loc}
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                    onClick={() => removeLocation(loc)}
+                  />
+                </Badge>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Scope Toggle */}
+      {/* Scraping Settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="w-5 h-5" />
-            Discovery Scope
-          </CardTitle>
-          <CardDescription>Target local businesses or search anywhere</CardDescription>
+          <CardTitle>Scraping Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <Button
-              variant={config?.scope === 'local' ? 'default' : 'outline'}
-              onClick={() => setConfig({ ...config, scope: 'local' })}
-              className="flex-1"
-            >
-              <MapPin className="w-4 h-4 mr-2" />
-              Local Only
-            </Button>
-            <Button
-              variant={config?.scope === 'any' ? 'default' : 'outline'}
-              onClick={() => setConfig({ ...config, scope: 'any' })}
-              className="flex-1"
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Anywhere
-            </Button>
-          </div>
-          
-          {config?.scope === 'local' && (
-            <div className="mt-4 space-y-3">
-              <Label>Target Locations</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="e.g., Phoenix, AZ"
-                  value={newLocation}
-                  onChange={(e) => setNewLocation(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addLocation()}
-                />
-                <Button onClick={addLocation} size="icon">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(config?.locations || []).map((loc, i) => (
-                  <Badge key={i} variant="secondary" className="flex items-center gap-1">
-                    {loc}
-                    <X 
-                      className="w-3 h-3 cursor-pointer hover:text-red-500" 
-                      onClick={() => removeLocation(loc)}
-                    />
-                  </Badge>
-                ))}
-                {(config?.locations || []).length === 0 && (
-                  <p className="text-sm text-muted-foreground">No locations added</p>
-                )}
-              </div>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label>Minimum Reviews</Label>
+              <Input
+                type="number"
+                value={config?.min_reviews || 5}
+                onChange={(e) => setConfig({...config, min_reviews: parseInt(e.target.value)})}
+              />
+              <p className="text-xs text-muted-foreground">Filter out new businesses</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Discovery Sources */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Radar className="w-5 h-5" />
-            Discovery Sources
-          </CardTitle>
-          <CardDescription>Choose where to find potential leads</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            {sources?.sources?.map((source) => {
-              const Icon = sourceIcons[source.id] || Search;
-              const isEnabled = config?.enabled_sources?.includes(source.id);
-              const isComingSoon = source.id === 'google_maps';
-              
-              return (
-                <div
-                  key={source.id}
-                  className={cn(
-                    "p-4 rounded-lg border-2 transition-all cursor-pointer",
-                    isEnabled ? "border-primary bg-primary/5" : "border-border hover:border-primary/30",
-                    isComingSoon && "opacity-50 cursor-not-allowed"
-                  )}
-                  onClick={() => !isComingSoon && toggleSource(source.id)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "p-2 rounded-lg",
-                        isEnabled ? "bg-primary/20" : "bg-muted"
-                      )}>
-                        <Icon className={cn("w-5 h-5", isEnabled && "text-primary")} />
-                      </div>
-                      <div>
-                        <p className="font-medium">{source.name}</p>
-                        <p className="text-sm text-muted-foreground">{source.description}</p>
-                      </div>
-                    </div>
-                    {isEnabled && <CheckCircle className="w-5 h-5 text-primary" />}
-                    {isComingSoon && <Badge variant="outline">Soon</Badge>}
-                  </div>
-                </div>
-              );
-            })}
+            <div className="space-y-2">
+              <Label>Max Per Search</Label>
+              <Input
+                type="number"
+                value={config?.max_per_search || 20}
+                onChange={(e) => setConfig({...config, max_per_search: parseInt(e.target.value)})}
+              />
+              <p className="text-xs text-muted-foreground">Results per keyword/location</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Daily Limit</Label>
+              <Input
+                type="number"
+                value={config?.daily_limit || 50}
+                onChange={(e) => setConfig({...config, daily_limit: parseInt(e.target.value)})}
+              />
+              <p className="text-xs text-muted-foreground">Max leads scraped per day</p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Industries */}
+      {/* Pipeline Stages */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Briefcase className="w-5 h-5" />
-            Target Industries
+            <BarChart3 className="w-5 h-5" />
+            Pipeline Stages
           </CardTitle>
-          <CardDescription>Industries to focus on for AI consulting opportunities</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {sources?.industries?.map((industry) => {
-              const isEnabled = config?.industries?.includes(industry.id);
-              
-              return (
-                <div
-                  key={industry.id}
-                  className={cn(
-                    "p-4 rounded-lg border-2 transition-all cursor-pointer",
-                    isEnabled ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
-                  )}
-                  onClick={() => toggleIndustry(industry.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{industry.name}</p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {industry.keywords.map((kw, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">{kw}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    {isEnabled && <CheckCircle className="w-5 h-5 text-primary" />}
-                  </div>
+            {Object.entries(funnel).map(([stage, count]) => (
+              <div key={stage} className="flex items-center gap-4">
+                <div className="w-40 text-sm font-medium capitalize">
+                  {stage.replace(/_/g, ' ')}
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Custom Keywords */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Custom Pain Keywords</CardTitle>
-          <CardDescription>Add custom keywords to detect AI consulting opportunities</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 mb-4">
-            <Input
-              placeholder="e.g., 'manual data entry', 'slow response'"
-              value={newKeyword}
-              onChange={(e) => setNewKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
-            />
-            <Button onClick={addKeyword} size="icon">
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(config?.custom_keywords || []).map((kw, i) => (
-              <Badge key={i} variant="secondary" className="flex items-center gap-1">
-                {kw}
-                <X 
-                  className="w-3 h-3 cursor-pointer hover:text-red-500" 
-                  onClick={() => removeKeyword(kw)}
-                />
-              </Badge>
+                <div className="flex-1">
+                  <Progress value={Math.min((count / Math.max(...Object.values(funnel))) * 100, 100)} />
+                </div>
+                <div className="w-16 text-right text-sm font-bold">{count}</div>
+              </div>
             ))}
-            {(config?.custom_keywords || []).length === 0 && (
-              <p className="text-sm text-muted-foreground">Using default AI/automation keywords</p>
+            {Object.keys(funnel).length === 0 && (
+              <p className="text-muted-foreground text-center py-4">No pipeline data yet. Start scraping!</p>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Advanced Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Advanced Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Cycle Interval (seconds)</Label>
-              <Input
-                type="number"
-                value={config?.cycle_interval_seconds || 300}
-                onChange={(e) => setConfig({...config, cycle_interval_seconds: parseInt(e.target.value)})}
-              />
-              <p className="text-xs text-muted-foreground">How often to run discovery (default: 5 min)</p>
+      {/* Deliverability */}
+      {deliverability && Object.keys(deliverability).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Deliverability (Last 7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold">{deliverability.sent || 0}</p>
+                <p className="text-sm text-muted-foreground">Sent</p>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold">{deliverability.open_rate || 0}%</p>
+                <p className="text-sm text-muted-foreground">Open Rate</p>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold">{deliverability.click_rate || 0}%</p>
+                <p className="text-sm text-muted-foreground">Click Rate</p>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-red-500">{deliverability.bounce_rate || 0}%</p>
+                <p className="text-sm text-muted-foreground">Bounce Rate</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Max Leads Per Cycle</Label>
-              <Input
-                type="number"
-                value={config?.max_leads_per_cycle || 50}
-                onChange={(e) => setConfig({...config, max_leads_per_cycle: parseInt(e.target.value)})}
-              />
-              <p className="text-xs text-muted-foreground">Limit leads discovered per cycle</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Minimum Intent Score</Label>
-              <Input
-                type="number"
-                value={config?.min_intent_score || 30}
-                onChange={(e) => setConfig({...config, min_intent_score: parseInt(e.target.value)})}
-              />
-              <p className="text-xs text-muted-foreground">Only save leads above this score</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
