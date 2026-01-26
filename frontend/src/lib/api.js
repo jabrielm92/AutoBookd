@@ -48,7 +48,11 @@ export const createLead = (data) => api.post('/leads', data);
 export const bulkCreateLeads = (leads) => api.post('/leads/bulk', { leads });
 export const updateLead = (id, data) => api.put(`/leads/${id}`, data);
 export const deleteLead = (id) => api.delete(`/leads/${id}`);
+export const bulkDeleteLeads = (ids) => api.post('/leads/bulk-delete', { ids });
 export const rescoreLead = (id) => api.post(`/leads/${id}/rescore`);
+export const importCSV = (formData) => api.post('/leads/import/csv', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
 
 // Conversations
 export const getConversations = (params) => api.get('/conversations', { params });
