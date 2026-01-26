@@ -253,7 +253,7 @@ class SequenceManager:
         return stats
     
     async def _send_next_email(self, sequence: Dict) -> Dict[str, Any]:
-        """Send the next email in a sequence"""
+        """Send the next email in a sequence with tracking"""
         
         current_step = sequence.get("current_step", 0)
         emails = sequence.get("emails", [])
@@ -292,17 +292,31 @@ class SequenceManager:
             lead.get("business_name", "your business")
         )
         
-        # Send email
+        # Generate tracking ID for this email
+        tracking_id = str(uuid.uuid4())
+        
+        # Send email with tracking
         result = await self.email_sender.send_email(
             to_email=lead["email"],
             subject=subject,
             body=email_template["body"],
             from_email=sequence["from_email"],
             from_name=sequence["from_name"],
-            tags=[f"sequence_{sequence['id']}", f"step_{current_step + 1}"]
+            tags=[f"sequence_{sequence['id']}", f"step_{current_step + 1}"],
+            tracking_id=tracking_id
         )
         
         if result["success"]:
+            # Store tracking record for open/click attribution
+            await self.db.email_tracking.insert_one({
+                "tracking_id": tracking_id,
+                "message_id": result["message_id"],
+                "lead_id": lead["id"],
+                "sequence_id": sequence["id"],
+                "step": current_step,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
             # Calculate next send time
             next_step = current_step + 1
             next_send_at = None
