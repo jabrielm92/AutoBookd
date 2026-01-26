@@ -335,6 +335,87 @@ export default function Analytics() {
           </CardContent>
         </Card>
       )}
+
+      {/* Email Engagement Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5" />
+            Email Engagement (Last 30 Days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 rounded-lg border bg-blue-50 dark:bg-blue-900/20 text-center">
+              <Mail className="w-5 h-5 mx-auto mb-2 text-blue-600" />
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                {trackingStats?.stats?.sent || 0}
+              </p>
+              <p className="text-sm text-muted-foreground">Sent</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-emerald-50 dark:bg-emerald-900/20 text-center">
+              <Eye className="w-5 h-5 mx-auto mb-2 text-emerald-600" />
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                {trackingStats?.stats?.open_rate || 0}%
+              </p>
+              <p className="text-sm text-muted-foreground">Open Rate</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-purple-50 dark:bg-purple-900/20 text-center">
+              <MousePointer className="w-5 h-5 mx-auto mb-2 text-purple-600" />
+              <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                {trackingStats?.stats?.click_rate || 0}%
+              </p>
+              <p className="text-sm text-muted-foreground">Click Rate</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-red-50 dark:bg-red-900/20 text-center">
+              <TrendingDown className="w-5 h-5 mx-auto mb-2 text-red-600" />
+              <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+                {trackingStats?.stats?.bounce_rate || 0}%
+              </p>
+              <p className="text-sm text-muted-foreground">Bounce Rate</p>
+            </div>
+          </div>
+
+          {/* Engaged Leads */}
+          {trackingStats?.engaged_leads && trackingStats.engaged_leads.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Eye className="w-4 h-4 text-emerald-500" />
+                Most Engaged Leads
+              </h4>
+              <div className="space-y-2">
+                {trackingStats.engaged_leads.slice(0, 5).map((lead) => (
+                  <div 
+                    key={lead.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium">{lead.business_name}</p>
+                      <p className="text-sm text-muted-foreground">{lead.email}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="gap-1">
+                        <Eye className="w-3 h-3" />
+                        {lead.email_opens || 0} opens
+                      </Badge>
+                      <Badge variant="outline" className="gap-1">
+                        <MousePointer className="w-3 h-3" />
+                        {lead.email_clicks || 0} clicks
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!trackingStats?.engaged_leads?.length && (
+            <p className="text-center text-muted-foreground py-4">
+              No engagement data yet. Send emails to start tracking opens and clicks.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
