@@ -650,11 +650,9 @@ async def enrich_lead(lead_id: str):
 @api_router.post("/leads/{lead_id}/research")
 async def research_lead(lead_id: str):
     """Manually trigger AI research on a lead"""
-    from pipeline_controller import get_pipeline
     from lead_scraper import WebsiteScraper
     from ai_engine import AIResearchEngine
     
-    pipeline = get_pipeline(db)
     config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
     
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
