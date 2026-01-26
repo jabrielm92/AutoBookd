@@ -54,6 +54,17 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
 
+  const fetchActivities = async () => {
+    try {
+      const { data } = await getPipelineActivity(50);
+      setActivities(data.activities || []);
+      setCounts(data.counts || {});
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && isRunning) {
       fetchActivities();
@@ -68,17 +79,6 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [activities]);
-
-  const fetchActivities = async () => {
-    try {
-      const { data } = await getPipelineActivity(50);
-      setActivities(data.activities || []);
-      setCounts(data.counts || {});
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch activities:', error);
-    }
-  };
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
