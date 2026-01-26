@@ -9,7 +9,11 @@ import {
   EyeOff,
   CheckCircle,
   AlertCircle,
-  User
+  User,
+  TestTube,
+  Link,
+  Linkedin,
+  Database
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { getConfig, updateConfig } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -83,6 +88,39 @@ export default function Settings() {
         </Button>
       </div>
 
+      {/* Test Mode Card */}
+      <Card className={config?.test_mode ? "border-amber-500 bg-amber-50/50" : ""}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TestTube className="w-5 h-5" />
+            Test Mode
+            {config?.test_mode && (
+              <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                ACTIVE
+              </Badge>
+            )}
+          </CardTitle>
+          <CardDescription>
+            Simulate the full pipeline without sending real emails
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="font-medium">Enable Test Mode</p>
+              <p className="text-sm text-muted-foreground">
+                When enabled, emails are simulated but not actually sent. Perfect for testing the pipeline safely.
+              </p>
+            </div>
+            <Switch
+              checked={config?.test_mode || false}
+              onCheckedChange={(checked) => setConfig({...config, test_mode: checked})}
+              data-testid="test-mode-toggle"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Sender Info */}
       <Card>
         <CardHeader>
@@ -100,6 +138,7 @@ export default function Settings() {
                 value={config?.sender_name || ''}
                 onChange={(e) => setConfig({...config, sender_name: e.target.value})}
                 placeholder="John Smith"
+                data-testid="sender-name-input"
               />
             </div>
             <div className="space-y-2">
@@ -108,6 +147,7 @@ export default function Settings() {
                 value={config?.sender_company || ''}
                 onChange={(e) => setConfig({...config, sender_company: e.target.value})}
                 placeholder="ARI Solutions"
+                data-testid="sender-company-input"
               />
             </div>
           </div>
@@ -117,6 +157,7 @@ export default function Settings() {
               value={config?.from_email || ''}
               onChange={(e) => setConfig({...config, from_email: e.target.value})}
               placeholder="outreach@yourdomain.com"
+              data-testid="from-email-input"
             />
             <p className="text-xs text-muted-foreground">Must be a verified domain in Resend</p>
           </div>
@@ -140,6 +181,7 @@ export default function Settings() {
                 type="number"
                 value={config?.daily_outreach_limit || 50}
                 onChange={(e) => setConfig({...config, daily_outreach_limit: parseInt(e.target.value)})}
+                data-testid="daily-limit-input"
               />
               <p className="text-xs text-muted-foreground">Max emails per day</p>
             </div>
@@ -149,6 +191,7 @@ export default function Settings() {
                 type="number"
                 value={config?.max_follow_ups || 2}
                 onChange={(e) => setConfig({...config, max_follow_ups: parseInt(e.target.value)})}
+                data-testid="max-followups-input"
               />
               <p className="text-xs text-muted-foreground">Per lead before stopping</p>
             </div>
@@ -158,6 +201,7 @@ export default function Settings() {
                 type="number"
                 value={config?.outreach_score_threshold || 70}
                 onChange={(e) => setConfig({...config, outreach_score_threshold: parseInt(e.target.value)})}
+                data-testid="outreach-threshold-input"
               />
               <p className="text-xs text-muted-foreground">Minimum score to contact</p>
             </div>
@@ -167,9 +211,77 @@ export default function Settings() {
                 type="number"
                 value={config?.priority_score_threshold || 80}
                 onChange={(e) => setConfig({...config, priority_score_threshold: parseInt(e.target.value)})}
+                data-testid="priority-threshold-input"
               />
               <p className="text-xs text-muted-foreground">Score for priority queue</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar Integration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Calendar Integration
+          </CardTitle>
+          <CardDescription>Setup auto-booking for positive replies</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Link className="w-4 h-4" />
+              Calendly Booking Link
+            </Label>
+            <Input
+              value={config?.calendly_link || ''}
+              onChange={(e) => setConfig({...config, calendly_link: e.target.value})}
+              placeholder="https://calendly.com/your-name/30min"
+              data-testid="calendly-link-input"
+            />
+            <p className="text-xs text-muted-foreground">
+              This link will be included in emails and sent automatically when a lead shows positive intent
+            </p>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                Calendly API Key
+                {config?.calendly_api_key ? (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Configured
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-zinc-100 text-zinc-600 border-zinc-200">
+                    Optional
+                  </Badge>
+                )}
+              </Label>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type={showKeys.calendly ? 'text' : 'password'}
+                value={config?.calendly_api_key || ''}
+                onChange={(e) => setConfig({...config, calendly_api_key: e.target.value})}
+                placeholder="Calendly API key for webhook verification"
+                data-testid="calendly-api-input"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => toggleShowKey('calendly')}
+              >
+                {showKeys.calendly ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Webhook URL: <code className="bg-muted px-1 py-0.5 rounded">/api/webhooks/calendly</code>
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -208,6 +320,7 @@ export default function Settings() {
                 value={config?.openai_api_key || ''}
                 onChange={(e) => setConfig({...config, openai_api_key: e.target.value})}
                 placeholder="sk-..."
+                data-testid="openai-api-input"
               />
               <Button 
                 variant="outline" 
@@ -217,7 +330,7 @@ export default function Settings() {
                 {showKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Used for AI-powered message personalization and lead scoring</p>
+            <p className="text-xs text-muted-foreground">Used for AI-powered personalization, research, and reply classification</p>
           </div>
 
           <Separator />
@@ -247,6 +360,7 @@ export default function Settings() {
                 value={config?.resend_api_key || ''}
                 onChange={(e) => setConfig({...config, resend_api_key: e.target.value})}
                 placeholder="re_..."
+                data-testid="resend-api-input"
               />
               <Button 
                 variant="outline" 
@@ -261,41 +375,80 @@ export default function Settings() {
 
           <Separator />
 
-          {/* Calendly */}
+          {/* Apollo (Future) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Calendly API Key
-                {config?.calendly_api_key ? (
+                <Database className="w-4 h-4" />
+                Apollo.io API Key
+                {config?.apollo_api_key ? (
                   <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Configured
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    <AlertCircle className="w-3 h-3 mr-1" />
-                    Not Set
+                  <Badge variant="outline" className="bg-zinc-100 text-zinc-600 border-zinc-200">
+                    Future Integration
                   </Badge>
                 )}
               </Label>
             </div>
             <div className="flex gap-2">
               <Input
-                type={showKeys.calendly ? 'text' : 'password'}
-                value={config?.calendly_api_key || ''}
-                onChange={(e) => setConfig({...config, calendly_api_key: e.target.value})}
-                placeholder="Calendly API key"
+                type={showKeys.apollo ? 'text' : 'password'}
+                value={config?.apollo_api_key || ''}
+                onChange={(e) => setConfig({...config, apollo_api_key: e.target.value})}
+                placeholder="Apollo.io API key"
+                data-testid="apollo-api-input"
               />
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={() => toggleShowKey('calendly')}
+                onClick={() => toggleShowKey('apollo')}
               >
-                {showKeys.calendly ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showKeys.apollo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Used for calendar booking integration</p>
+            <p className="text-xs text-muted-foreground">For richer lead data enrichment (coming soon)</p>
+          </div>
+
+          <Separator />
+
+          {/* LinkedIn Cookie */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Linkedin className="w-4 h-4" />
+                LinkedIn Session Cookie
+                {config?.linkedin_cookie ? (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Configured
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-zinc-100 text-zinc-600 border-zinc-200">
+                    Optional
+                  </Badge>
+                )}
+              </Label>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type={showKeys.linkedin ? 'text' : 'password'}
+                value={config?.linkedin_cookie || ''}
+                onChange={(e) => setConfig({...config, linkedin_cookie: e.target.value})}
+                placeholder="li_at cookie value"
+                data-testid="linkedin-cookie-input"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => toggleShowKey('linkedin')}
+              >
+                {showKeys.linkedin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">For LinkedIn profile scraping (use manual import for now)</p>
           </div>
         </CardContent>
       </Card>
@@ -310,14 +463,15 @@ export default function Settings() {
             <div>
               <h3 className="font-semibold">How the Autonomous System Works</h3>
               <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                <li>1. <strong>Discovery Engine</strong> finds leads from Reddit, job postings, and web searches</li>
-                <li>2. <strong>AI Scoring</strong> evaluates each lead for AI consulting opportunity</li>
-                <li>3. <strong>Outreach Engine</strong> sends personalized emails via Resend</li>
-                <li>4. <strong>Follow-up Engine</strong> automatically follows up with non-responders</li>
-                <li>5. <strong>Learning Loop</strong> optimizes based on what converts</li>
+                <li>1. <strong>Scraping Loop</strong> finds leads from Google Maps via SerpAPI</li>
+                <li>2. <strong>Enrichment Loop</strong> finds emails via Hunter.io</li>
+                <li>3. <strong>Research Loop</strong> analyzes websites and generates personalized openers</li>
+                <li>4. <strong>Sequence Loop</strong> sends 4-step email campaigns via Resend</li>
+                <li>5. <strong>Analytics Loop</strong> tracks full-funnel metrics</li>
               </ul>
               <p className="text-sm text-muted-foreground mt-3">
                 Press <strong>Start System</strong> in the sidebar to begin autonomous operation.
+                Enable <strong>Test Mode</strong> to simulate without sending real emails.
               </p>
             </div>
           </div>
