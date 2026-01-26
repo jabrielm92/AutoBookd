@@ -176,11 +176,43 @@ class MessageVariant(BaseModel):
     performance_score: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class EmailGuidelines(BaseModel):
+    forbidden_words: List[str] = Field(default_factory=lambda: ["AI", "artificial intelligence", "machine learning", "automation", "bot", "automated"])
+    preferred_words: List[str] = Field(default_factory=lambda: ["solutions", "streamline", "efficiency", "results", "growth"])
+    tone: str = "professional"  # professional, friendly, conversational, direct
+    max_words: int = 150
+    rules: Dict[str, bool] = Field(default_factory=lambda: {
+        "no_exclamation_marks": False,
+        "always_include_question": True,
+        "first_name_only": True,
+        "no_competitor_mentions": True,
+        "no_roi_promises": True
+    })
+
+class Product(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str
+    features: Optional[List[str]] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class DiscoverySet(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    keywords: List[str] = Field(default_factory=list)
+    locations: List[str] = Field(default_factory=list)
+    min_reviews: int = 5
+    max_per_search: int = 20
+    daily_limit: int = 50
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class SystemConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "system_config"
     is_running: bool = False
     test_mode: bool = False
+    active_product_id: Optional[str] = None
+    active_discovery_set_id: Optional[str] = None
     daily_outreach_limit: int = 50
     max_follow_ups: int = 2
     outreach_score_threshold: int = 70
@@ -195,6 +227,7 @@ class SystemConfig(BaseModel):
     apollo_api_key: Optional[str] = None
     linkedin_cookie: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
+    email_guidelines: EmailGuidelines = Field(default_factory=EmailGuidelines)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SystemConfigUpdate(BaseModel):
