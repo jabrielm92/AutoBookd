@@ -150,6 +150,7 @@ class EmailSender:
                 return {
                     "success": True,
                     "message_id": data.get("id"),
+                    "tracking_id": tracking_id,
                     "error": None,
                     "test_mode": False
                 }
