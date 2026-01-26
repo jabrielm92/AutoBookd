@@ -233,6 +233,8 @@ class SystemConfig(BaseModel):
 class SystemConfigUpdate(BaseModel):
     is_running: Optional[bool] = None
     test_mode: Optional[bool] = None
+    active_product_id: Optional[str] = None
+    active_discovery_set_id: Optional[str] = None
     daily_outreach_limit: Optional[int] = None
     max_follow_ups: Optional[int] = None
     outreach_score_threshold: Optional[int] = None
@@ -247,6 +249,7 @@ class SystemConfigUpdate(BaseModel):
     apollo_api_key: Optional[str] = None
     linkedin_cookie: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
+    email_guidelines: Optional[Dict[str, Any]] = None
 
 class DiscoveryConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
