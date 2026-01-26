@@ -471,6 +471,50 @@ async def stop_system():
     )
     return {"status": "stopped", "message": "Pipeline stopped"}
 
+@api_router.get("/pipeline/activity")
+async def get_pipeline_activity(limit: int = 20):
+    """Get real-time pipeline activity log"""
+    activities = await db.pipeline_activity.find(
+        {},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(limit).to_list(limit)
+    
+    # Get current counts
+    counts = {
+        "scraped": await db.leads.count_documents({}),
+        "enriched": await db.leads.count_documents({"email": {"$exists": True, "$ne": None}}),
+        "researched": await db.leads.count_documents({"research": {"$exists": True}}),
+        "in_sequence": await db.leads.count_documents({"pipeline_stage": "in_sequence"}),
+        "emails_sent": await db.sequences.count_documents({"current_step": {"$gt": 0}})
+    }
+    
+    return {
+        "activities": list(reversed(activities)),
+        "counts": counts
+    }
+
+@api_router.post("/pipeline/activity")
+async def log_pipeline_activity(data: Dict[str, Any]):
+    """Log a pipeline activity event"""
+    activity = {
+        "id": str(uuid.uuid4()),
+        "type": data.get("type", "info"),
+        "stage": data.get("stage", "unknown"),
+        "message": data.get("message", ""),
+        "lead_name": data.get("lead_name"),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.pipeline_activity.insert_one(activity)
+    
+    # Keep only last 100 activities
+    count = await db.pipeline_activity.count_documents({})
+    if count > 100:
+        oldest = await db.pipeline_activity.find({}, {"_id": 1}).sort("timestamp", 1).limit(count - 100).to_list(count - 100)
+        if oldest:
+            await db.pipeline_activity.delete_many({"_id": {"$in": [o["_id"] for o in oldest]}})
+    
+    return {"status": "logged"}
+
 @api_router.get("/system/status")
 async def get_system_status():
     from pipeline_controller import get_pipeline
