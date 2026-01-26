@@ -1,19 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-heading: 'Manrope', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
 }
 
 code {
@@ -22,57 +28,57 @@ code {
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 20% 10%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
-    --primary: 220 90% 56%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 90%;
-    --secondary-foreground: 220 20% 20%;
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 160 84% 39%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 14% 89%;
-    --input: 220 14% 89%;
-    --ring: 220 90% 56%;
-    --chart-1: 220 90% 56%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
     --chart-2: 160 84% 39%;
-    --chart-3: 43 96% 56%;
+    --chart-3: 38 92% 50%;
     --chart-4: 280 65% 60%;
     --chart-5: 0 84% 60%;
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
     --success: 160 84% 39%;
-    --warning: 43 96% 56%;
-    --info: 220 90% 56%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
   }
 
   .dark {
-    --background: 224 30% 8%;
-    --foreground: 220 14% 96%;
-    --card: 224 30% 11%;
-    --card-foreground: 220 14% 96%;
-    --popover: 224 30% 11%;
-    --popover-foreground: 220 14% 96%;
-    --primary: 220 90% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 224 20% 18%;
-    --secondary-foreground: 220 14% 90%;
-    --muted: 224 20% 15%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 160 84% 45%;
+    --background: 222 47% 3%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 7%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 224 20% 18%;
-    --input: 224 20% 18%;
-    --ring: 220 90% 60%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
   }
 }
 
@@ -92,53 +98,116 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/30 rounded-full;
+  @apply bg-slate-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
+  @apply bg-slate-400;
 }
 
-/* Status colors */
-.status-uncontacted { @apply bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300; }
-.status-outreach_sent { @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400; }
-.status-engaged { @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400; }
-.status-discovery { @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400; }
-.status-qualified { @apply bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400; }
-.status-calendar_offered { @apply bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400; }
-.status-booked { @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400; }
-.status-stalled { @apply bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400; }
-.status-disqualified { @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400; }
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
 
-/* Score colors */
-.score-high { @apply text-emerald-600 dark:text-emerald-400; }
-.score-medium { @apply text-amber-600 dark:text-amber-400; }
-.score-low { @apply text-red-600 dark:text-red-400; }
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-600;
+}
+
+/* Status badges */
+.status-uncontacted { @apply bg-slate-100 text-slate-700; }
+.status-scraped { @apply bg-slate-100 text-slate-700; }
+.status-outreach_sent { @apply bg-blue-50 text-blue-700 border border-blue-200; }
+.status-engaged { @apply bg-amber-50 text-amber-700 border border-amber-200; }
+.status-discovery { @apply bg-purple-50 text-purple-700 border border-purple-200; }
+.status-qualified { @apply bg-cyan-50 text-cyan-700 border border-cyan-200; }
+.status-calendar_offered { @apply bg-indigo-50 text-indigo-700 border border-indigo-200; }
+.status-booked { @apply bg-emerald-50 text-emerald-700 border border-emerald-200; }
+.status-stalled { @apply bg-orange-50 text-orange-700 border border-orange-200; }
+.status-disqualified { @apply bg-red-50 text-red-700 border border-red-200; }
+
+/* Score badges */
+.score-badge {
+  @apply inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm font-bold;
+}
+.score-badge-high { @apply bg-emerald-100 text-emerald-700; }
+.score-badge-medium { @apply bg-amber-100 text-amber-700; }
+.score-badge-low { @apply bg-red-100 text-red-700; }
+
+.score-high { @apply text-emerald-600; }
+.score-medium { @apply text-amber-600; }
+.score-low { @apply text-red-600; }
+
+/* Data table */
+.data-table {
+  @apply w-full text-sm;
+}
+.data-table thead {
+  @apply border-b border-slate-200;
+}
+.data-table th {
+  @apply px-4 py-3 text-left font-medium text-slate-500 text-xs uppercase tracking-wider;
+}
+.data-table td {
+  @apply px-4 py-4 align-middle;
+}
+.data-table tbody tr {
+  @apply border-b border-slate-100 hover:bg-slate-50 transition-colors;
+}
+.data-table tbody tr:last-child {
+  @apply border-b-0;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply bg-slate-200 animate-pulse rounded;
+}
+
+/* Metric card hover */
+.metric-card {
+  @apply bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 cursor-pointer;
+}
+.metric-card:hover {
+  @apply border-slate-300 shadow-sm;
+}
+
+/* Pipeline stage card */
+.pipeline-card {
+  @apply bg-white border border-slate-200 rounded-xl p-4 transition-all duration-200;
+}
+.pipeline-card:hover {
+  @apply border-blue-300 shadow-sm;
+}
+.pipeline-card.clickable {
+  @apply cursor-pointer;
+}
 
 /* Animations */
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(1.4); opacity: 0; }
-}
-
-.animate-pulse-ring {
-  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(10px); opacity: 0; }
+  from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
 
-/* Glass effect */
-.glass {
-  @apply backdrop-blur-xl bg-white/80 dark:bg-gray-900/80;
+/* Checkbox group */
+.checkbox-row {
+  @apply flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer;
+}
+.checkbox-row.selected {
+  @apply bg-blue-50;
 }
