@@ -25,7 +25,13 @@ class AIResearchEngine:
         self.http_client = httpx.AsyncClient(timeout=60.0)
         self.model = "gpt-4o-mini"  # Cost-effective, good quality
     
-    async def research_lead(self, lead: Dict[str, Any], website_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def research_lead(
+        self, 
+        lead: Dict[str, Any], 
+        website_data: Dict[str, Any],
+        product: Dict[str, Any] = None,
+        email_guidelines: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """
         Perform AI research on a lead
         
@@ -50,8 +56,50 @@ class AIResearchEngine:
         Services: {website_data.get('services', '')[:500]}
         """
         
-        prompt = f"""You are a sales research assistant for an AI consulting company.
-
+        # Build product context
+        product_context = ""
+        if product:
+            product_context = f"""
+YOUR PRODUCT/SERVICE:
+- Name: {product.get('name', 'Business Solutions')}
+- Description: {product.get('description', '')}
+- Key Features: {', '.join(product.get('features', []))}
+"""
+        
+        # Build email rules
+        rules = """
+RULES:
+1. Be SPECIFIC - reference actual things from their website
+2. Focus on operational pain points your solution can solve
+3. DO NOT use generic phrases like "I noticed your website"
+4. The opener should prove you did research
+5. Keep opener under 25 words"""
+        
+        if email_guidelines:
+            forbidden = email_guidelines.get('forbidden_words', [])
+            if forbidden:
+                rules += f"\n6. NEVER use these words: {', '.join(forbidden)}"
+            
+            preferred = email_guidelines.get('preferred_words', [])
+            if preferred:
+                rules += f"\n7. Prefer using: {', '.join(preferred)}"
+            
+            tone = email_guidelines.get('tone', 'professional')
+            rules += f"\n8. Tone should be: {tone}"
+            
+            max_words = email_guidelines.get('max_words', 150)
+            rules += f"\n9. Keep opener under {min(25, max_words // 6)} words"
+            
+            rule_toggles = email_guidelines.get('rules', {})
+            if rule_toggles.get('no_exclamation_marks'):
+                rules += "\n10. Do NOT use exclamation marks"
+            if rule_toggles.get('always_include_question'):
+                rules += "\n11. End with a question"
+            if rule_toggles.get('first_name_only'):
+                rules += "\n12. Use first name only (not Mr./Ms.)"
+        
+        prompt = f"""You are a sales research assistant.
+{product_context}
 BUSINESS INFO:
 - Name: {lead.get('business_name')}
 - Industry: {lead.get('category')}
@@ -63,21 +111,20 @@ WEBSITE CONTENT:
 {website_content}
 
 TASK:
-Analyze this business and identify AI/automation opportunities.
-
-RULES:
-1. Be SPECIFIC - reference actual things from their website
-2. Focus on operational pain points AI can solve
-3. DO NOT mention "AI" in the opener - sound human
-4. DO NOT use generic phrases like "I noticed your website"
-5. The opener should prove you did research
-6. Keep opener under 25 words
+Analyze this business and identify how your solution can help them.
+{rules}
 
 OUTPUT JSON:
 {{
     "pain_point": "One specific operational pain they likely have",
-    "opportunity": "One specific way AI could help them",
+    "opportunity": "One specific way your solution could help them",
     "opener": "A personalized first sentence that proves research",
+    "services": "Their main services (brief)",
+    "target_customer": "Who they serve",
+    "personalization_quality": "high/medium/low"
+}}
+
+Return ONLY valid JSON, no markdown."""
     "services": "Their main services (brief)",
     "target_customer": "Who they serve",
     "personalization_quality": "high/medium/low"
