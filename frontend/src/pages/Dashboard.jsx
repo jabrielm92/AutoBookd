@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { getAnalytics, getPriorityQueue, getFollowUpQueue, getPipelineAnalytics } from '@/lib/api';
+import { getAnalytics, getPriorityQueue, getFollowUpQueue, getPipelineActivity } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 const statusLabels = {
@@ -35,7 +35,7 @@ export default function Dashboard() {
   const { isRunning, testMode } = useOutletContext();
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
-  const [pipelineData, setPipelineData] = useState(null);
+  const [pipelineCounts, setPipelineCounts] = useState({});
   const [priorityLeads, setPriorityLeads] = useState([]);
   const [followUpLeads, setFollowUpLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,16 +44,24 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+  // Auto-refresh when pipeline is running
+  useEffect(() => {
+    if (isRunning) {
+      const interval = setInterval(fetchData, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isRunning]);
+
   const fetchData = async () => {
     try {
-      const [analyticsRes, pipelineRes, priorityRes, followUpRes] = await Promise.all([
+      const [analyticsRes, activityRes, priorityRes, followUpRes] = await Promise.all([
         getAnalytics().catch(() => ({ data: {} })),
-        getPipelineAnalytics().catch(() => ({ data: {} })),
+        getPipelineActivity(1).catch(() => ({ data: { counts: {} } })),
         getPriorityQueue(5).catch(() => ({ data: [] })),
         getFollowUpQueue(5).catch(() => ({ data: [] }))
       ]);
       setAnalytics(analyticsRes.data);
-      setPipelineData(pipelineRes.data);
+      setPipelineCounts(activityRes.data?.counts || {});
       setPriorityLeads(priorityRes.data || []);
       setFollowUpLeads(followUpRes.data || []);
     } catch (error) {
