@@ -38,12 +38,31 @@ class PipelineController:
         self.sequence_manager = SequenceManager(db, self.email_sender)
         self.deliverability_tracker = DeliverabilityTracker(db)
     
+    async def _log_activity(self, stage: str, message: str, activity_type: str = "info", lead_name: str = None):
+        """Log activity to database for real-time display"""
+        try:
+            activity = {
+                "id": str(uuid.uuid4()),
+                "type": activity_type,
+                "stage": stage,
+                "message": message,
+                "lead_name": lead_name,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            await self.db.pipeline_activity.insert_one(activity)
+        except Exception as e:
+            logger.error(f"Failed to log activity: {e}")
+    
     async def start(self):
         """Start the full pipeline"""
         if self.is_running:
             return {"status": "already_running"}
         
         self.is_running = True
+        
+        # Clear old activities
+        await self.db.pipeline_activity.delete_many({})
+        await self._log_activity("system", "Pipeline started", "success")
         
         # Start background tasks
         self._tasks = [
