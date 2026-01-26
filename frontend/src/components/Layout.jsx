@@ -13,11 +13,12 @@ import {
   Square,
   Zap,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  TestTube
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getConfig, startSystem, stopSystem } from '@/lib/api';
+import { getConfig, startSystem, stopSystem, getSystemStatus } from '@/lib/api';
 import { toast } from 'sonner';
 
 const navItems = [
@@ -34,20 +35,26 @@ const navItems = [
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [testMode, setTestMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    fetchConfig();
+    fetchStatus();
   }, []);
 
-  const fetchConfig = async () => {
+  const fetchStatus = async () => {
     try {
-      const { data } = await getConfig();
+      const { data } = await getSystemStatus();
       setIsRunning(data.is_running);
+      setTestMode(data.test_mode || false);
     } catch (error) {
-      console.error('Failed to fetch config:', error);
+      console.error('Failed to fetch status:', error);
     }
+  };
+
+  const fetchConfig = async () => {
+    await fetchStatus();
   };
 
   const handleSystemToggle = async () => {
@@ -58,9 +65,13 @@ export default function Layout() {
         setIsRunning(false);
         toast.success('System stopped');
       } else {
-        await startSystem();
+        // Get test_mode from config before starting
+        const { data: config } = await getConfig();
+        const useTestMode = config.test_mode || false;
+        await startSystem(useTestMode);
         setIsRunning(true);
-        toast.success('System started');
+        setTestMode(useTestMode);
+        toast.success(useTestMode ? 'System started in TEST MODE' : 'System started');
       }
     } catch (error) {
       toast.error('Failed to toggle system');
@@ -101,6 +112,7 @@ export default function Layout() {
           <Button
             onClick={handleSystemToggle}
             disabled={loading}
+            data-testid="system-toggle-btn"
             className={cn(
               "w-full justify-center gap-2 font-semibold transition-all",
               isRunning 
@@ -121,12 +133,20 @@ export default function Layout() {
             )}
           </Button>
           {!collapsed && (
-            <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <span className={cn(
-                "w-2 h-2 rounded-full",
-                isRunning ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
-              )} />
-              {isRunning ? "Running" : "Stopped"}
+            <div className="mt-2 flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  isRunning ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
+                )} />
+                {isRunning ? "Running" : "Stopped"}
+              </div>
+              {isRunning && testMode && (
+                <div className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                  <TestTube className="w-3 h-3" />
+                  TEST MODE
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -167,7 +187,7 @@ export default function Layout() {
         collapsed ? "ml-16" : "ml-64"
       )}>
         <div className="p-6">
-          <Outlet context={{ isRunning, fetchConfig }} />
+          <Outlet context={{ isRunning, testMode, fetchConfig }} />
         </div>
       </main>
     </div>
