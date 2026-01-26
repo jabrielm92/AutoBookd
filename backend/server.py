@@ -26,6 +26,7 @@ api_router = APIRouter(prefix="/api")
 
 # ============== ENUMS ==============
 class LeadStatus(str, Enum):
+    SCRAPED = "scraped"
     UNCONTACTED = "uncontacted"
     OUTREACH_SENT = "outreach_sent"
     ENGAGED = "engaged"
