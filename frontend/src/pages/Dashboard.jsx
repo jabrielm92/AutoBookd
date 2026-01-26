@@ -89,8 +89,6 @@ export default function Dashboard() {
     );
   }
 
-  const metrics = pipelineData?.metrics || {};
-
   return (
     <div className="space-y-8" data-testid="dashboard">
       {/* Header */}
