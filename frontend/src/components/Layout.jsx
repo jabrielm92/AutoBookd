@@ -297,7 +297,7 @@ export default function Layout() {
                   <SelectValue placeholder="Select a product (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No product selected</SelectItem>
+                  <SelectItem value="none">No product selected</SelectItem>
                   {products.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
@@ -318,7 +318,7 @@ export default function Layout() {
                   <SelectValue placeholder="Select a discovery set (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Use default settings</SelectItem>
+                  <SelectItem value="none">Use default settings</SelectItem>
                   {discoverySets.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
