@@ -285,7 +285,9 @@ class EmailSequenceGenerator:
         research: Dict[str, Any],
         sender_name: str,
         sender_company: str,
-        calendar_link: str = None
+        calendar_link: str = None,
+        product: Dict[str, Any] = None,
+        email_guidelines: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """
         Generate a 4-email sequence based on research
@@ -299,8 +301,26 @@ class EmailSequenceGenerator:
         
         opener = research.get('opener', f"Your {lead.get('category', 'business')} caught my attention.")
         pain_point = research.get('pain_point', 'managing customer inquiries')
-        opportunity = research.get('opportunity', 'automated customer response')
+        opportunity = research.get('opportunity', 'streamlined operations')
         business_name = lead.get('business_name', 'your business')
+        
+        # Use product info if available
+        product_name = product.get('name', sender_company) if product else sender_company
+        product_desc = product.get('description', '') if product else ''
+        
+        # Build value proposition from product
+        value_prop = "respond to customers faster and never miss a lead"
+        if product_desc:
+            value_prop = product_desc[:100]
+        
+        # Apply email guidelines
+        if email_guidelines:
+            # Filter forbidden words from all content
+            forbidden = email_guidelines.get('forbidden_words', [])
+            for word in forbidden:
+                opener = opener.replace(word, '').replace(word.lower(), '')
+                pain_point = pain_point.replace(word, '').replace(word.lower(), '')
+                opportunity = opportunity.replace(word, '').replace(word.lower(), '')
         
         sequence = [
             # Email 1: Personal opener
@@ -310,7 +330,7 @@ class EmailSequenceGenerator:
                 "subject": f"Quick question about {business_name}",
                 "body": f"""{opener}
 
-I work with {lead.get('category', 'businesses')} to solve {pain_point} - typically helping them respond to customers faster and never miss a lead.
+I work with {lead.get('category', 'businesses')} to solve {pain_point} - typically helping them {value_prop}.
 
 Would it make sense to chat for 15 minutes this week?
 
@@ -341,7 +361,7 @@ Curious - how are you currently handling {pain_point.lower()}?
                 "subject": "Re: Quick question about {business_name}",
                 "body": f"""Quick thought -
 
-I recently helped a {lead.get('category', 'similar business')} cut their response time from hours to minutes. They went from missing 30% of leads to capturing nearly all of them.
+I recently helped a {lead.get('category', 'similar business')} streamline their operations significantly. They went from missing 30% of leads to capturing nearly all of them.
 
 {opportunity} could do the same for {business_name}.
 
