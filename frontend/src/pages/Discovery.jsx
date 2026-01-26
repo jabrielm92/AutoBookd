@@ -11,7 +11,11 @@ import {
   Mail,
   FileText,
   Send,
-  ArrowRight
+  ArrowRight,
+  Package,
+  Shield,
+  Trash2,
+  Save
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,36 +23,98 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import api from '@/lib/api';
+import api, { getConfig, updateConfig, getProducts, createProduct, deleteProduct, getDiscoverySets, createDiscoverySet, deleteDiscoverySet } from '@/lib/api';
 
 export default function Discovery() {
   const navigate = useNavigate();
   const [config, setConfig] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [discoverySets, setDiscoverySets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [scraping, setScraping] = useState(false);
-  const [newKeyword, setNewKeyword] = useState('');
-  const [newLocation, setNewLocation] = useState('');
+  
+  // Quick scrape inputs
   const [manualKeyword, setManualKeyword] = useState('');
   const [manualLocation, setManualLocation] = useState('');
+  
+  // New product form
+  const [newProduct, setNewProduct] = useState({ name: '', description: '', features: '' });
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  
+  // New discovery set form
+  const [newDiscoverySet, setNewDiscoverySet] = useState({ 
+    name: '', 
+    keywords: '', 
+    locations: '',
+    min_reviews: 5,
+    max_per_search: 20,
+    daily_limit: 50
+  });
+  const [isDiscoveryDialogOpen, setIsDiscoveryDialogOpen] = useState(false);
+  
+  // Email guidelines
+  const [emailGuidelines, setEmailGuidelines] = useState({
+    forbidden_words: [],
+    preferred_words: [],
+    tone: 'professional',
+    max_words: 150,
+    rules: {
+      no_exclamation_marks: false,
+      always_include_question: true,
+      first_name_only: true,
+      no_competitor_mentions: true,
+      no_roi_promises: true
+    }
+  });
+  const [forbiddenInput, setForbiddenInput] = useState('');
+  const [preferredInput, setPreferredInput] = useState('');
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000);
+    const interval = setInterval(() => fetchAnalytics(), 30000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
-      const [configRes, analyticsRes] = await Promise.all([
-        api.get('/scrape/config'),
-        api.get('/pipeline/analytics')
+      const [configRes, analyticsRes, productsRes, setsRes] = await Promise.all([
+        getConfig(),
+        api.get('/pipeline/analytics').catch(() => ({ data: {} })),
+        getProducts().catch(() => ({ data: [] })),
+        getDiscoverySets().catch(() => ({ data: [] }))
       ]);
       setConfig(configRes.data);
       setAnalytics(analyticsRes.data);
+      setProducts(productsRes.data || []);
+      setDiscoverySets(setsRes.data || []);
+      
+      if (configRes.data?.email_guidelines) {
+        setEmailGuidelines(configRes.data.email_guidelines);
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -56,11 +122,20 @@ export default function Discovery() {
     }
   };
 
-  const handleSave = async () => {
+  const fetchAnalytics = async () => {
+    try {
+      const res = await api.get('/pipeline/analytics');
+      setAnalytics(res.data);
+    } catch (error) {
+      console.error('Failed to fetch analytics');
+    }
+  };
+
+  const handleSaveEmailGuidelines = async () => {
     setSaving(true);
     try {
-      await api.put('/scrape/config', config);
-      toast.success('Configuration saved');
+      await updateConfig({ email_guidelines: emailGuidelines });
+      toast.success('Email guidelines saved');
     } catch (error) {
       toast.error('Failed to save');
     } finally {
@@ -78,7 +153,7 @@ export default function Discovery() {
     try {
       const { data } = await api.post(`/scrape/now?keyword=${encodeURIComponent(manualKeyword)}&location=${encodeURIComponent(manualLocation)}&limit=20`);
       toast.success(`Scraped ${data.scraped} leads, saved ${data.saved} new`);
-      fetchData();
+      fetchAnalytics();
     } catch (error) {
       toast.error('Scraping failed');
     } finally {
@@ -86,28 +161,90 @@ export default function Discovery() {
     }
   };
 
-  const addKeyword = () => {
-    if (!newKeyword.trim()) return;
-    const keywords = [...(config?.keywords || []), newKeyword.trim()];
-    setConfig({ ...config, keywords });
-    setNewKeyword('');
+  const handleAddProduct = async () => {
+    try {
+      const features = newProduct.features.split(',').map(f => f.trim()).filter(f => f);
+      await createProduct({ ...newProduct, features });
+      toast.success('Product added');
+      setIsProductDialogOpen(false);
+      setNewProduct({ name: '', description: '', features: '' });
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to add product');
+    }
   };
 
-  const removeKeyword = (kw) => {
-    const keywords = (config?.keywords || []).filter(k => k !== kw);
-    setConfig({ ...config, keywords });
+  const handleDeleteProduct = async (id) => {
+    try {
+      await deleteProduct(id);
+      toast.success('Product deleted');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
   };
 
-  const addLocation = () => {
-    if (!newLocation.trim()) return;
-    const locations = [...(config?.locations || []), newLocation.trim()];
-    setConfig({ ...config, locations });
-    setNewLocation('');
+  const handleAddDiscoverySet = async () => {
+    try {
+      const keywords = newDiscoverySet.keywords.split(',').map(k => k.trim()).filter(k => k);
+      const locations = newDiscoverySet.locations.split(',').map(l => l.trim()).filter(l => l);
+      await createDiscoverySet({ 
+        name: newDiscoverySet.name,
+        keywords, 
+        locations,
+        min_reviews: newDiscoverySet.min_reviews,
+        max_per_search: newDiscoverySet.max_per_search,
+        daily_limit: newDiscoverySet.daily_limit
+      });
+      toast.success('Discovery set saved');
+      setIsDiscoveryDialogOpen(false);
+      setNewDiscoverySet({ name: '', keywords: '', locations: '', min_reviews: 5, max_per_search: 20, daily_limit: 50 });
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to save');
+    }
   };
 
-  const removeLocation = (loc) => {
-    const locations = (config?.locations || []).filter(l => l !== loc);
-    setConfig({ ...config, locations });
+  const handleDeleteDiscoverySet = async (id) => {
+    try {
+      await deleteDiscoverySet(id);
+      toast.success('Deleted');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  const addForbiddenWord = () => {
+    if (!forbiddenInput.trim()) return;
+    setEmailGuidelines(prev => ({
+      ...prev,
+      forbidden_words: [...prev.forbidden_words, forbiddenInput.trim()]
+    }));
+    setForbiddenInput('');
+  };
+
+  const removeForbiddenWord = (word) => {
+    setEmailGuidelines(prev => ({
+      ...prev,
+      forbidden_words: prev.forbidden_words.filter(w => w !== word)
+    }));
+  };
+
+  const addPreferredWord = () => {
+    if (!preferredInput.trim()) return;
+    setEmailGuidelines(prev => ({
+      ...prev,
+      preferred_words: [...prev.preferred_words, preferredInput.trim()]
+    }));
+    setPreferredInput('');
+  };
+
+  const removePreferredWord = (word) => {
+    setEmailGuidelines(prev => ({
+      ...prev,
+      preferred_words: prev.preferred_words.filter(w => w !== word)
+    }));
   };
 
   const navigateToStage = (stage) => {
@@ -128,288 +265,448 @@ export default function Discovery() {
   }
 
   const metrics = analytics?.metrics || {};
-  const funnel = analytics?.funnel || {};
 
-  // Pipeline stages with clickable navigation
   const pipelineStages = [
-    { 
-      key: 'scraped', 
-      label: 'Scraped', 
-      value: metrics.total_scraped || 0,
-      icon: Search,
-      color: 'text-blue-600 bg-blue-50 border-blue-200',
-      stage: 'scraped'
-    },
-    { 
-      key: 'enriched', 
-      label: 'Enriched', 
-      value: metrics.total_enriched || 0,
-      icon: Mail,
-      color: 'text-purple-600 bg-purple-50 border-purple-200',
-      rate: metrics.scrape_to_enrich_rate,
-      stage: 'needs_research'
-    },
-    { 
-      key: 'researched', 
-      label: 'Ready', 
-      value: metrics.total_ready || 0,
-      icon: FileText,
-      color: 'text-amber-600 bg-amber-50 border-amber-200',
-      rate: metrics.enrich_to_ready_rate,
-      stage: 'ready_for_outreach'
-    },
-    { 
-      key: 'contacted', 
-      label: 'Contacted', 
-      value: metrics.total_contacted || 0,
-      icon: Send,
-      color: 'text-cyan-600 bg-cyan-50 border-cyan-200',
-      rate: metrics.reply_rate,
-      stage: 'in_sequence'
-    },
-    { 
-      key: 'booked', 
-      label: 'Booked', 
-      value: metrics.total_booked || 0,
-      icon: CheckCircle,
-      color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-      rate: metrics.booking_rate,
-      stage: 'booked'
-    }
+    { key: 'scraped', label: 'Scraped', value: metrics.total_scraped || 0, icon: Search, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30', stage: 'scraped' },
+    { key: 'enriched', label: 'Enriched', value: metrics.total_enriched || 0, icon: Mail, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30', stage: 'needs_research' },
+    { key: 'researched', label: 'Ready', value: metrics.total_ready || 0, icon: FileText, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30', stage: 'ready_for_outreach' },
+    { key: 'contacted', label: 'Contacted', value: metrics.total_contacted || 0, icon: Send, color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/30', stage: 'in_sequence' },
+    { key: 'booked', label: 'Booked', value: metrics.total_booked || 0, icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30', stage: 'booked' }
   ];
 
   return (
     <div className="space-y-6" data-testid="discovery-page">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Discovery Pipeline</h1>
-          <p className="text-slate-500">Scrape → Enrich → Research → Outreach → Book</p>
+          <h1 className="text-2xl font-bold tracking-tight">Discovery & Campaign Setup</h1>
+          <p className="text-slate-500 dark:text-slate-400">Configure targets, products, and email rules</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={fetchData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Config'}
-          </Button>
-        </div>
+        <Button variant="outline" onClick={fetchData}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Pipeline Funnel - Clickable Cards */}
+      {/* Pipeline Funnel */}
       <div className="grid grid-cols-5 gap-4">
-        {pipelineStages.map((stage, idx) => (
+        {pipelineStages.map((stage) => (
           <Card 
             key={stage.key}
-            className={cn(
-              "pipeline-card clickable border",
-              stage.color.split(' ').slice(1).join(' ')
-            )}
+            className="pipeline-card clickable cursor-pointer hover:border-blue-400 dark:hover:border-blue-500"
             onClick={() => navigateToStage(stage.stage)}
             data-testid={`pipeline-card-${stage.key}`}
           >
             <CardContent className="pt-6 text-center">
-              <stage.icon className={cn("w-8 h-8 mx-auto mb-2", stage.color.split(' ')[0])} />
-              <p className="text-3xl font-bold">{stage.value}</p>
-              <p className="text-sm text-slate-600 font-medium">{stage.label}</p>
-              {stage.rate !== undefined && (
-                <p className="text-xs text-slate-400 mt-1">{stage.rate || 0}% rate</p>
-              )}
-              <div className="flex items-center justify-center gap-1 text-xs text-blue-600 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                View <ArrowRight className="w-3 h-3" />
+              <div className={cn("w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center", stage.color.split(' ').slice(1).join(' '))}>
+                <stage.icon className={cn("w-5 h-5", stage.color.split(' ')[0])} />
               </div>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{stage.value}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{stage.label}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Quick Scrape */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Search className="w-5 h-5" />
-            Quick Scrape (Google Maps via SerpAPI)
-          </CardTitle>
-          <CardDescription>Test scraping with a single search - uses 1 API credit</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label className="text-xs text-slate-500">Keyword</Label>
-              <Input
-                placeholder="e.g., accounting firm"
-                value={manualKeyword}
-                onChange={(e) => setManualKeyword(e.target.value)}
-                data-testid="scrape-keyword-input"
-              />
-            </div>
-            <div className="flex-1">
-              <Label className="text-xs text-slate-500">Location</Label>
-              <Input
-                placeholder="e.g., Philadelphia, PA"
-                value={manualLocation}
-                onChange={(e) => setManualLocation(e.target.value)}
-                data-testid="scrape-location-input"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button onClick={handleScrapeNow} disabled={scraping} data-testid="scrape-now-btn">
-                {scraping ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Play className="w-4 h-4 mr-2" />
-                )}
-                Scrape Now
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <Tabs defaultValue="scrape" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="scrape">Quick Scrape</TabsTrigger>
+          <TabsTrigger value="targets">Discovery Sets</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="email">Email Rules</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* Keywords */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Target Keywords</CardTitle>
-            <CardDescription>Business types to search for</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="e.g., law firm"
-                value={newKeyword}
-                onChange={(e) => setNewKeyword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
-                data-testid="add-keyword-input"
-              />
-              <Button onClick={addKeyword} size="icon" data-testid="add-keyword-btn">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(config?.keywords || []).map((kw, i) => (
-                <Badge key={i} variant="secondary" className="flex items-center gap-1 py-1.5 px-3">
-                  {kw}
-                  <X 
-                    className="w-3 h-3 cursor-pointer hover:text-red-500 ml-1" 
-                    onClick={() => removeKeyword(kw)}
+        {/* Quick Scrape Tab */}
+        <TabsContent value="scrape">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Search className="w-5 h-5" />
+                Quick Scrape (Google Maps via SerpAPI)
+              </CardTitle>
+              <CardDescription>Test scraping with a single search - uses 1 API credit</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">Keyword</Label>
+                  <Input
+                    placeholder="e.g., accounting firm"
+                    value={manualKeyword}
+                    onChange={(e) => setManualKeyword(e.target.value)}
+                    data-testid="scrape-keyword-input"
                   />
-                </Badge>
-              ))}
-              {(config?.keywords || []).length === 0 && (
-                <p className="text-sm text-slate-400">No keywords configured</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Locations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Target Locations</CardTitle>
-            <CardDescription>Cities to search in</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="e.g., Austin, TX"
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addLocation()}
-                data-testid="add-location-input"
-              />
-              <Button onClick={addLocation} size="icon" data-testid="add-location-btn">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(config?.locations || []).map((loc, i) => (
-                <Badge key={i} variant="secondary" className="flex items-center gap-1 py-1.5 px-3">
-                  <MapPin className="w-3 h-3" />
-                  {loc}
-                  <X 
-                    className="w-3 h-3 cursor-pointer hover:text-red-500 ml-1" 
-                    onClick={() => removeLocation(loc)}
-                  />
-                </Badge>
-              ))}
-              {(config?.locations || []).length === 0 && (
-                <p className="text-sm text-slate-400">No locations configured</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Scraping Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Scraping Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label>Minimum Reviews</Label>
-              <Input
-                type="number"
-                value={config?.min_reviews || 5}
-                onChange={(e) => setConfig({...config, min_reviews: parseInt(e.target.value)})}
-                data-testid="min-reviews-input"
-              />
-              <p className="text-xs text-slate-400">Filter out new businesses</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Max Per Search</Label>
-              <Input
-                type="number"
-                value={config?.max_per_search || 20}
-                onChange={(e) => setConfig({...config, max_per_search: parseInt(e.target.value)})}
-                data-testid="max-per-search-input"
-              />
-              <p className="text-xs text-slate-400">Results per keyword/location</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Daily Limit</Label>
-              <Input
-                type="number"
-                value={config?.daily_limit || 50}
-                onChange={(e) => setConfig({...config, daily_limit: parseInt(e.target.value)})}
-                data-testid="daily-limit-input"
-              />
-              <p className="text-xs text-slate-400">Max leads scraped per day</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pipeline Stages Detail */}
-      {Object.keys(funnel).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Pipeline Stage Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Object.entries(funnel).map(([stage, count]) => (
-                <div 
-                  key={stage} 
-                  className="flex items-center gap-4 cursor-pointer hover:bg-slate-50 p-2 rounded-lg -mx-2 transition-colors"
-                  onClick={() => navigateToStage(stage)}
-                >
-                  <div className="w-40 text-sm font-medium capitalize text-slate-700">
-                    {stage.replace(/_/g, ' ')}
-                  </div>
-                  <div className="flex-1">
-                    <Progress value={Math.min((count / Math.max(...Object.values(funnel))) * 100, 100)} className="h-2" />
-                  </div>
-                  <div className="w-16 text-right text-sm font-bold text-slate-900">{count}</div>
-                  <ArrowRight className="w-4 h-4 text-slate-400" />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                <div className="flex-1">
+                  <Label className="text-xs text-slate-500 dark:text-slate-400">Location</Label>
+                  <Input
+                    placeholder="e.g., Philadelphia, PA"
+                    value={manualLocation}
+                    onChange={(e) => setManualLocation(e.target.value)}
+                    data-testid="scrape-location-input"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleScrapeNow} disabled={scraping} data-testid="scrape-now-btn">
+                    {scraping ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+                    Scrape Now
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Discovery Sets Tab */}
+        <TabsContent value="targets">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <MapPin className="w-5 h-5" />
+                    Saved Discovery Sets
+                  </CardTitle>
+                  <CardDescription>Target configurations for different campaigns</CardDescription>
+                </div>
+                <Dialog open={isDiscoveryDialogOpen} onOpenChange={setIsDiscoveryDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="add-discovery-btn">
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Set
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create Discovery Set</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Set Name *</Label>
+                        <Input
+                          value={newDiscoverySet.name}
+                          onChange={(e) => setNewDiscoverySet({...newDiscoverySet, name: e.target.value})}
+                          placeholder="Philadelphia Accountants"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Keywords (comma separated) *</Label>
+                        <Input
+                          value={newDiscoverySet.keywords}
+                          onChange={(e) => setNewDiscoverySet({...newDiscoverySet, keywords: e.target.value})}
+                          placeholder="accounting firm, CPA, bookkeeper"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Locations (comma separated) *</Label>
+                        <Input
+                          value={newDiscoverySet.locations}
+                          onChange={(e) => setNewDiscoverySet({...newDiscoverySet, locations: e.target.value})}
+                          placeholder="Philadelphia PA, Camden NJ"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Min Reviews</Label>
+                          <Input
+                            type="number"
+                            value={newDiscoverySet.min_reviews}
+                            onChange={(e) => setNewDiscoverySet({...newDiscoverySet, min_reviews: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Max/Search</Label>
+                          <Input
+                            type="number"
+                            value={newDiscoverySet.max_per_search}
+                            onChange={(e) => setNewDiscoverySet({...newDiscoverySet, max_per_search: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Daily Limit</Label>
+                          <Input
+                            type="number"
+                            value={newDiscoverySet.daily_limit}
+                            onChange={(e) => setNewDiscoverySet({...newDiscoverySet, daily_limit: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button onClick={handleAddDiscoverySet} disabled={!newDiscoverySet.name || !newDiscoverySet.keywords}>
+                        Save Set
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {discoverySets.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p>No discovery sets saved</p>
+                  <p className="text-sm">Create a set to define your target audience</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {discoverySets.map((set) => (
+                    <div key={set.id} className="flex items-start justify-between p-4 rounded-lg border dark:border-slate-700 bg-card">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">{set.name}</h3>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {set.keywords?.map((k, i) => (
+                            <Badge key={i} variant="secondary">{k}</Badge>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {set.locations?.map((l, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">{l}</Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                          Min {set.min_reviews} reviews • Max {set.max_per_search}/search • {set.daily_limit}/day
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteDiscoverySet(set.id)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Products Tab */}
+        <TabsContent value="products">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Package className="w-5 h-5" />
+                    Products / Services
+                  </CardTitle>
+                  <CardDescription>What you're selling - AI uses this to personalize outreach</CardDescription>
+                </div>
+                <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="add-product-btn">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Product / Service</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Name *</Label>
+                        <Input
+                          value={newProduct.name}
+                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                          placeholder="Business Process Solutions"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description *</Label>
+                        <Textarea
+                          value={newProduct.description}
+                          onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                          placeholder="We help businesses streamline operations..."
+                          rows={4}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Key Features (comma separated)</Label>
+                        <Input
+                          value={newProduct.features}
+                          onChange={(e) => setNewProduct({...newProduct, features: e.target.value})}
+                          placeholder="Lead capture, Customer response"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button onClick={handleAddProduct} disabled={!newProduct.name || !newProduct.description}>
+                        Add Product
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {products.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p>No products defined</p>
+                  <p className="text-sm">Add a product to personalize outreach</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {products.map((product) => (
+                    <div key={product.id} className="flex items-start justify-between p-4 rounded-lg border dark:border-slate-700 bg-card">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+                        {product.features?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {product.features.map((f, i) => (
+                              <Badge key={i} variant="secondary">{f}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Email Rules Tab */}
+        <TabsContent value="email">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Shield className="w-5 h-5" />
+                    Email Guidelines
+                  </CardTitle>
+                  <CardDescription>Control how AI writes your outreach emails</CardDescription>
+                </div>
+                <Button onClick={handleSaveEmailGuidelines} disabled={saving}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Rules'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Forbidden Words */}
+              <div className="space-y-3">
+                <Label className="text-red-600 dark:text-red-400">Forbidden Words (Never Use)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={forbiddenInput}
+                    onChange={(e) => setForbiddenInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addForbiddenWord()}
+                    placeholder="e.g., AI, automation, bot"
+                  />
+                  <Button onClick={addForbiddenWord} size="icon">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {emailGuidelines.forbidden_words.map((word, i) => (
+                    <Badge key={i} variant="destructive" className="flex items-center gap-1">
+                      {word}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => removeForbiddenWord(word)} />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Preferred Words */}
+              <div className="space-y-3">
+                <Label className="text-emerald-600 dark:text-emerald-400">Preferred Words (Favor Using)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={preferredInput}
+                    onChange={(e) => setPreferredInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addPreferredWord()}
+                    placeholder="e.g., solutions, streamline"
+                  />
+                  <Button onClick={addPreferredWord} size="icon">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {emailGuidelines.preferred_words.map((word, i) => (
+                    <Badge key={i} className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
+                      {word}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => removePreferredWord(word)} />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Tone & Length */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Email Tone</Label>
+                  <Select 
+                    value={emailGuidelines.tone} 
+                    onValueChange={(v) => setEmailGuidelines({...emailGuidelines, tone: v})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="friendly">Friendly</SelectItem>
+                      <SelectItem value="conversational">Conversational</SelectItem>
+                      <SelectItem value="direct">Direct</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Max Words Per Email</Label>
+                  <Input
+                    type="number"
+                    value={emailGuidelines.max_words}
+                    onChange={(e) => setEmailGuidelines({...emailGuidelines, max_words: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Rule Toggles */}
+              <div className="space-y-4">
+                <Label>Email Rules</Label>
+                <div className="space-y-3">
+                  {[
+                    { key: 'no_exclamation_marks', label: 'No exclamation marks' },
+                    { key: 'always_include_question', label: 'Always end with a question' },
+                    { key: 'first_name_only', label: 'Use first name only (not Mr./Ms.)' },
+                    { key: 'no_competitor_mentions', label: 'Never mention competitors' },
+                    { key: 'no_roi_promises', label: "Don't make ROI/results promises" }
+                  ].map((rule) => (
+                    <div key={rule.key} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{rule.label}</span>
+                      <Switch
+                        checked={emailGuidelines.rules[rule.key] || false}
+                        onCheckedChange={(checked) => setEmailGuidelines({
+                          ...emailGuidelines,
+                          rules: { ...emailGuidelines.rules, [rule.key]: checked }
+                        })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
