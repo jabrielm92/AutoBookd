@@ -122,11 +122,11 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-500 font-medium">Scraped</p>
-                <p className="text-3xl font-bold mt-1">{metrics.total_scraped || analytics?.total_leads || 0}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Scraped</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_scraped || analytics?.total_leads || 0}</p>
               </div>
-              <div className="p-2.5 rounded-lg bg-blue-50">
-                <Search className="w-5 h-5 text-blue-600" />
+              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30">
+                <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -140,14 +140,14 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-500 font-medium">Enriched</p>
-                <p className="text-3xl font-bold mt-1">{metrics.total_enriched || 0}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Enriched</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_enriched || 0}</p>
               </div>
-              <div className="p-2.5 rounded-lg bg-purple-50">
-                <Mail className="w-5 h-5 text-purple-600" />
+              <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-900/30">
+                <Mail className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-3">{metrics.scrape_to_enrich_rate || 0}% conversion</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">{metrics.scrape_to_enrich_rate || 0}% conversion</p>
           </CardContent>
         </Card>
 
@@ -159,17 +159,17 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-500 font-medium">Contacted</p>
-                <p className="text-3xl font-bold mt-1">{metrics.total_contacted || 0}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Contacted</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_contacted || 0}</p>
               </div>
-              <div className="p-2.5 rounded-lg bg-cyan-50">
-                <MessageSquare className="w-5 h-5 text-cyan-600" />
+              <div className="p-2.5 rounded-lg bg-cyan-50 dark:bg-cyan-900/30">
+                <MessageSquare className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
               </div>
             </div>
             <div className="flex items-center gap-1 mt-3">
               <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs text-emerald-600 font-medium">{analytics?.reply_rate || metrics.reply_rate || 0}%</span>
-              <span className="text-xs text-slate-400">reply rate</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{analytics?.reply_rate || metrics.reply_rate || 0}%</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">reply rate</span>
             </div>
           </CardContent>
         </Card>
@@ -182,17 +182,17 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-500 font-medium">Booked</p>
-                <p className="text-3xl font-bold mt-1">{metrics.total_booked || analytics?.total_bookings || 0}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Booked</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_booked || analytics?.total_bookings || 0}</p>
               </div>
-              <div className="p-2.5 rounded-lg bg-emerald-50">
-                <Calendar className="w-5 h-5 text-emerald-600" />
+              <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30">
+                <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
             <div className="flex items-center gap-1 mt-3">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs text-emerald-600 font-medium">{analytics?.booking_rate || metrics.booking_rate || 0}%</span>
-              <span className="text-xs text-slate-400">conversion</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{analytics?.booking_rate || metrics.booking_rate || 0}%</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">conversion</span>
             </div>
           </CardContent>
         </Card>
@@ -205,14 +205,14 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-500 font-medium">Ready</p>
-                <p className="text-3xl font-bold mt-1">{metrics.total_ready || 0}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ready</p>
+                <p className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{metrics.total_ready || 0}</p>
               </div>
-              <div className="p-2.5 rounded-lg bg-amber-50">
-                <CheckCircle className="w-5 h-5 text-amber-600" />
+              <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/30">
+                <CheckCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-3">Awaiting outreach</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">Awaiting outreach</p>
           </CardContent>
         </Card>
       </div>
