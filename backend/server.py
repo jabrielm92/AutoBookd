@@ -1327,20 +1327,39 @@ async def get_analytics():
     avg_result = await db.leads.aggregate(score_pipeline).to_list(1)
     avg_score = avg_result[0]['avg'] if avg_result else 0
     
-    # Niches performance
-    niches = await db.niches.find({}, {"_id": 0}).to_list(100)
+    # Niches/Categories performance - compute from leads directly
+    category_pipeline = [
+        {"$group": {
+            "_id": "$category",
+            "leads_scraped": {"$sum": 1},
+            "leads_contacted": {"$sum": {"$cond": [
+                {"$in": ["$status", ["outreach_sent", "engaged", "discovery", "qualified", "calendar_offered", "booked"]]},
+                1, 0
+            ]}},
+            "bookings": {"$sum": {"$cond": [{"$eq": ["$status", "booked"]}, 1, 0]}},
+            "replies": {"$sum": {"$cond": [
+                {"$in": ["$status", ["engaged", "discovery", "qualified", "calendar_offered", "booked"]]},
+                1, 0
+            ]}}
+        }},
+        {"$match": {"_id": {"$ne": None}}},
+        {"$sort": {"leads_scraped": -1}},
+        {"$limit": 10}
+    ]
+    category_stats = await db.leads.aggregate(category_pipeline).to_list(10)
+    
     niches_performance = []
-    for niche in niches:
-        if niche.get('leads_contacted', 0) > 0:
-            niche['reply_rate'] = (niche.get('replies', 0) / niche['leads_contacted']) * 100
-            niche['booking_rate'] = (niche.get('bookings', 0) / niche['leads_contacted']) * 100
+    for cat in category_stats:
+        contacted = cat.get('leads_contacted', 0)
+        reply_rate = (cat.get('replies', 0) / contacted * 100) if contacted > 0 else 0
+        booking_rate = (cat.get('bookings', 0) / contacted * 100) if contacted > 0 else 0
         niches_performance.append({
-            "name": niche.get('name'),
-            "leads_scraped": niche.get('leads_scraped', 0),
-            "leads_contacted": niche.get('leads_contacted', 0),
-            "bookings": niche.get('bookings', 0),
-            "reply_rate": niche.get('reply_rate', 0),
-            "booking_rate": niche.get('booking_rate', 0)
+            "name": cat.get('_id', 'Unknown'),
+            "leads_scraped": cat.get('leads_scraped', 0),
+            "leads_contacted": contacted,
+            "bookings": cat.get('bookings', 0),
+            "reply_rate": round(reply_rate, 1),
+            "booking_rate": round(booking_rate, 1)
         })
     
     return Analytics(
