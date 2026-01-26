@@ -45,12 +45,12 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import api, { getConfig, updateConfig, getProducts, createProduct, deleteProduct, getDiscoverySets, createDiscoverySet, deleteDiscoverySet } from '@/lib/api';
+import api, { getConfig, updateConfig, getProducts, createProduct, deleteProduct, getDiscoverySets, createDiscoverySet, deleteDiscoverySet, getPipelineActivity } from '@/lib/api';
 
 export default function Discovery() {
   const navigate = useNavigate();
   const [config, setConfig] = useState(null);
-  const [analytics, setAnalytics] = useState(null);
+  const [pipelineCounts, setPipelineCounts] = useState({});
   const [products, setProducts] = useState([]);
   const [discoverySets, setDiscoverySets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,20 +95,20 @@ export default function Discovery() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => fetchAnalytics(), 30000);
+    const interval = setInterval(() => fetchCounts(), 10000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
-      const [configRes, analyticsRes, productsRes, setsRes] = await Promise.all([
+      const [configRes, activityRes, productsRes, setsRes] = await Promise.all([
         getConfig(),
-        api.get('/pipeline/analytics').catch(() => ({ data: {} })),
+        getPipelineActivity(1).catch(() => ({ data: { counts: {} } })),
         getProducts().catch(() => ({ data: [] })),
         getDiscoverySets().catch(() => ({ data: [] }))
       ]);
       setConfig(configRes.data);
-      setAnalytics(analyticsRes.data);
+      setPipelineCounts(activityRes.data?.counts || {});
       setProducts(productsRes.data || []);
       setDiscoverySets(setsRes.data || []);
       
@@ -122,12 +122,12 @@ export default function Discovery() {
     }
   };
 
-  const fetchAnalytics = async () => {
+  const fetchCounts = async () => {
     try {
-      const res = await api.get('/pipeline/analytics');
-      setAnalytics(res.data);
+      const res = await getPipelineActivity(1);
+      setPipelineCounts(res.data?.counts || {});
     } catch (error) {
-      console.error('Failed to fetch analytics');
+      console.error('Failed to fetch counts');
     }
   };
 
