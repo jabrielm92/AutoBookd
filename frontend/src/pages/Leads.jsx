@@ -115,7 +115,13 @@ export default function Leads() {
     try {
       const params = { limit: 200 };
       if (statusFilter && statusFilter !== 'all') {
-        params.status = statusFilter;
+        // Check if it's a pipeline_stage or status value
+        const pipelineStages = ['needs_enrichment', 'needs_research', 'ready_for_outreach', 'in_sequence', 'low_score', 'no_email', 'no_domain'];
+        if (pipelineStages.includes(statusFilter)) {
+          params.pipeline_stage = statusFilter;
+        } else {
+          params.status = statusFilter;
+        }
       }
       const { data } = await getLeads(params);
       setLeads(data);
