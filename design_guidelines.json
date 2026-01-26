@@ -1,0 +1,133 @@
+{
+  "identity": {
+    "name": "AutoBookd",
+    "company": "ARI Solutions Inc.",
+    "archetype": "The Swiss Utility",
+    "vibe": "Professional, Automated, Trustworthy, High-Density",
+    "core_principle": "Fusion over Imitation: Mix Swiss precision with SaaS utility."
+  },
+  "typography": {
+    "headings": {
+      "family": "Manrope, sans-serif",
+      "weights": ["500", "600", "700"],
+      "usage": "All page titles, card headers, and major metrics.",
+      "letter_spacing": "tracking-tight"
+    },
+    "body": {
+      "family": "Inter, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "General text, table data, inputs."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "API keys, code snippets, IDs."
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": "#0F172A",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#F1F5F9",
+      "secondary_foreground": "#0F172A",
+      "accent": "#2563EB",
+      "accent_foreground": "#FFFFFF",
+      "background": "#F8FAFC",
+      "foreground": "#0F172A",
+      "card": "#FFFFFF",
+      "card_foreground": "#0F172A",
+      "border": "#E2E8F0",
+      "muted": "#F1F5F9",
+      "muted_foreground": "#64748B",
+      "destructive": "#EF4444",
+      "success": "#10B981",
+      "warning": "#F59E0B"
+    },
+    "dark_mode_palette": {
+      "primary": "#F8FAFC",
+      "primary_foreground": "#0F172A",
+      "secondary": "#1E293B",
+      "secondary_foreground": "#F8FAFC",
+      "accent": "#3B82F6",
+      "accent_foreground": "#FFFFFF",
+      "background": "#020617",
+      "foreground": "#F8FAFC",
+      "card": "#0F172A",
+      "card_foreground": "#F8FAFC",
+      "border": "#1E293B",
+      "muted": "#1E293B",
+      "muted_foreground": "#94A3B8"
+    },
+    "rules": [
+      "NO gradients for backgrounds. Use solid colors or subtle noise textures.",
+      "Primary color is for text/headings. Accent color is for CTAs/Links only.",
+      "Borders should be subtle (slate-200 in light, slate-800 in dark)."
+    ]
+  },
+  "layout": {
+    "structure": "Top Navbar (Fixed) + Main Content Area",
+    "navbar": {
+      "height": "h-16",
+      "style": "bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50",
+      "elements": ["Logo (Left)", "Nav Links (Center/Left)", "User/Settings (Right)"],
+      "link_style": "text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+    },
+    "container": {
+      "max_width": "max-w-7xl",
+      "padding": "px-4 sm:px-6 lg:px-8",
+      "center": true
+    },
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+      "cards": "col-span-1",
+      "main_chart": "col-span-2 lg:col-span-3"
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "bg-card text-card-foreground rounded-xl border shadow-sm",
+      "header": "p-6 pb-3",
+      "content": "p-6 pt-0"
+    },
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-lg font-medium transition-all active:scale-95",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 rounded-lg font-medium",
+      "ghost": "hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 rounded-lg"
+    },
+    "inputs": {
+      "style": "h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-md bg-white/70 border border-white/20 shadow-sm",
+    "shadows": "shadow-sm for cards, shadow-md for dropdowns/modals",
+    "radius": "rounded-xl (0.75rem) for containers, rounded-lg (0.5rem) for inner elements",
+    "animations": "transition-all duration-200 ease-in-out"
+  },
+  "image_urls": {
+    "avatars": [
+      "https://images.unsplash.com/photo-1655249493799-9cee4fe983bb?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.unsplash.com/photo-1689600944138-da3b150d9cb8?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=srgb&fm=jpg&q=85"
+    ],
+    "backgrounds": [
+      "https://images.unsplash.com/photo-1763929154494-a3d6eba05282?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "https://images.unsplash.com/photo-1764437358274-0cf9ceda78cf?crop=entropy&cs=srgb&fm=jpg&q=85"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. REFACTOR LAYOUT: Remove the Sidebar component entirely. Create a new 'Navbar' component and integrate it into 'Layout.jsx'.",
+    "2. UPDATE THEME: Modify 'index.css' and 'tailwind.config.js' to use the new color palette (Slate/Blue) and fonts (Manrope). Remove 'Space Grotesk' references.",
+    "3. REMOVE BRANDING: Search for 'Emergent' string in the codebase and replace with 'AutoBookd' or 'ARI Solutions'.",
+    "4. COMPONENT STYLE: Update Shadcn components (Button, Card, Input) to match the 'Swiss Utility' style (sharper radius, cleaner borders).",
+    "5. DATA-TESTID: Ensure all interactive elements (nav links, buttons, inputs) have 'data-testid' attributes.",
+    "6. NAVBAR LOGIC: The Navbar must be responsive. On mobile, use a Sheet/Drawer for the menu.",
+    "7. DASHBOARD GRID: Refactor the Dashboard page to use the 'Bento' grid layout defined in 'layout.grid_system'."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for backgrounds.",
+    "Use 'Manrope' for all headings.",
+    "Ensure high contrast for text (Slate 900 on Slate 50).",
+    "Use 'sonner' for toasts.",
+    "All components must be functional and interactive."
+  ]
+}
