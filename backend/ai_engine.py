@@ -125,12 +125,6 @@ OUTPUT JSON:
 }}
 
 Return ONLY valid JSON, no markdown."""
-    "services": "Their main services (brief)",
-    "target_customer": "Who they serve",
-    "personalization_quality": "high/medium/low"
-}}
-
-Return ONLY valid JSON, no markdown."""
 
         try:
             response = await self.http_client.post(
