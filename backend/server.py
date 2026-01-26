@@ -180,6 +180,7 @@ class SystemConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "system_config"
     is_running: bool = False
+    test_mode: bool = False
     daily_outreach_limit: int = 50
     max_follow_ups: int = 2
     outreach_score_threshold: int = 70
@@ -190,11 +191,15 @@ class SystemConfig(BaseModel):
     sender_name: Optional[str] = None
     sender_company: Optional[str] = "ARI Solutions"
     calendly_api_key: Optional[str] = None
+    calendly_link: Optional[str] = None
+    apollo_api_key: Optional[str] = None
+    linkedin_cookie: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SystemConfigUpdate(BaseModel):
     is_running: Optional[bool] = None
+    test_mode: Optional[bool] = None
     daily_outreach_limit: Optional[int] = None
     max_follow_ups: Optional[int] = None
     outreach_score_threshold: Optional[int] = None
@@ -205,6 +210,9 @@ class SystemConfigUpdate(BaseModel):
     sender_name: Optional[str] = None
     sender_company: Optional[str] = None
     calendly_api_key: Optional[str] = None
+    calendly_link: Optional[str] = None
+    apollo_api_key: Optional[str] = None
+    linkedin_cookie: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
 
 class DiscoveryConfig(BaseModel):
@@ -349,12 +357,19 @@ async def update_config(update: SystemConfigUpdate):
     return config
 
 @api_router.post("/system/start")
-async def start_system(background_tasks: BackgroundTasks):
+async def start_system(background_tasks: BackgroundTasks, test_mode: bool = False):
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     
     if pipeline.is_running:
         return {"status": "already_running", "message": "Pipeline is already running"}
+    
+    # Update test mode setting
+    await db.system_config.update_one(
+        {"id": "system_config"},
+        {"$set": {"test_mode": test_mode}},
+        upsert=True
+    )
     
     # Start pipeline in background
     background_tasks.add_task(pipeline.start)
@@ -364,7 +379,9 @@ async def start_system(background_tasks: BackgroundTasks):
         {"$set": {"is_running": True, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
-    return {"status": "running", "message": "Production pipeline started - Scraping, Enrichment, Research, Sequencing, Analytics"}
+    
+    mode_msg = " (TEST MODE - no emails sent)" if test_mode else ""
+    return {"status": "running", "test_mode": test_mode, "message": f"Production pipeline started{mode_msg} - Scraping, Enrichment, Research, Sequencing, Analytics"}
 
 @api_router.post("/system/stop")
 async def stop_system():
@@ -391,10 +408,201 @@ async def get_system_status():
     
     return {
         "is_running": pipeline.is_running,
+        "test_mode": config.get("test_mode", False) if config else False,
         "config": config,
         "pipeline_analytics": pipeline_analytics,
         "deliverability": deliverability
     }
+
+# ----- Calendly Webhook -----
+@api_router.post("/webhooks/calendly")
+async def calendly_webhook(payload: Dict[str, Any]):
+    """Handle Calendly booking events"""
+    event_type = payload.get("event")
+    event_data = payload.get("payload", {})
+    
+    if event_type == "invitee.created":
+        # New booking created
+        invitee = event_data.get("invitee", {})
+        email = invitee.get("email", "").lower()
+        name = invitee.get("name", "")
+        event_start = event_data.get("event", {}).get("start_time")
+        
+        # Find lead by email
+        lead = await db.leads.find_one({"email": {"$regex": f"^{email}$", "$options": "i"}}, {"_id": 0})
+        
+        if lead:
+            # Update lead status
+            await db.leads.update_one(
+                {"id": lead["id"]},
+                {"$set": {
+                    "status": "booked",
+                    "pipeline_stage": "booked",
+                    "booked_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            
+            # Stop any active sequences
+            await db.sequences.update_many(
+                {"lead_id": lead["id"], "status": "active"},
+                {"$set": {"status": "completed", "stop_reason": "booked"}}
+            )
+            
+            # Create booking record
+            booking = {
+                "id": str(uuid.uuid4()),
+                "lead_id": lead["id"],
+                "calendly_event_id": event_data.get("event", {}).get("uuid"),
+                "invitee_email": email,
+                "invitee_name": name,
+                "meeting_date": event_start,
+                "status": "scheduled",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.bookings.insert_one(booking)
+            
+            logger.info(f"Calendly booking received for lead: {lead['business_name']}")
+            return {"status": "processed", "lead_id": lead["id"]}
+        
+        return {"status": "no_matching_lead", "email": email}
+    
+    elif event_type == "invitee.canceled":
+        # Booking canceled
+        invitee = event_data.get("invitee", {})
+        email = invitee.get("email", "").lower()
+        
+        lead = await db.leads.find_one({"email": {"$regex": f"^{email}$", "$options": "i"}}, {"_id": 0})
+        if lead:
+            await db.leads.update_one(
+                {"id": lead["id"]},
+                {"$set": {
+                    "status": "calendar_offered",
+                    "pipeline_stage": "booking_canceled",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            return {"status": "canceled", "lead_id": lead["id"]}
+    
+    return {"status": "ignored", "event": event_type}
+
+# ----- Reply Processing -----
+@api_router.post("/webhooks/email/reply")
+async def process_email_reply(payload: Dict[str, Any]):
+    """Process incoming email replies and classify intent"""
+    from ai_engine import AIResearchEngine
+    
+    sender_email = payload.get("from", "").lower()
+    subject = payload.get("subject", "")
+    body = payload.get("body", "")
+    
+    # Find lead by email
+    lead = await db.leads.find_one({"email": {"$regex": f"^{sender_email}$", "$options": "i"}}, {"_id": 0})
+    if not lead:
+        return {"status": "no_matching_lead", "email": sender_email}
+    
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    
+    # Classify reply with AI
+    ai_engine = AIResearchEngine(config.get("openai_api_key"))
+    classification = await ai_engine.classify_reply(body)
+    await ai_engine.close()
+    
+    intent = classification.get("intent", "neutral")
+    action = classification.get("action", "human_review")
+    
+    # Update lead status based on intent
+    new_status = "engaged"
+    if intent == "positive":
+        new_status = "qualified"
+    elif intent == "negative":
+        new_status = "disqualified"
+    
+    await db.leads.update_one(
+        {"id": lead["id"]},
+        {"$set": {
+            "status": new_status,
+            "reply_intent": intent,
+            "reply_action": action,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Stop sequences if negative
+    if intent == "negative":
+        await db.sequences.update_many(
+            {"lead_id": lead["id"], "status": "active"},
+            {"$set": {"status": "stopped", "stop_reason": "negative_reply"}}
+        )
+    
+    # Record reply in conversation
+    conversation = await db.conversations.find_one({"lead_id": lead["id"]}, {"_id": 0})
+    reply_msg = {
+        "id": str(uuid.uuid4()),
+        "content": f"Subject: {subject}\n\n{body}",
+        "direction": "inbound",
+        "channel": "email",
+        "intent": intent,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if conversation:
+        await db.conversations.update_one(
+            {"lead_id": lead["id"]},
+            {
+                "$push": {"messages": reply_msg},
+                "$set": {"current_sentiment": 1.0 if intent == "positive" else (-1.0 if intent == "negative" else 0.0)}
+            }
+        )
+    
+    # If positive and action is send_calendar, trigger auto-booking
+    response = {
+        "status": "processed",
+        "lead_id": lead["id"],
+        "intent": intent,
+        "action": action
+    }
+    
+    if action == "send_calendar" and config.get("calendly_link"):
+        response["calendar_link_sent"] = True
+        response["calendly_link"] = config["calendly_link"]
+    
+    return response
+
+# ----- LinkedIn Manual Import -----
+@api_router.post("/leads/import/linkedin")
+async def import_linkedin_lead(data: Dict[str, Any]):
+    """Import a lead from LinkedIn profile data (manual entry)"""
+    lead = Lead(
+        business_name=data.get("company_name", data.get("name", "Unknown")),
+        category=data.get("industry", "Professional Services"),
+        city=data.get("location", "").split(",")[0].strip() if data.get("location") else None,
+        state=data.get("location", "").split(",")[1].strip() if data.get("location") and "," in data.get("location", "") else None,
+        website=data.get("website"),
+        email=data.get("email"),
+        phone=data.get("phone"),
+        context={
+            "source": "linkedin",
+            "linkedin_url": data.get("linkedin_url"),
+            "headline": data.get("headline"),
+            "about": data.get("about"),
+            "connection_degree": data.get("connection_degree"),
+            "imported_at": datetime.now(timezone.utc).isoformat()
+        }
+    )
+    
+    score, breakdown = calculate_lead_score(lead.model_dump())
+    lead.lead_score = score
+    lead.score_breakdown = breakdown
+    lead.status = LeadStatus.SCRAPED
+    
+    doc = lead.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    doc['pipeline_stage'] = 'needs_enrichment' if not lead.email else 'needs_research'
+    
+    await db.leads.insert_one(doc)
+    return {"status": "imported", "lead_id": lead.id, "score": score}
 
 # ----- Scraping Endpoints -----
 @api_router.get("/scrape/config")
