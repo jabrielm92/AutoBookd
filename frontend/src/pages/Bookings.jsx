@@ -4,11 +4,10 @@ import {
   Plus,
   Clock,
   MapPin,
-  User,
-  Video,
   MoreHorizontal,
   Check,
-  X
+  X,
+  Video
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,15 +77,29 @@ export default function Bookings() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const [bookingsRes, leadsRes] = await Promise.all([
-        getBookings({ limit: 100 }),
-        getLeads({ status: 'qualified', limit: 100 })
-      ]);
-      setBookings(bookingsRes.data);
-      setLeads(leadsRes.data);
+      // Fetch bookings first
+      let bookingsData = [];
+      try {
+        const bookingsRes = await getBookings({ limit: 100 });
+        bookingsData = bookingsRes.data || [];
+      } catch (e) {
+        console.log('No bookings yet');
+      }
+      setBookings(bookingsData);
+
+      // Fetch leads for dropdown - get all leads with email
+      let leadsData = [];
+      try {
+        const leadsRes = await getLeads({ limit: 100 });
+        leadsData = (leadsRes.data || []).filter(l => l.email);
+      } catch (e) {
+        console.log('No leads yet');
+      }
+      setLeads(leadsData);
     } catch (error) {
-      toast.error('Failed to fetch data');
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
@@ -133,24 +146,28 @@ export default function Bookings() {
 
   const getBookingsForDate = (date) => {
     return bookings.filter(b => {
-      const bookingDate = parseISO(b.meeting_date);
-      return isSameDay(bookingDate, date);
+      try {
+        const bookingDate = parseISO(b.meeting_date);
+        return isSameDay(bookingDate, date);
+      } catch {
+        return false;
+      }
     });
   };
 
   const selectedDateBookings = getBookingsForDate(selectedDate);
 
   const statusColors = {
-    scheduled: 'bg-blue-100 text-blue-700',
-    completed: 'bg-emerald-100 text-emerald-700',
-    cancelled: 'bg-red-100 text-red-700',
-    no_show: 'bg-amber-100 text-amber-700'
+    scheduled: 'bg-blue-50 text-blue-700 border-blue-200',
+    completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    cancelled: 'bg-red-50 text-red-700 border-red-200',
+    no_show: 'bg-amber-50 text-amber-700 border-amber-200'
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Bookings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Bookings</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="skeleton h-96 rounded-xl" />
           <div className="lg:col-span-2 skeleton h-96 rounded-xl" />
@@ -163,8 +180,8 @@ export default function Bookings() {
     <div className="space-y-6" data-testid="bookings-page">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Bookings</h1>
-          <p className="text-muted-foreground">{bookings.length} total meetings</p>
+          <h1 className="text-2xl font-bold tracking-tight">Bookings</h1>
+          <p className="text-slate-500">{bookings.length} total meetings</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -188,11 +205,15 @@ export default function Bookings() {
                     <SelectValue placeholder="Select a lead" />
                   </SelectTrigger>
                   <SelectContent>
-                    {leads.map(lead => (
-                      <SelectItem key={lead.id} value={lead.id}>
-                        {lead.business_name}
-                      </SelectItem>
-                    ))}
+                    {leads.length === 0 ? (
+                      <div className="p-2 text-sm text-slate-500">No leads with email available</div>
+                    ) : (
+                      leads.map(lead => (
+                        <SelectItem key={lead.id} value={lead.id}>
+                          {lead.business_name} ({lead.email})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -294,7 +315,9 @@ export default function Bookings() {
               onSelect={(date) => date && setSelectedDate(date)}
               className="rounded-md"
               modifiers={{
-                booked: bookings.map(b => parseISO(b.meeting_date))
+                booked: bookings.map(b => {
+                  try { return parseISO(b.meeting_date); } catch { return new Date(); }
+                })
               }}
               modifiersStyles={{
                 booked: { fontWeight: 'bold', textDecoration: 'underline' }
@@ -312,7 +335,7 @@ export default function Bookings() {
           </CardHeader>
           <CardContent>
             {selectedDateBookings.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 text-slate-400">
                 <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No meetings scheduled for this day</p>
               </div>
@@ -321,35 +344,35 @@ export default function Bookings() {
                 {selectedDateBookings.map((booking) => (
                   <div 
                     key={booking.id}
-                    className="flex items-start gap-4 p-4 rounded-lg border border-border hover:border-primary/30 transition-colors"
+                    className="flex items-start gap-4 p-4 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
                     data-testid={`booking-card-${booking.id}`}
                   >
-                    <div className="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-primary/10 text-primary">
-                      <span className="text-2xl font-bold">{booking.meeting_time.split(':')[0]}</span>
-                      <span className="text-xs">{booking.meeting_time.split(':')[1]}</span>
+                    <div className="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-slate-900 text-white">
+                      <span className="text-2xl font-bold">{booking.meeting_time?.split(':')[0] || '00'}</span>
+                      <span className="text-xs">{booking.meeting_time?.split(':')[1] || '00'}</span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-semibold">{getLeadName(booking.lead_id)}</h3>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                          <h3 className="font-semibold text-slate-900">{getLeadName(booking.lead_id)}</h3>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               {booking.duration_minutes} min
                             </span>
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
-                              {booking.timezone.split('/')[1].replace('_', ' ')}
+                              {booking.timezone?.split('/')[1]?.replace('_', ' ') || 'EST'}
                             </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge className={statusColors[booking.status]}>
+                          <Badge className={cn("border", statusColors[booking.status] || statusColors.scheduled)}>
                             {booking.status}
                           </Badge>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -359,7 +382,7 @@ export default function Bookings() {
                                 Mark Completed
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleUpdateStatus(booking.id, 'no_show')}>
-                                <User className="w-4 h-4 mr-2" />
+                                <Video className="w-4 h-4 mr-2" />
                                 Mark No Show
                               </DropdownMenuItem>
                               <DropdownMenuItem 
@@ -374,7 +397,7 @@ export default function Bookings() {
                         </div>
                       </div>
                       {booking.notes && (
-                        <p className="mt-2 text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                        <p className="mt-2 text-sm text-slate-500 bg-slate-50 p-2 rounded">
                           {booking.notes}
                         </p>
                       )}
@@ -394,30 +417,31 @@ export default function Bookings() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {bookings.filter(b => b.status === 'scheduled').map((booking) => (
-              <div 
-                key={booking.id}
-                className="flex items-center justify-between p-3 rounded-lg border border-border"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-muted flex flex-col items-center justify-center text-sm">
-                    <span className="font-bold">{format(parseISO(booking.meeting_date), 'dd')}</span>
-                    <span className="text-xs text-muted-foreground">{format(parseISO(booking.meeting_date), 'MMM')}</span>
+            {bookings.filter(b => b.status === 'scheduled').length === 0 ? (
+              <p className="text-center py-8 text-slate-400">No upcoming meetings</p>
+            ) : (
+              bookings.filter(b => b.status === 'scheduled').map((booking) => (
+                <div 
+                  key={booking.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-slate-200"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-slate-100 flex flex-col items-center justify-center text-sm">
+                      <span className="font-bold">{format(parseISO(booking.meeting_date), 'dd')}</span>
+                      <span className="text-xs text-slate-500">{format(parseISO(booking.meeting_date), 'MMM')}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{getLeadName(booking.lead_id)}</p>
+                      <p className="text-sm text-slate-500">
+                        {booking.meeting_time} • {booking.duration_minutes} min
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{getLeadName(booking.lead_id)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {booking.meeting_time} • {booking.duration_minutes} min
-                    </p>
-                  </div>
+                  <Badge className={cn("border", statusColors[booking.status])}>
+                    {booking.status}
+                  </Badge>
                 </div>
-                <Badge className={statusColors[booking.status]}>
-                  {booking.status}
-                </Badge>
-              </div>
-            ))}
-            {bookings.filter(b => b.status === 'scheduled').length === 0 && (
-              <p className="text-center py-8 text-muted-foreground">No upcoming meetings</p>
+              ))
             )}
           </div>
         </CardContent>
