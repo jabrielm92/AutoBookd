@@ -499,14 +499,14 @@ export default function Leads() {
                   </td>
                   <td>
                     <div>
-                      <p className="font-medium text-slate-900">{lead.business_name}</p>
-                      <p className="text-xs text-slate-500">{lead.category}</p>
+                      <p className="font-medium text-slate-900 dark:text-white">{lead.business_name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{lead.category}</p>
                       {lead.website && (
                         <a 
                           href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-0.5"
                         >
                           {lead.website.replace(/^https?:\/\//, '').substring(0, 25)}
                           <ExternalLink className="w-3 h-3" />
@@ -518,14 +518,14 @@ export default function Leads() {
                     <div className="space-y-1">
                       {lead.email ? (
                         <div className="flex items-center gap-1.5 text-sm">
-                          <Mail className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-slate-700">{lead.email}</span>
+                          <Mail className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-slate-700 dark:text-slate-200">{lead.email}</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 italic">No email</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 italic">No email</span>
                       )}
                       {lead.phone && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                           <Phone className="w-3 h-3" />
                           {lead.phone}
                         </div>
@@ -533,19 +533,19 @@ export default function Leads() {
                     </div>
                   </td>
                   <td>
-                    <div className="flex items-center gap-1 text-sm text-slate-600">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                       {lead.city}{lead.state && `, ${lead.state}`}
                     </div>
                     {lead.rating && (
-                      <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
+                      <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                         {lead.rating} ({lead.review_count || 0})
                       </div>
                     )}
                   </td>
                   <td>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                       <Clock className="w-3 h-3" />
                       {formatDate(lead.created_at)}
                     </div>
