@@ -45,6 +45,7 @@ export const researchLead = (id) => api.post(`/leads/${id}/research`);
 
 // Pipeline
 export const getPipelineAnalytics = () => api.get('/pipeline/analytics');
+export const getPipelineActivity = (limit = 20) => api.get('/pipeline/activity', { params: { limit } });
 export const getSequences = (params) => api.get('/sequences', { params });
 export const pauseSequence = (id) => api.post(`/sequences/${id}/pause`);
 export const resumeSequence = (id) => api.post(`/sequences/${id}/resume`);
