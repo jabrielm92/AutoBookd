@@ -393,17 +393,49 @@ async def update_config(update: SystemConfigUpdate):
     return config
 
 @api_router.post("/system/start")
-async def start_system(background_tasks: BackgroundTasks, test_mode: bool = False):
+async def start_system(
+    background_tasks: BackgroundTasks, 
+    test_mode: bool = False,
+    product_id: Optional[str] = None,
+    discovery_set_id: Optional[str] = None
+):
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     
     if pipeline.is_running:
         return {"status": "already_running", "message": "Pipeline is already running"}
     
-    # Update test mode setting
+    # Validate product and discovery set if provided
+    if product_id:
+        product = await db.products.find_one({"id": product_id}, {"_id": 0})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+    
+    if discovery_set_id:
+        discovery_set = await db.discovery_sets.find_one({"id": discovery_set_id}, {"_id": 0})
+        if not discovery_set:
+            raise HTTPException(status_code=404, detail="Discovery set not found")
+        # Also update scrape config with discovery set settings
+        await db.scrape_config.update_one(
+            {"id": "scrape_config"},
+            {"$set": {
+                "keywords": discovery_set.get("keywords", []),
+                "locations": discovery_set.get("locations", []),
+                "min_reviews": discovery_set.get("min_reviews", 5),
+                "max_per_search": discovery_set.get("max_per_search", 20),
+                "daily_limit": discovery_set.get("daily_limit", 50)
+            }},
+            upsert=True
+        )
+    
+    # Update config with selections
     await db.system_config.update_one(
         {"id": "system_config"},
-        {"$set": {"test_mode": test_mode}},
+        {"$set": {
+            "test_mode": test_mode,
+            "active_product_id": product_id,
+            "active_discovery_set_id": discovery_set_id
+        }},
         upsert=True
     )
     
@@ -416,8 +448,14 @@ async def start_system(background_tasks: BackgroundTasks, test_mode: bool = Fals
         upsert=True
     )
     
-    mode_msg = " (TEST MODE - no emails sent)" if test_mode else ""
-    return {"status": "running", "test_mode": test_mode, "message": f"Production pipeline started{mode_msg} - Scraping, Enrichment, Research, Sequencing, Analytics"}
+    mode_msg = " (TEST MODE)" if test_mode else ""
+    return {
+        "status": "running", 
+        "test_mode": test_mode,
+        "product_id": product_id,
+        "discovery_set_id": discovery_set_id,
+        "message": f"Pipeline started{mode_msg}"
+    }
 
 @api_router.post("/system/stop")
 async def stop_system():
