@@ -13,9 +13,27 @@ const api = axios.create({
 // System
 export const getConfig = () => api.get('/config');
 export const updateConfig = (data) => api.put('/config', data);
-export const startSystem = (testMode = false) => api.post(`/system/start?test_mode=${testMode}`);
+export const startSystem = (testMode = false, productId = null, discoverySetId = null) => {
+  const params = new URLSearchParams();
+  params.append('test_mode', testMode);
+  if (productId) params.append('product_id', productId);
+  if (discoverySetId) params.append('discovery_set_id', discoverySetId);
+  return api.post(`/system/start?${params.toString()}`);
+};
 export const stopSystem = () => api.post('/system/stop');
 export const getSystemStatus = () => api.get('/system/status');
+
+// Products
+export const getProducts = () => api.get('/products');
+export const createProduct = (data) => api.post('/products', data);
+export const updateProduct = (id, data) => api.put(`/products/${id}`, data);
+export const deleteProduct = (id) => api.delete(`/products/${id}`);
+
+// Discovery Sets
+export const getDiscoverySets = () => api.get('/discovery-sets');
+export const createDiscoverySet = (data) => api.post('/discovery-sets', data);
+export const updateDiscoverySet = (id, data) => api.put(`/discovery-sets/${id}`, data);
+export const deleteDiscoverySet = (id) => api.delete(`/discovery-sets/${id}`);
 
 // Scraping
 export const getScrapeConfig = () => api.get('/scrape/config');
