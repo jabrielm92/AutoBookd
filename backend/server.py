@@ -445,10 +445,83 @@ async def get_system_status():
     return {
         "is_running": pipeline.is_running,
         "test_mode": config.get("test_mode", False) if config else False,
+        "active_product_id": config.get("active_product_id") if config else None,
+        "active_discovery_set_id": config.get("active_discovery_set_id") if config else None,
         "config": config,
         "pipeline_analytics": pipeline_analytics,
         "deliverability": deliverability
     }
+
+# ----- Products -----
+@api_router.get("/products")
+async def get_products():
+    """Get all saved products/services"""
+    products = await db.products.find({}, {"_id": 0}).to_list(100)
+    return products
+
+@api_router.post("/products")
+async def create_product(data: Dict[str, Any]):
+    """Create a new product/service"""
+    product = Product(
+        name=data.get("name", ""),
+        description=data.get("description", ""),
+        features=data.get("features", [])
+    )
+    doc = product.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.products.insert_one(doc)
+    return {"id": product.id, "status": "created"}
+
+@api_router.put("/products/{product_id}")
+async def update_product(product_id: str, data: Dict[str, Any]):
+    """Update a product/service"""
+    update_data = {k: v for k, v in data.items() if k in ['name', 'description', 'features']}
+    await db.products.update_one({"id": product_id}, {"$set": update_data})
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    return product
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str):
+    """Delete a product/service"""
+    await db.products.delete_one({"id": product_id})
+    return {"status": "deleted"}
+
+# ----- Discovery Sets -----
+@api_router.get("/discovery-sets")
+async def get_discovery_sets():
+    """Get all saved discovery sets"""
+    sets = await db.discovery_sets.find({}, {"_id": 0}).to_list(100)
+    return sets
+
+@api_router.post("/discovery-sets")
+async def create_discovery_set(data: Dict[str, Any]):
+    """Create a new discovery set"""
+    discovery_set = DiscoverySet(
+        name=data.get("name", ""),
+        keywords=data.get("keywords", []),
+        locations=data.get("locations", []),
+        min_reviews=data.get("min_reviews", 5),
+        max_per_search=data.get("max_per_search", 20),
+        daily_limit=data.get("daily_limit", 50)
+    )
+    doc = discovery_set.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.discovery_sets.insert_one(doc)
+    return {"id": discovery_set.id, "status": "created"}
+
+@api_router.put("/discovery-sets/{set_id}")
+async def update_discovery_set(set_id: str, data: Dict[str, Any]):
+    """Update a discovery set"""
+    update_data = {k: v for k, v in data.items() if k in ['name', 'keywords', 'locations', 'min_reviews', 'max_per_search', 'daily_limit']}
+    await db.discovery_sets.update_one({"id": set_id}, {"$set": update_data})
+    ds = await db.discovery_sets.find_one({"id": set_id}, {"_id": 0})
+    return ds
+
+@api_router.delete("/discovery-sets/{set_id}")
+async def delete_discovery_set(set_id: str):
+    """Delete a discovery set"""
+    await db.discovery_sets.delete_one({"id": set_id})
+    return {"status": "deleted"}
 
 # ----- Calendly Webhook -----
 @api_router.post("/webhooks/calendly")
