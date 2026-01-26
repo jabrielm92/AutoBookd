@@ -16,7 +16,8 @@ import {
   TestTube,
   Zap,
   Moon,
-  Sun
+  Sun,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -40,6 +41,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { getConfig, startSystem, stopSystem, getSystemStatus, getProducts, getDiscoverySets } from '@/lib/api';
 import { toast } from 'sonner';
+import RealTimeProgressModal from './RealTimeProgressModal';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -62,6 +64,7 @@ export default function Layout() {
 
   // Start flow modal state
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [discoverySets, setDiscoverySets] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -209,6 +212,18 @@ export default function Layout() {
                     <TestTube className="w-3 h-3" />
                     TEST
                   </div>
+                )}
+                {isRunning && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsProgressModalOpen(true)}
+                    className="gap-1.5 text-xs"
+                    data-testid="view-activity-btn"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    View Activity
+                  </Button>
                 )}
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
@@ -361,6 +376,13 @@ export default function Layout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Real-time Progress Modal */}
+      <RealTimeProgressModal 
+        isOpen={isProgressModalOpen} 
+        onClose={() => setIsProgressModalOpen(false)}
+        isRunning={isRunning}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
