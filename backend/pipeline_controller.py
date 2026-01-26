@@ -223,6 +223,7 @@ class PipelineController:
     async def _enrichment_loop(self):
         """Enrich leads with email and website data"""
         logger.info("Enrichment loop started")
+        await self._log_activity("enrich", "Enrichment engine started", "info")
         
         while self.is_running:
             try:
@@ -231,6 +232,9 @@ class PipelineController:
                     "pipeline_stage": "needs_enrichment",
                     "email": {"$exists": False}
                 }).limit(10).to_list(10)
+                
+                if leads:
+                    await self._log_activity("enrich", f"Processing {len(leads)} leads for enrichment", "info")
                 
                 for lead in leads:
                     if not self.is_running:
@@ -243,7 +247,10 @@ class PipelineController:
                             {"id": lead["id"]},
                             {"$set": {"pipeline_stage": "no_domain", "updated_at": datetime.now(timezone.utc).isoformat()}}
                         )
+                        await self._log_activity("enrich", f"No domain for {lead.get('business_name')}", "warning", lead.get('business_name'))
                         continue
+                    
+                    await self._log_activity("enrich", f"Looking up email for {lead.get('business_name')}", "info", lead.get('business_name'))
                     
                     # Find email
                     email_data = await self.email_finder.find_email(domain, lead.get("business_name"))
@@ -258,11 +265,13 @@ class PipelineController:
                             "pipeline_stage": "needs_research",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }
+                        await self._log_activity("enrich", f"Email found: {email_data['email']}", "success", lead.get('business_name'))
                     else:
                         update_data = {
                             "pipeline_stage": "no_email",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }
+                        await self._log_activity("enrich", f"No email found for {lead.get('business_name')}", "warning", lead.get('business_name'))
                     
                     await self.db.leads.update_one(
                         {"id": lead["id"]},
@@ -281,12 +290,14 @@ class PipelineController:
                 break
             except Exception as e:
                 logger.error(f"Enrichment loop error: {e}")
+                await self._log_activity("enrich", f"Error: {str(e)}", "error")
                 await asyncio.sleep(60)
     
     # ==================== RESEARCH LOOP ====================
     async def _research_loop(self):
         """AI research on leads"""
         logger.info("Research loop started")
+        await self._log_activity("research", "AI Research engine started", "info")
         
         while self.is_running:
             try:
@@ -304,6 +315,9 @@ class PipelineController:
                     "email": {"$exists": True}
                 }).limit(5).to_list(5)
                 
+                if leads:
+                    await self._log_activity("research", f"Researching {len(leads)} leads with AI", "info")
+                
                 for lead in leads:
                     if not self.is_running:
                         break
@@ -312,8 +326,12 @@ class PipelineController:
                     if not website_url:
                         continue
                     
+                    await self._log_activity("research", f"Analyzing website for {lead.get('business_name')}", "info", lead.get('business_name'))
+                    
                     # Scrape website
                     website_data = await self.website_scraper.scrape_website(website_url)
+                    
+                    await self._log_activity("research", f"Running AI research on {lead.get('business_name')}", "info", lead.get('business_name'))
                     
                     # AI research
                     research = await self.ai_engine.research_lead(lead, website_data)
@@ -337,7 +355,13 @@ class PipelineController:
                         }}
                     )
                     
-                    logger.info(f"Researched {lead['business_name']}: score={score}, quality={research.get('personalization_quality')}")
+                    quality = research.get('personalization_quality', 'unknown')
+                    if score >= 60:
+                        await self._log_activity("research", f"Lead ready: {lead.get('business_name')} (Score: {score})", "success", lead.get('business_name'))
+                    else:
+                        await self._log_activity("research", f"Low score: {lead.get('business_name')} ({score})", "warning", lead.get('business_name'))
+                    
+                    logger.info(f"Researched {lead['business_name']}: score={score}, quality={quality}")
                     
                     # Rate limit
                     await asyncio.sleep(3)
@@ -348,6 +372,7 @@ class PipelineController:
                 break
             except Exception as e:
                 logger.error(f"Research loop error: {e}")
+                await self._log_activity("research", f"Error: {str(e)}", "error")
                 await asyncio.sleep(60)
     
     def _calculate_lead_score(self, lead: Dict, research: Dict, website_data: Dict) -> int:
@@ -400,6 +425,7 @@ class PipelineController:
     async def _sequence_loop(self):
         """Create and send email sequences"""
         logger.info("Sequence loop started")
+        await self._log_activity("sequence", "Email sequence engine started", "info")
         
         while self.is_running:
             try:
@@ -422,6 +448,7 @@ class PipelineController:
                 
                 if sent_today >= daily_limit:
                     logger.info(f"Daily email limit reached ({sent_today}/{daily_limit})")
+                    await self._log_activity("sequence", f"Daily limit reached ({sent_today}/{daily_limit})", "warning")
                     await asyncio.sleep(3600)
                     continue
                 
@@ -429,6 +456,7 @@ class PipelineController:
                 sequence_stats = await self.sequence_manager.process_due_sequences(test_mode=test_mode)
                 
                 if sequence_stats["sent"] > 0:
+                    await self._log_activity("sequence", f"Sent {sequence_stats['sent']} follow-up emails", "success")
                     # Update daily stats
                     await self.db.daily_email_stats.update_one(
                         {"date": today},
@@ -442,11 +470,16 @@ class PipelineController:
                     "sequence_id": {"$exists": False}
                 }).limit(5).to_list(5)
                 
+                if ready_leads:
+                    await self._log_activity("sequence", f"Creating sequences for {len(ready_leads)} leads", "info")
+                
                 for lead in ready_leads:
                     if sent_today >= daily_limit:
                         break
                     
                     research = lead.get("research", {})
+                    
+                    await self._log_activity("sequence", f"Generating email sequence for {lead.get('business_name')}", "info", lead.get('business_name'))
                     
                     # Generate sequence
                     emails = self.sequence_generator.generate_sequence(
@@ -475,6 +508,8 @@ class PipelineController:
                         }}
                     )
                     
+                    mode_label = " [TEST]" if test_mode else ""
+                    await self._log_activity("sequence", f"Sequence created for {lead.get('business_name')}{mode_label}", "success", lead.get('business_name'))
                     logger.info(f"Created sequence for {lead['business_name']}" + (" [TEST MODE]" if test_mode else ""))
                 
                 await asyncio.sleep(60)
@@ -483,12 +518,14 @@ class PipelineController:
                 break
             except Exception as e:
                 logger.error(f"Sequence loop error: {e}")
+                await self._log_activity("sequence", f"Error: {str(e)}", "error")
                 await asyncio.sleep(60)
     
     # ==================== ANALYTICS LOOP ====================
     async def _analytics_loop(self):
         """Update analytics and metrics"""
         logger.info("Analytics loop started")
+        await self._log_activity("analytics", "Analytics engine started", "info")
         
         while self.is_running:
             try:
