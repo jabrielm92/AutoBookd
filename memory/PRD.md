@@ -25,13 +25,24 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 
 ### Email Open/Click Tracking ✅ (NEW)
 - [x] Tracking pixel injection for open tracking
-- [x] Link wrapping for click tracking with redirect
+- [x] Link wrapping with click tracking and redirect
 - [x] /api/track/open/{tracking_id} - returns 1x1 GIF
 - [x] /api/track/click/{tracking_id} - redirects to original URL
 - [x] /api/tracking/stats - engagement statistics
 - [x] Analytics page shows: Sent, Open Rate, Click Rate, Bounce Rate
 - [x] "Most Engaged Leads" section showing opens/clicks per lead
-- [x] Tracking records stored in email_tracking collection
+- [x] Tracking data stored in email_tracking collection
+
+### Dashboard & Stats Auto-Refresh ✅ (FIXED)
+- [x] Dashboard cards now use /api/pipeline/activity for accurate counts
+- [x] Auto-refresh every 5 seconds when pipeline is running
+- [x] Niche Performance computed from actual lead categories
+- [x] Discovery page cards also use live pipeline counts
+- [x] "View Activity" button placement fixed (next to Stop button)
+
+### Leads Filter ✅ (FIXED)
+- [x] Backend supports both `status` and `pipeline_stage` filtering
+- [x] Frontend correctly distinguishes pipeline stages vs lead statuses
 
 ### UI/UX Overhaul ✅
 - [x] Top Navbar instead of sidebar
