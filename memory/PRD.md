@@ -14,6 +14,15 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 
 ## What's Been Implemented (Jan 26, 2025)
 
+### Real-Time Progress Modal ✅ (NEW)
+- [x] Stage progress cards showing counts (Scraped, Enriched, Researched, In Sequence)
+- [x] Auto-scrolling activity log with timestamps
+- [x] Color-coded stage icons (Search, Mail, Brain, Send)
+- [x] Success/Error/Warning indicators per activity
+- [x] Auto-refresh every 2 seconds
+- [x] "View Activity" button in navbar when pipeline is running
+- [x] Activity logging in all pipeline loops (scrape, enrich, research, sequence, analytics)
+
 ### UI/UX Overhaul ✅
 - [x] Top Navbar instead of sidebar
 - [x] Clean "Swiss Utility" design
@@ -59,6 +68,7 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 | /api/products | GET/POST | Manage products/services |
 | /api/discovery-sets | GET/POST | Manage discovery configurations |
 | /api/system/start | POST | Start pipeline with selections |
+| /api/pipeline/activity | GET | Real-time activity log + counts |
 | /api/leads/bulk-delete | POST | Delete multiple leads |
 | /api/leads/import/csv | POST | Upload CSV file |
 | /api/webhooks/calendly | POST | Booking webhook |
@@ -79,14 +89,16 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 ### Frontend (React + TailwindCSS + Shadcn)
 ```
 /app/frontend/src/
-├── components/Layout.jsx  # Navbar + Start Modal
+├── components/
+│   ├── Layout.jsx               # Navbar + Start Modal + Progress Modal trigger
+│   └── RealTimeProgressModal.jsx # Activity feed + stage cards
 ├── pages/
 │   ├── Dashboard.jsx      # KPIs + queues
 │   ├── Leads.jsx          # Bulk select, CSV import
 │   ├── Discovery.jsx      # Clickable funnel cards
 │   ├── Settings.jsx       # Tabbed: General, Products, Discovery, Email Rules, API Keys
 │   └── ...
-└── lib/api.js             # API client
+└── lib/api.js             # API client (includes getPipelineActivity)
 ```
 
 ## Settings Tabs
