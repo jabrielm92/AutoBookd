@@ -1382,6 +1382,126 @@ async def get_followup_queue(limit: int = 30):
     ).limit(limit).to_list(limit)
     return leads
 
+# ----- Email Tracking -----
+@api_router.get("/track/open/{tracking_id}")
+async def track_email_open(tracking_id: str):
+    """Track email opens via pixel - returns 1x1 transparent GIF"""
+    from email_engine import DeliverabilityTracker
+    from fastapi.responses import Response
+    
+    tracker = DeliverabilityTracker(db)
+    
+    # Find the email event by tracking_id
+    email_event = await db.email_tracking.find_one({"tracking_id": tracking_id}, {"_id": 0})
+    
+    if email_event:
+        lead_id = email_event.get("lead_id")
+        sequence_id = email_event.get("sequence_id")
+        
+        # Record open event
+        await tracker.record_event("opened", email_event.get("message_id", tracking_id), {
+            "lead_id": lead_id,
+            "sequence_id": sequence_id,
+            "tracking_id": tracking_id
+        })
+        
+        # Update lead with open tracking
+        if lead_id:
+            await db.leads.update_one(
+                {"id": lead_id},
+                {
+                    "$set": {"last_email_opened_at": datetime.now(timezone.utc).isoformat()},
+                    "$inc": {"email_opens": 1}
+                }
+            )
+        
+        # Update sequence tracking
+        if sequence_id:
+            await db.sequences.update_one(
+                {"id": sequence_id},
+                {"$inc": {"opens": 1}}
+            )
+    
+    # Return 1x1 transparent GIF
+    gif_bytes = b'GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;'
+    return Response(content=gif_bytes, media_type="image/gif")
+
+
+@api_router.get("/track/click/{tracking_id}")
+async def track_email_click(tracking_id: str, url: str = ""):
+    """Track email link clicks and redirect"""
+    from email_engine import DeliverabilityTracker
+    from fastapi.responses import RedirectResponse
+    import base64
+    
+    tracker = DeliverabilityTracker(db)
+    
+    # Find the email event by tracking_id
+    email_event = await db.email_tracking.find_one({"tracking_id": tracking_id}, {"_id": 0})
+    
+    if email_event:
+        lead_id = email_event.get("lead_id")
+        sequence_id = email_event.get("sequence_id")
+        
+        # Record click event
+        await tracker.record_event("clicked", email_event.get("message_id", tracking_id), {
+            "lead_id": lead_id,
+            "sequence_id": sequence_id,
+            "tracking_id": tracking_id,
+            "clicked_url": url
+        })
+        
+        # Update lead with click tracking
+        if lead_id:
+            await db.leads.update_one(
+                {"id": lead_id},
+                {
+                    "$set": {"last_email_clicked_at": datetime.now(timezone.utc).isoformat()},
+                    "$inc": {"email_clicks": 1}
+                }
+            )
+        
+        # Update sequence tracking
+        if sequence_id:
+            await db.sequences.update_one(
+                {"id": sequence_id},
+                {"$inc": {"clicks": 1}}
+            )
+    
+    # Decode and redirect to original URL
+    if url:
+        try:
+            decoded_url = base64.urlsafe_b64decode(url.encode()).decode()
+            return RedirectResponse(url=decoded_url, status_code=302)
+        except Exception:
+            pass
+    
+    # Fallback - redirect to calendly or main site
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    fallback_url = config.get("calendly_link") if config else "https://calendly.com"
+    return RedirectResponse(url=fallback_url, status_code=302)
+
+
+@api_router.get("/tracking/stats")
+async def get_tracking_stats():
+    """Get email engagement statistics"""
+    from email_engine import DeliverabilityTracker
+    
+    tracker = DeliverabilityTracker(db)
+    stats = await tracker.get_deliverability_stats(days=30)
+    
+    # Get top engaged leads
+    engaged_leads = await db.leads.find(
+        {"email_opens": {"$gt": 0}},
+        {"_id": 0, "id": 1, "business_name": 1, "email": 1, "email_opens": 1, "email_clicks": 1, "last_email_opened_at": 1}
+    ).sort("email_opens", -1).limit(10).to_list(10)
+    
+    return {
+        "stats": stats,
+        "engaged_leads": engaged_leads
+    }
+
+
 # ----- Health Check -----
 @api_router.get("/health")
 async def health_check():
