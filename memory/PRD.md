@@ -23,6 +23,16 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 - [x] "View Activity" button in navbar when pipeline is running
 - [x] Activity logging in all pipeline loops (scrape, enrich, research, sequence, analytics)
 
+### Email Open/Click Tracking ✅ (NEW)
+- [x] Tracking pixel injection for open tracking
+- [x] Link wrapping for click tracking with redirect
+- [x] /api/track/open/{tracking_id} - returns 1x1 GIF
+- [x] /api/track/click/{tracking_id} - redirects to original URL
+- [x] /api/tracking/stats - engagement statistics
+- [x] Analytics page shows: Sent, Open Rate, Click Rate, Bounce Rate
+- [x] "Most Engaged Leads" section showing opens/clicks per lead
+- [x] Tracking records stored in email_tracking collection
+
 ### UI/UX Overhaul ✅
 - [x] Top Navbar instead of sidebar
 - [x] Clean "Swiss Utility" design
@@ -69,6 +79,9 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 | /api/discovery-sets | GET/POST | Manage discovery configurations |
 | /api/system/start | POST | Start pipeline with selections |
 | /api/pipeline/activity | GET | Real-time activity log + counts |
+| /api/track/open/{id} | GET | Track email opens (returns pixel) |
+| /api/track/click/{id} | GET | Track clicks (redirects to URL) |
+| /api/tracking/stats | GET | Email engagement statistics |
 | /api/leads/bulk-delete | POST | Delete multiple leads |
 | /api/leads/import/csv | POST | Upload CSV file |
 | /api/webhooks/calendly | POST | Booking webhook |
