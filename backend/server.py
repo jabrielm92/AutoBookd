@@ -349,109 +349,172 @@ async def update_config(update: SystemConfigUpdate):
 
 @api_router.post("/system/start")
 async def start_system(background_tasks: BackgroundTasks):
-    from autonomous_controller import get_controller
-    controller = get_controller(db)
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
     
-    if controller.is_running:
-        return {"status": "already_running", "message": "System is already running"}
+    if pipeline.is_running:
+        return {"status": "already_running", "message": "Pipeline is already running"}
     
-    # Start autonomous system in background
-    background_tasks.add_task(controller.start)
+    # Start pipeline in background
+    background_tasks.add_task(pipeline.start)
     
     await db.system_config.update_one(
         {"id": "system_config"},
         {"$set": {"is_running": True, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
-    return {"status": "running", "message": "Autonomous system started - Discovery, Outreach, and Learning engines activated"}
+    return {"status": "running", "message": "Production pipeline started - Scraping, Enrichment, Research, Sequencing, Analytics"}
 
 @api_router.post("/system/stop")
 async def stop_system():
-    from autonomous_controller import get_controller
-    controller = get_controller(db)
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
     
-    await controller.stop()
+    await pipeline.stop()
     
     await db.system_config.update_one(
         {"id": "system_config"},
         {"$set": {"is_running": False, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
-    return {"status": "stopped", "message": "Autonomous system stopped"}
+    return {"status": "stopped", "message": "Pipeline stopped"}
 
 @api_router.get("/system/status")
 async def get_system_status():
-    from autonomous_controller import get_controller
-    controller = get_controller(db)
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
     
     config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    discovery_stats = await db.discovery_stats.find_one({"id": "stats"}, {"_id": 0})
-    metrics = await db.system_metrics.find_one({"id": "metrics"}, {"_id": 0})
+    pipeline_analytics = await db.pipeline_analytics.find_one({"id": "pipeline_analytics"}, {"_id": 0})
+    deliverability = await db.deliverability_stats.find_one({"id": "deliverability_stats"}, {"_id": 0})
     
     return {
-        "is_running": controller.is_running,
+        "is_running": pipeline.is_running,
         "config": config,
-        "discovery_stats": discovery_stats,
-        "metrics": metrics
+        "pipeline_analytics": pipeline_analytics,
+        "deliverability": deliverability
     }
 
-# ----- Discovery Config -----
-@api_router.get("/discovery/config")
-async def get_discovery_config():
-    config = await db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
+# ----- Scraping Endpoints -----
+@api_router.get("/scrape/config")
+async def get_scrape_config():
+    config = await db.scrape_config.find_one({"id": "scrape_config"}, {"_id": 0})
     if not config:
-        config = DiscoveryConfig().model_dump()
-        await db.discovery_config.insert_one(config)
+        config = {
+            "id": "scrape_config",
+            "keywords": ["accounting firm", "law firm", "plumber", "electrician", "HVAC", "roofing"],
+            "locations": ["Philadelphia, PA"],
+            "min_reviews": 5,
+            "max_per_search": 20,
+            "daily_limit": 50
+        }
+        await db.scrape_config.insert_one(config)
     return config
 
-@api_router.put("/discovery/config")
-async def update_discovery_config(update: DiscoveryConfigUpdate):
-    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
-    
-    await db.discovery_config.update_one(
-        {"id": "discovery_config"},
-        {"$set": update_data},
+@api_router.put("/scrape/config")
+async def update_scrape_config(update: Dict[str, Any]):
+    await db.scrape_config.update_one(
+        {"id": "scrape_config"},
+        {"$set": update},
         upsert=True
     )
-    config = await db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
-    return config
+    return await db.scrape_config.find_one({"id": "scrape_config"}, {"_id": 0})
 
-@api_router.post("/discovery/run-now")
-async def run_discovery_now(background_tasks: BackgroundTasks):
-    """Manually trigger one discovery cycle"""
-    from discovery_engine import DiscoveryEngine
+@api_router.post("/scrape/now")
+async def scrape_now(keyword: str, location: str, limit: int = 20):
+    """Manually trigger a Google Maps scrape"""
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
     
-    config = await db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
-    system_config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    
-    engine = DiscoveryEngine(db, system_config.get('openai_api_key') if system_config else None)
-    engine.config = config or {}
-    
-    background_tasks.add_task(engine._run_discovery_cycle)
-    
-    return {"status": "started", "message": "Discovery cycle triggered"}
+    result = await pipeline.scrape_now(keyword, location, limit)
+    return result
 
-@api_router.get("/discovery/stats")
-async def get_discovery_stats():
-    stats = await db.discovery_stats.find_one({"id": "stats"}, {"_id": 0})
-    return stats or {"total_discovered": 0, "cycles_run": 0}
+@api_router.post("/leads/{lead_id}/enrich")
+async def enrich_lead(lead_id: str):
+    """Manually enrich a lead with email"""
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
+    
+    result = await pipeline.enrich_lead(lead_id)
+    return result
 
-@api_router.get("/discovery/sources")
-async def get_available_sources():
-    """Get available discovery sources and industries"""
+@api_router.post("/leads/{lead_id}/research")
+async def research_lead(lead_id: str):
+    """Manually trigger AI research on a lead"""
+    from pipeline_controller import get_pipeline
+    from lead_scraper import WebsiteScraper
+    from ai_engine import AIResearchEngine
+    
+    pipeline = get_pipeline(db)
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    
+    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Scrape website
+    scraper = WebsiteScraper()
+    website_data = await scraper.scrape_website(lead.get("website", ""))
+    await scraper.close()
+    
+    # AI research
+    ai_engine = AIResearchEngine(config.get("openai_api_key"))
+    research = await ai_engine.research_lead(lead, website_data)
+    await ai_engine.close()
+    
+    # Update lead
+    await db.leads.update_one(
+        {"id": lead_id},
+        {"$set": {
+            "research": research,
+            "website_data": {
+                "title": website_data.get("title"),
+                "meta_description": website_data.get("meta_description"),
+                "scraped": website_data.get("success", False)
+            },
+            "pipeline_stage": "ready_for_outreach",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"success": True, "research": research}
+
+@api_router.get("/pipeline/analytics")
+async def get_pipeline_analytics():
+    """Get full pipeline analytics"""
+    analytics = await db.pipeline_analytics.find_one({"id": "pipeline_analytics"}, {"_id": 0})
+    deliverability = await db.deliverability_stats.find_one({"id": "deliverability_stats"}, {"_id": 0})
+    
     return {
-        "sources": [
-            {"id": "reddit", "name": "Reddit Intent Mining", "description": "Find people asking about AI/automation"},
-            {"id": "jobs", "name": "Job Posting Signals", "description": "Find companies hiring for automatable roles"},
-            {"id": "web_search", "name": "Web Search", "description": "Search for businesses by industry and location"},
-            {"id": "google_maps", "name": "Google Maps", "description": "Coming soon - requires SerpAPI key"}
-        ],
-        "industries": [
-            {"id": "professional_services", "name": "Professional Services", "keywords": ["accounting", "legal", "consulting", "financial advisor"]},
-            {"id": "home_services", "name": "Home Services", "keywords": ["plumber", "electrician", "HVAC", "roofing", "landscaping"]},
-            {"id": "field_services", "name": "Field Services", "keywords": ["property management", "construction", "maintenance", "inspection"]}
-        ]
+        "funnel": analytics.get("funnel", {}) if analytics else {},
+        "metrics": analytics.get("metrics", {}) if analytics else {},
+        "deliverability": deliverability or {},
+        "updated_at": analytics.get("updated_at") if analytics else None
     }
+
+@api_router.get("/sequences")
+async def get_sequences(status: Optional[str] = None, limit: int = 50):
+    """Get email sequences"""
+    query = {}
+    if status:
+        query["status"] = status
+    
+    sequences = await db.sequences.find(query, {"_id": 0}).limit(limit).to_list(limit)
+    return sequences
+
+@api_router.post("/sequences/{sequence_id}/pause")
+async def pause_sequence(sequence_id: str):
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
+    await pipeline.sequence_manager.pause_sequence(sequence_id)
+    return {"status": "paused"}
+
+@api_router.post("/sequences/{sequence_id}/resume")
+async def resume_sequence(sequence_id: str):
+    from pipeline_controller import get_pipeline
+    pipeline = get_pipeline(db)
+    await pipeline.sequence_manager.resume_sequence(sequence_id)
+    return {"status": "resumed"}
 
 # ----- Leads -----
 @api_router.post("/leads", response_model=Lead)
