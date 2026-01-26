@@ -970,6 +970,7 @@ async def bulk_create_leads(data: LeadBulkCreate):
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(
     status: Optional[LeadStatus] = None,
+    pipeline_stage: Optional[str] = None,
     min_score: Optional[int] = None,
     niche_id: Optional[str] = None,
     limit: int = Query(100, le=500),
@@ -978,6 +979,8 @@ async def get_leads(
     query = {}
     if status:
         query['status'] = status.value
+    if pipeline_stage:
+        query['pipeline_stage'] = pipeline_stage
     if min_score:
         query['lead_score'] = {"$gte": min_score}
     if niche_id:
