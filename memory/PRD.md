@@ -43,6 +43,8 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 ### Leads Filter ✅ (FIXED)
 - [x] Backend supports both `status` and `pipeline_stage` filtering
 - [x] Frontend correctly distinguishes pipeline stages vs lead statuses
+- [x] Added `pipeline_stage` field to Lead Pydantic model (was missing)
+- [x] Added email tracking fields to Lead model (email_opens, email_clicks, etc.)
 
 ### UI/UX Overhaul ✅
 - [x] Top Navbar instead of sidebar
