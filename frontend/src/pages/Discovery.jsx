@@ -153,7 +153,7 @@ export default function Discovery() {
     try {
       const { data } = await api.post(`/scrape/now?keyword=${encodeURIComponent(manualKeyword)}&location=${encodeURIComponent(manualLocation)}&limit=20`);
       toast.success(`Scraped ${data.scraped} leads, saved ${data.saved} new`);
-      fetchAnalytics();
+      fetchCounts();
     } catch (error) {
       toast.error('Scraping failed');
     } finally {
