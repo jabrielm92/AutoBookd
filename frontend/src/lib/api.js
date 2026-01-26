@@ -98,6 +98,7 @@ export const getFollowUpQueue = (limit) => api.get('/queue/follow-up', { params:
 
 // Analytics
 export const getAnalytics = () => api.get('/analytics');
+export const getTrackingStats = () => api.get('/tracking/stats');
 
 // Health
 export const healthCheck = () => api.get('/health');
