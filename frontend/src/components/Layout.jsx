@@ -282,7 +282,7 @@ export default function Layout() {
                       <span className="font-bold text-lg">AutoBookd</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <NavLinks mobile />
+                      <NavLinks mobile onMobileClick={() => setMobileOpen(false)} />
                     </div>
                     <div className="pt-4 border-t flex items-center justify-between">
                       <p className="text-xs text-slate-500">ARI Solutions Inc.</p>
