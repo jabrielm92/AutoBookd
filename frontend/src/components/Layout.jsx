@@ -112,7 +112,9 @@ export default function Layout() {
   const handleStart = async () => {
     setLoading(true);
     try {
-      await startSystem(startTestMode, selectedProduct || null, selectedDiscoverySet || null);
+      const productId = selectedProduct === 'none' ? null : selectedProduct || null;
+      const discoverySetId = selectedDiscoverySet === 'none' ? null : selectedDiscoverySet || null;
+      await startSystem(startTestMode, productId, discoverySetId);
       setIsRunning(true);
       setTestMode(startTestMode);
       setIsStartModalOpen(false);
