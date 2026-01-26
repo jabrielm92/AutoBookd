@@ -828,6 +828,85 @@ async def delete_lead(lead_id: str):
         raise HTTPException(status_code=404, detail="Lead not found")
     return {"message": "Lead deleted"}
 
+@api_router.post("/leads/bulk-delete")
+async def bulk_delete_leads(data: Dict[str, List[str]]):
+    """Delete multiple leads at once"""
+    ids = data.get("ids", [])
+    if not ids:
+        raise HTTPException(status_code=400, detail="No IDs provided")
+    
+    result = await db.leads.delete_many({"id": {"$in": ids}})
+    return {"deleted": result.deleted_count, "requested": len(ids)}
+
+@api_router.post("/leads/import/csv")
+async def import_csv_leads(file: UploadFile = File(...)):
+    """Import leads from CSV file"""
+    import csv
+    import io
+    
+    content = await file.read()
+    decoded = content.decode('utf-8')
+    reader = csv.DictReader(io.StringIO(decoded))
+    
+    created = 0
+    skipped = 0
+    errors = []
+    
+    for row in reader:
+        try:
+            # Map common column names
+            business_name = row.get('business_name') or row.get('Business Name') or row.get('company') or row.get('Company') or row.get('name') or row.get('Name')
+            if not business_name:
+                skipped += 1
+                continue
+            
+            # Check for duplicates
+            existing = await db.leads.find_one({
+                "business_name": {"$regex": f"^{business_name}$", "$options": "i"}
+            })
+            if existing:
+                skipped += 1
+                continue
+            
+            lead = Lead(
+                business_name=business_name,
+                category=row.get('category') or row.get('Category') or row.get('industry') or row.get('Industry') or 'Unknown',
+                city=row.get('city') or row.get('City'),
+                state=row.get('state') or row.get('State'),
+                phone=row.get('phone') or row.get('Phone') or row.get('phone_number'),
+                email=row.get('email') or row.get('Email') or row.get('email_address'),
+                website=row.get('website') or row.get('Website') or row.get('url') or row.get('URL'),
+                rating=float(row.get('rating') or row.get('Rating') or 0) if row.get('rating') or row.get('Rating') else None,
+                review_count=int(row.get('review_count') or row.get('Reviews') or row.get('reviews') or 0),
+                context={
+                    "source": "csv_import",
+                    "imported_at": datetime.now(timezone.utc).isoformat(),
+                    "original_row": {k: v for k, v in row.items() if v}
+                }
+            )
+            
+            score, breakdown = calculate_lead_score(lead.model_dump())
+            lead.lead_score = score
+            lead.score_breakdown = breakdown
+            
+            doc = lead.model_dump()
+            doc['created_at'] = doc['created_at'].isoformat()
+            doc['updated_at'] = doc['updated_at'].isoformat()
+            doc['pipeline_stage'] = 'needs_enrichment' if not lead.email else 'needs_research'
+            
+            await db.leads.insert_one(doc)
+            created += 1
+            
+        except Exception as e:
+            errors.append(f"Row error: {str(e)}")
+            skipped += 1
+    
+    return {
+        "created": created,
+        "skipped": skipped,
+        "errors": errors[:5] if errors else []
+    }
+
 @api_router.post("/leads/{lead_id}/rescore", response_model=Lead)
 async def rescore_lead(lead_id: str):
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
