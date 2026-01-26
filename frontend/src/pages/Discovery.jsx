@@ -490,7 +490,7 @@ export default function Discovery() {
                     <Package className="w-5 h-5" />
                     Products / Services
                   </CardTitle>
-                  <CardDescription>What you're selling - AI uses this to personalize outreach</CardDescription>
+                  <CardDescription>What you sell - AI uses this to personalize outreach</CardDescription>
                 </div>
                 <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
                   <DialogTrigger asChild>
