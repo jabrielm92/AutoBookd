@@ -7,7 +7,10 @@ import {
   Calendar,
   Target,
   BarChart3,
-  PieChart
+  PieChart,
+  Mail,
+  MousePointer,
+  Eye
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +29,7 @@ import {
   Line,
   Legend
 } from 'recharts';
-import { getAnalytics } from '@/lib/api';
+import { getAnalytics, getTrackingStats } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +49,7 @@ const statusLabels = {
 
 export default function Analytics() {
   const [analytics, setAnalytics] = useState(null);
+  const [trackingStats, setTrackingStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,8 +58,12 @@ export default function Analytics() {
 
   const fetchAnalytics = async () => {
     try {
-      const { data } = await getAnalytics();
-      setAnalytics(data);
+      const [analyticsRes, trackingRes] = await Promise.all([
+        getAnalytics(),
+        getTrackingStats().catch(() => ({ data: null }))
+      ]);
+      setAnalytics(analyticsRes.data);
+      setTrackingStats(trackingRes.data);
     } catch (error) {
       toast.error('Failed to fetch analytics');
     } finally {
