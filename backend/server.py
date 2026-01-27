@@ -606,7 +606,9 @@ async def create_portal(user: dict = Depends(get_current_user)):
     if not user.get("stripe_customer_id"):
         raise HTTPException(status_code=400, detail="No subscription found")
     
-    base_url = os.environ.get("TRACKING_BASE_URL", "http://localhost:3000")
+    base_url = os.environ.get("FRONTEND_URL")
+    if not base_url:
+        raise HTTPException(status_code=500, detail="FRONTEND_URL environment variable not configured")
     portal_url = await stripe_service.create_portal_session(
         user["stripe_customer_id"],
         f"{base_url}/settings"
