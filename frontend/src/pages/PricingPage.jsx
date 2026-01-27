@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 
 const features = [
-  "Unlimited lead discovery",
+  "Automated lead discovery",
   "AI-powered website research",
   "Hyper-personalized email sequences",
   "Auto reply classification",
