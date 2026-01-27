@@ -118,10 +118,14 @@ class GoogleMapsScraper:
 class HunterEmailFinder:
     """Find and verify emails via Hunter.io"""
     
-    def __init__(self):
-        self.api_key = HUNTER_API_KEY
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or HUNTER_API_KEY
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.base_url = "https://api.hunter.io/v2"
+    
+    def set_api_key(self, api_key: str):
+        """Update API key dynamically"""
+        self.api_key = api_key
     
     async def find_email(self, domain: str, company_name: str = None) -> Optional[Dict[str, Any]]:
         """
@@ -239,10 +243,14 @@ class HunterEmailFinder:
 class ApolloEmailFinder:
     """Find and enrich leads via Apollo.io"""
     
-    def __init__(self):
-        self.api_key = APOLLO_API_KEY
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or APOLLO_API_KEY
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.base_url = "https://api.apollo.io/v1"
+    
+    def set_api_key(self, api_key: str):
+        """Update API key dynamically"""
+        self.api_key = api_key
     
     async def find_email(self, domain: str, company_name: str = None) -> Optional[Dict[str, Any]]:
         """
