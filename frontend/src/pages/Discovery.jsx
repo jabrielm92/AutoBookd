@@ -504,42 +504,56 @@ export default function Discovery() {
                       Add Product
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
                     <DialogHeader>
-                      <DialogTitle>Add Product / Service</DialogTitle>
+                      <DialogTitle className="text-white">Add Product / Service</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label>Name *</Label>
+                        <Label className="text-slate-300">Name *</Label>
                         <Input
                           value={newProduct.name}
                           onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                           placeholder="Business Process Solutions"
+                          className="bg-slate-800 border-slate-700 text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Description *</Label>
+                        <Label className="text-slate-300">Description *</Label>
                         <Textarea
                           value={newProduct.description}
                           onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
                           placeholder="We help businesses streamline operations..."
-                          rows={4}
+                          rows={3}
+                          className="bg-slate-800 border-slate-700 text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Key Features (comma separated)</Label>
+                        <Label className="text-slate-300">Key Features (comma separated)</Label>
                         <Input
                           value={newProduct.features}
                           onChange={(e) => setNewProduct({...newProduct, features: e.target.value})}
                           placeholder="Lead capture, Customer response"
+                          className="bg-slate-800 border-slate-700 text-white"
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Email Guidelines (Optional)</Label>
+                        <Textarea
+                          value={newProduct.email_guidelines}
+                          onChange={(e) => setNewProduct({...newProduct, email_guidelines: e.target.value})}
+                          placeholder="Custom instructions for AI email generation:&#10;- Always mention we're local to their area&#10;- Focus on cost savings&#10;- Never mention competitors"
+                          rows={4}
+                          className="bg-slate-800 border-slate-700 text-white"
+                        />
+                        <p className="text-xs text-slate-500">These guidelines will be followed by AI when writing emails for this product</p>
                       </div>
                     </div>
                     <DialogFooter>
                       <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="outline" className="border-slate-700 text-slate-300">Cancel</Button>
                       </DialogClose>
-                      <Button onClick={handleAddProduct} disabled={!newProduct.name || !newProduct.description}>
+                      <Button onClick={handleAddProduct} disabled={!newProduct.name || !newProduct.description} className="bg-red-600 hover:bg-red-700">
                         Add Product
                       </Button>
                     </DialogFooter>
