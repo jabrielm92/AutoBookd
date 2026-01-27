@@ -244,10 +244,10 @@ class PipelineController:
                             logger.info(f"Saved lead: {lead['business_name']}")
                             await self._log_activity("scrape", f"Found: {lead['business_name']}", "success", lead['business_name'])
                         
-                        # Update daily stats
+                        # Update daily stats for tenant
                         await self.db.daily_scrape_stats.update_one(
-                            {"date": today},
-                            {"$set": {"scraped": scraped_today}},
+                            {"date": today, "tenant_id": tenant_id},
+                            {"$set": {"scraped": scraped_today, "tenant_id": tenant_id}},
                             upsert=True
                         )
                         
