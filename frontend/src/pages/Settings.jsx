@@ -734,6 +734,83 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Discovery Set Dialog */}
+      <Dialog open={isSetDialogOpen} onOpenChange={setIsSetDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">{editingSet ? 'Edit Discovery Set' : 'Create Discovery Set'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300">Name</Label>
+              <Input
+                value={setForm.name}
+                onChange={(e) => setSetForm({...setForm, name: e.target.value})}
+                placeholder="e.g., HVAC Companies Texas"
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Keywords (comma-separated)</Label>
+              <Textarea
+                value={setForm.keywords}
+                onChange={(e) => setSetForm({...setForm, keywords: e.target.value})}
+                placeholder="HVAC, Air Conditioning, Heating"
+                rows={2}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Locations (comma-separated)</Label>
+              <Textarea
+                value={setForm.locations}
+                onChange={(e) => setSetForm({...setForm, locations: e.target.value})}
+                placeholder="Austin TX, Dallas TX, Houston TX"
+                rows={2}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Daily Limit</Label>
+                <Input
+                  type="number"
+                  value={setForm.daily_limit}
+                  onChange={(e) => setSetForm({...setForm, daily_limit: e.target.value})}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Per Search</Label>
+                <Input
+                  type="number"
+                  value={setForm.max_per_search}
+                  onChange={(e) => setSetForm({...setForm, max_per_search: e.target.value})}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Min Reviews</Label>
+                <Input
+                  type="number"
+                  value={setForm.min_reviews}
+                  onChange={(e) => setSetForm({...setForm, min_reviews: e.target.value})}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSetDialogOpen(false)} className="border-slate-700 text-slate-300">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSet} className="bg-red-600 hover:bg-red-700">
+              {editingSet ? 'Save Changes' : 'Create Set'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
