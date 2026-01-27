@@ -872,15 +872,15 @@ async def start_system(
     background_tasks.add_task(pipeline.start)
     
     await db.system_config.update_one(
-        {"id": "system_config"},
+        {"tenant_id": tenant_id},
         {"$set": {"is_running": True, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
     
-    mode_msg = " (TEST MODE)" if test_mode else ""
+    mode_msg = " (Drafts Only - Emails Not Sent)" if not auto_send_emails else ""
     return {
         "status": "running", 
-        "test_mode": test_mode,
+        "auto_send_emails": auto_send_emails,
         "product_id": product_id,
         "discovery_set_id": discovery_set_id,
         "message": f"Pipeline started{mode_msg}"
