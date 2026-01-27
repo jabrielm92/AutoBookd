@@ -109,8 +109,9 @@ class PipelineController:
         for task in self._tasks:
             task.cancel()
         
-        await self.db.system_config.update_one(
-            {"id": "system_config"},
+        # Update all running configs to stopped
+        await self.db.system_config.update_many(
+            {"is_running": True},
             {"$set": {
                 "is_running": False,
                 "pipeline_stopped_at": datetime.now(timezone.utc).isoformat()
