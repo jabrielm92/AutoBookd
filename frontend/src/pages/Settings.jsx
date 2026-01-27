@@ -261,39 +261,6 @@ export default function Settings() {
 
         {/* General Tab */}
         <TabsContent value="general" className="space-y-6">
-          {/* Test Mode */}
-          <Card className={config?.test_mode ? "border-amber-500 bg-amber-950/20" : "bg-slate-900 border-slate-800"}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                <TestTube className="w-5 h-5" />
-                Test Mode
-                {config?.test_mode && (
-                  <Badge variant="outline" className="bg-amber-900/50 text-amber-400 border-amber-700">
-                    ACTIVE
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription className="text-slate-400">
-                Simulate the full pipeline without sending real emails
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="font-medium">Enable Test Mode</p>
-                  <p className="text-sm text-muted-foreground">
-                    Emails are simulated but not sent.
-                  </p>
-                </div>
-                <Switch
-                  checked={config?.test_mode || false}
-                  onCheckedChange={(checked) => setConfig({...config, test_mode: checked})}
-                  data-testid="test-mode-toggle"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Sender Info */}
           <Card>
             <CardHeader>
