@@ -19,7 +19,9 @@ import {
   MapPin,
   Pencil,
   Trash2,
-  Plus
+  Plus,
+  CreditCard,
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,8 +34,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { getConfig, updateConfig, resetDailyLimits, getDiscoverySets, createDiscoverySet, updateDiscoverySet, deleteDiscoverySet } from '@/lib/api';
+import { getConfig, updateConfig, resetDailyLimits, getDiscoverySets, createDiscoverySet, updateDiscoverySet, deleteDiscoverySet, getMySubscription } from '@/lib/api';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import api from '@/lib/api';
 
 export default function Settings() {
   const [config, setConfig] = useState(null);
