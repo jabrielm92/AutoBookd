@@ -1313,10 +1313,11 @@ async def research_lead(lead_id: str):
     return {"success": True, "research": research}
 
 @api_router.get("/pipeline/analytics")
-async def get_pipeline_analytics():
-    """Get full pipeline analytics"""
-    analytics = await db.pipeline_analytics.find_one({"id": "pipeline_analytics"}, {"_id": 0})
-    deliverability = await db.deliverability_stats.find_one({"id": "deliverability_stats"}, {"_id": 0})
+async def get_pipeline_analytics(user: dict = Depends(get_current_user)):
+    """Get full pipeline analytics for current tenant"""
+    tenant_id = user["id"]
+    analytics = await db.pipeline_analytics.find_one({"tenant_id": tenant_id}, {"_id": 0})
+    deliverability = await db.deliverability_stats.find_one({"tenant_id": tenant_id}, {"_id": 0})
     
     return {
         "funnel": analytics.get("funnel", {}) if analytics else {},
@@ -1326,9 +1327,9 @@ async def get_pipeline_analytics():
     }
 
 @api_router.get("/sequences")
-async def get_sequences(status: Optional[str] = None, limit: int = 50):
-    """Get email sequences"""
-    query = {}
+async def get_sequences(status: Optional[str] = None, limit: int = 50, user: dict = Depends(get_current_user)):
+    """Get email sequences for current tenant"""
+    query = {"tenant_id": user["id"]}
     if status:
         query["status"] = status
     
@@ -1336,14 +1337,14 @@ async def get_sequences(status: Optional[str] = None, limit: int = 50):
     return sequences
 
 @api_router.post("/sequences/{sequence_id}/pause")
-async def pause_sequence(sequence_id: str):
+async def pause_sequence(sequence_id: str, user: dict = Depends(get_current_user)):
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     await pipeline.sequence_manager.pause_sequence(sequence_id)
     return {"status": "paused"}
 
 @api_router.post("/sequences/{sequence_id}/resume")
-async def resume_sequence(sequence_id: str):
+async def resume_sequence(sequence_id: str, user: dict = Depends(get_current_user)):
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     await pipeline.sequence_manager.resume_sequence(sequence_id)
