@@ -93,7 +93,6 @@ export default function Layout() {
   const [testMode, setTestMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -112,12 +111,6 @@ export default function Layout() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
-    }
-    // Check for saved theme - default to dark
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme !== 'light') {
-      setDarkMode(true);
-      document.documentElement.classList.add('dark');
     }
   }, []);
 
