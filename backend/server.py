@@ -955,13 +955,13 @@ async def get_system_status():
 
 # ----- Products -----
 @api_router.get("/products")
-async def get_products():
-    """Get all saved products/services"""
-    products = await db.products.find({}, {"_id": 0}).to_list(100)
+async def get_products(user: dict = Depends(get_current_user)):
+    """Get all saved products/services for current tenant"""
+    products = await db.products.find({"tenant_id": user["id"]}, {"_id": 0}).to_list(100)
     return products
 
 @api_router.post("/products")
-async def create_product(data: Dict[str, Any]):
+async def create_product(data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Create a new product/service"""
     product = Product(
         name=data.get("name", ""),
@@ -970,32 +970,33 @@ async def create_product(data: Dict[str, Any]):
     )
     doc = product.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['tenant_id'] = user["id"]
     await db.products.insert_one(doc)
     return {"id": product.id, "status": "created"}
 
 @api_router.put("/products/{product_id}")
-async def update_product(product_id: str, data: Dict[str, Any]):
+async def update_product(product_id: str, data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Update a product/service"""
-    update_data = {k: v for k, v in data.items() if k in ['name', 'description', 'features']}
-    await db.products.update_one({"id": product_id}, {"$set": update_data})
-    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    update_data = {k: v for k, v in data.items() if k in ['name', 'description', 'features', 'email_guidelines']}
+    await db.products.update_one({"id": product_id, "tenant_id": user["id"]}, {"$set": update_data})
+    product = await db.products.find_one({"id": product_id, "tenant_id": user["id"]}, {"_id": 0})
     return product
 
 @api_router.delete("/products/{product_id}")
-async def delete_product(product_id: str):
+async def delete_product(product_id: str, user: dict = Depends(get_current_user)):
     """Delete a product/service"""
-    await db.products.delete_one({"id": product_id})
+    await db.products.delete_one({"id": product_id, "tenant_id": user["id"]})
     return {"status": "deleted"}
 
 # ----- Discovery Sets -----
 @api_router.get("/discovery-sets")
-async def get_discovery_sets():
-    """Get all saved discovery sets"""
-    sets = await db.discovery_sets.find({}, {"_id": 0}).to_list(100)
+async def get_discovery_sets(user: dict = Depends(get_current_user)):
+    """Get all saved discovery sets for current tenant"""
+    sets = await db.discovery_sets.find({"tenant_id": user["id"]}, {"_id": 0}).to_list(100)
     return sets
 
 @api_router.post("/discovery-sets")
-async def create_discovery_set(data: Dict[str, Any]):
+async def create_discovery_set(data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Create a new discovery set"""
     discovery_set = DiscoverySet(
         name=data.get("name", ""),
@@ -1007,21 +1008,22 @@ async def create_discovery_set(data: Dict[str, Any]):
     )
     doc = discovery_set.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['tenant_id'] = user["id"]
     await db.discovery_sets.insert_one(doc)
     return {"id": discovery_set.id, "status": "created"}
 
 @api_router.put("/discovery-sets/{set_id}")
-async def update_discovery_set(set_id: str, data: Dict[str, Any]):
+async def update_discovery_set(set_id: str, data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Update a discovery set"""
     update_data = {k: v for k, v in data.items() if k in ['name', 'keywords', 'locations', 'min_reviews', 'max_per_search', 'daily_limit']}
-    await db.discovery_sets.update_one({"id": set_id}, {"$set": update_data})
-    ds = await db.discovery_sets.find_one({"id": set_id}, {"_id": 0})
+    await db.discovery_sets.update_one({"id": set_id, "tenant_id": user["id"]}, {"$set": update_data})
+    ds = await db.discovery_sets.find_one({"id": set_id, "tenant_id": user["id"]}, {"_id": 0})
     return ds
 
 @api_router.delete("/discovery-sets/{set_id}")
-async def delete_discovery_set(set_id: str):
+async def delete_discovery_set(set_id: str, user: dict = Depends(get_current_user)):
     """Delete a discovery set"""
-    await db.discovery_sets.delete_one({"id": set_id})
+    await db.discovery_sets.delete_one({"id": set_id, "tenant_id": user["id"]})
     return {"status": "deleted"}
 
 # ----- Reset Daily Limits -----
