@@ -1,0 +1,21 @@
+business_name,category,city,state,phone,email,website,rating,reviews
+"Sunrise Plumbing Co","Plumber","Austin","TX","512-555-0101","contact@sunriseplumbing.com","sunriseplumbing.com",4.8,127
+"Elite HVAC Services","HVAC","Dallas","TX","214-555-0202","info@elitehvac.com","elitehvac.com",4.6,89
+"Green Lawn Care Pro","Landscaping","Houston","TX","713-555-0303","hello@greenlawnpro.com","greenlawnpro.com",4.9,203
+"Premier Electric LLC","Electrician","San Antonio","TX","210-555-0404","service@premierelectric.com","premierelectric.com",4.7,156
+"Crystal Clear Windows","Window Cleaning","Austin","TX","512-555-0505","info@crystalclearwin.com","crystalclearwin.com",4.5,67
+"Reliable Roofing Inc","Roofing","Fort Worth","TX","817-555-0606","contact@reliableroofing.com","reliableroofing.com",4.8,234
+"Swift Moving Services","Moving Company","Dallas","TX","214-555-0707","book@swiftmoving.com","swiftmoving.com",4.4,98
+"Pure Clean Carpets","Carpet Cleaning","Houston","TX","713-555-0808","schedule@pureclean.com","pureclean.com",4.6,145
+"Ace Pest Control","Pest Control","Austin","TX","512-555-0909","help@acepest.com","acepest.com",4.7,178
+"Golden Gate Painters","Painting","San Francisco","CA","415-555-1010","quote@goldengatepainters.com","goldengatepainters.com",4.9,312
+"Bay Area Concrete","Concrete","Oakland","CA","510-555-1111","info@bayareaconcrete.com","bayareaconcrete.com",4.5,89
+"Pacific Plumbers","Plumber","Los Angeles","CA","323-555-1212","service@pacificplumbers.com","pacificplumbers.com",4.6,267
+"SoCal Solar Solutions","Solar","San Diego","CA","619-555-1313","sales@socalsolar.com","socalsolar.com",4.8,423
+"Valley Pool Service","Pool Service","Phoenix","AZ","602-555-1414","info@valleypool.com","valleypool.com",4.7,156
+"Desert Landscaping","Landscaping","Scottsdale","AZ","480-555-1515","design@desertscape.com","desertscape.com",4.9,198
+"Mountain View HVAC","HVAC","Denver","CO","303-555-1616","cool@mountainviewhvac.com","mountainviewhvac.com",4.5,134
+"Mile High Electric","Electrician","Denver","CO","303-555-1717","power@milehighelectric.com","milehighelectric.com",4.8,267
+"Sunshine Cleaning Co","Commercial Cleaning","Miami","FL","305-555-1818","clean@sunshineco.com","sunshineco.com",4.6,189
+"Florida Fence Pros","Fencing","Orlando","FL","407-555-1919","build@floridafence.com","floridafence.com",4.7,145
+"Coastal Roofing","Roofing","Tampa","FL","813-555-2020","repair@coastalroof.com","coastalroof.com",4.8,278
