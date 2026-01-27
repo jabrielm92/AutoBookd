@@ -51,12 +51,14 @@ class AutonomousController:
             asyncio.create_task(self._run_learning_loop())
         ]
         
-        # Update status
-        await self.db.system_config.update_one(
-            {"id": "system_config"},
-            {"$set": {"is_running": True, "started_at": datetime.now(timezone.utc).isoformat()}},
-            upsert=True
-        )
+        # Update status (tenant-aware)
+        config = await self._get_config()
+        tenant_id = config.get("tenant_id")
+        if tenant_id:
+            await self.db.system_config.update_one(
+                {"tenant_id": tenant_id},
+                {"$set": {"is_running": True, "started_at": datetime.now(timezone.utc).isoformat()}}
+            )
         
         logger.info("Autonomous system started")
         return {"status": "started", "engines": ["discovery", "outreach", "follow_up", "learning"]}
@@ -69,9 +71,9 @@ class AutonomousController:
         for task in self._tasks:
             task.cancel()
         
-        # Update status
-        await self.db.system_config.update_one(
-            {"id": "system_config"},
+        # Update status (tenant-aware - stop all running configs)
+        await self.db.system_config.update_many(
+            {"is_running": True},
             {"$set": {"is_running": False, "stopped_at": datetime.now(timezone.utc).isoformat()}}
         )
         
@@ -79,16 +81,29 @@ class AutonomousController:
         return {"status": "stopped"}
     
     async def _get_config(self) -> Dict[str, Any]:
-        """Get system configuration"""
-        config = await self.db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+        """Get system configuration for the running tenant"""
+        # Find the config that's marked as running
+        config = await self.db.system_config.find_one({"is_running": True}, {"_id": 0})
+        if not config:
+            # Fallback to any config
+            config = await self.db.system_config.find_one({}, {"_id": 0})
         return config or {}
     
     async def _get_discovery_config(self) -> Dict[str, Any]:
-        """Get discovery configuration"""
-        config = await self.db.discovery_config.find_one({"id": "discovery_config"}, {"_id": 0})
+        """Get discovery configuration for current tenant"""
+        system_config = await self._get_config()
+        tenant_id = system_config.get("tenant_id")
+        
+        if tenant_id:
+            config = await self.db.discovery_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
+        else:
+            config = await self.db.discovery_config.find_one({}, {"_id": 0})
+        
         if not config:
             config = DEFAULT_DISCOVERY_CONFIG.copy()
-            config['id'] = 'discovery_config'
+            config['id'] = f'discovery_config_{tenant_id}' if tenant_id else 'discovery_config'
+            if tenant_id:
+                config['tenant_id'] = tenant_id
             await self.db.discovery_config.insert_one(config)
         return config
     
