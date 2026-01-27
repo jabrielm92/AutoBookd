@@ -41,7 +41,7 @@ class PipelineController:
     
     async def _get_email_finder(self):
         """Get the configured email finder (Hunter or Apollo) with API key from config"""
-        config = await self.db.system_config.find_one({"id": "system_config"})
+        config = await self._get_config()  # Uses tenant-aware _get_config
         provider = config.get("enrichment_provider", "hunter") if config else "hunter"
         
         if provider == "apollo":
