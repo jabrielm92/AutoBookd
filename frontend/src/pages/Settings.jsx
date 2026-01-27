@@ -316,15 +316,112 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
+        {/* Discovery Tab */}
+        <TabsContent value="discovery" className="space-y-6">
+          {/* Reset Daily Limits */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <RotateCcw className="w-5 h-5" />
+                Daily Scrape Limits
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Reset your daily scrape counter if you hit the limit
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800 border border-slate-700">
+                <div>
+                  <p className="text-sm text-slate-300">If your pipeline stopped due to daily limits, reset here to continue scraping.</p>
+                  <p className="text-xs text-slate-500 mt-1">Limits reset automatically at midnight UTC</p>
+                </div>
+                <Button 
+                  onClick={handleResetLimits} 
+                  disabled={resettingLimits}
+                  variant="outline"
+                  className="border-emerald-600 text-emerald-400 hover:bg-emerald-900/30"
+                  data-testid="reset-limits-btn"
+                >
+                  <RotateCcw className={`w-4 h-4 mr-2 ${resettingLimits ? 'animate-spin' : ''}`} />
+                  {resettingLimits ? 'Resetting...' : 'Reset Limits'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Discovery Sets */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <MapPin className="w-5 h-5" />
+                    Discovery Sets
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Define keywords and locations to scrape leads from
+                  </CardDescription>
+                </div>
+                <Button onClick={() => openSetDialog()} size="sm" className="bg-red-600 hover:bg-red-700">
+                  <Plus className="w-4 h-4 mr-1" />
+                  New Set
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {discoverySets.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <MapPin className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No discovery sets yet</p>
+                  <p className="text-sm">Create one to start finding leads</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {discoverySets.map((set) => (
+                    <div key={set.id} className="flex items-center justify-between p-4 rounded-lg bg-slate-800 border border-slate-700">
+                      <div className="flex-1">
+                        <p className="font-medium text-white">{set.name}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(set.keywords || []).slice(0, 3).map((kw, i) => (
+                            <Badge key={i} variant="outline" className="text-xs bg-slate-700 text-slate-300 border-slate-600">
+                              {kw}
+                            </Badge>
+                          ))}
+                          {(set.keywords || []).length > 3 && (
+                            <Badge variant="outline" className="text-xs bg-slate-700 text-slate-400 border-slate-600">
+                              +{set.keywords.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {(set.locations || []).join(', ').substring(0, 50)}{(set.locations || []).join(', ').length > 50 ? '...' : ''} • Limit: {set.daily_limit}/day
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => openSetDialog(set)} className="text-slate-400 hover:text-white">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteSet(set.id)} className="text-slate-400 hover:text-red-400">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* System Tab */}
         <TabsContent value="system" className="space-y-6">
-          <Card>
+          <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <SettingsIcon className="w-5 h-5" />
                 System Settings
               </CardTitle>
-              <CardDescription>Configure automation behavior</CardDescription>
+              <CardDescription className="text-slate-400">Configure automation behavior</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-6">
