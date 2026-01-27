@@ -158,7 +158,7 @@ export default function LandingPage() {
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
-          <p className="text-slate-500 text-sm mt-4">No credit card required • Cancel anytime</p>
+          <p className="text-slate-500 text-sm mt-4">Cancel anytime</p>
         </div>
       </section>
 
