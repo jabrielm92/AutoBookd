@@ -623,7 +623,7 @@ class PipelineController:
                 ]
                 
                 status_counts = await self.db.leads.aggregate(status_pipeline).to_list(20)
-                statuses = {item["_id"]: item["count"] for item in status_counts}
+                statuses = {str(item["_id"]): item["count"] for item in status_counts if item["_id"] is not None}
                 
                 contacted = statuses.get("outreach_sent", 0) + statuses.get("engaged", 0) + statuses.get("qualified", 0) + statuses.get("booked", 0)
                 replied = statuses.get("engaged", 0) + statuses.get("qualified", 0) + statuses.get("booked", 0)
