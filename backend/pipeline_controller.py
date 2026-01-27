@@ -77,8 +77,13 @@ class PipelineController:
         
         self.is_running = True
         
-        # Clear old activities
-        await self.db.pipeline_activity.delete_many({})
+        # Clear old activities for this tenant
+        config = await self._get_config()
+        tenant_id = config.get("tenant_id") if config else None
+        if tenant_id:
+            await self.db.pipeline_activity.delete_many({"tenant_id": tenant_id})
+        else:
+            await self.db.pipeline_activity.delete_many({})
         await self._log_activity("system", "Pipeline started", "success")
         
         # Start background tasks
