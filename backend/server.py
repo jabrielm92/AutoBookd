@@ -1249,11 +1249,13 @@ async def import_linkedin_lead(data: Dict[str, Any]):
 
 # ----- Scraping Endpoints -----
 @api_router.get("/scrape/config")
-async def get_scrape_config():
-    config = await db.scrape_config.find_one({"id": "scrape_config"}, {"_id": 0})
+async def get_scrape_config(user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    config = await db.scrape_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
     if not config:
         config = {
-            "id": "scrape_config",
+            "id": f"scrape_config_{tenant_id}",
+            "tenant_id": tenant_id,
             "keywords": ["accounting firm", "law firm", "plumber", "electrician", "HVAC", "roofing"],
             "locations": ["Philadelphia, PA"],
             "min_reviews": 5,
@@ -1264,13 +1266,18 @@ async def get_scrape_config():
     return config
 
 @api_router.put("/scrape/config")
-async def update_scrape_config(update: Dict[str, Any]):
+async def update_scrape_config(update: Dict[str, Any], user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    # Remove any tenant_id from update to prevent tampering
+    update.pop("tenant_id", None)
+    update.pop("id", None)
+    
     await db.scrape_config.update_one(
-        {"id": "scrape_config"},
-        {"$set": update},
+        {"tenant_id": tenant_id},
+        {"$set": update, "$setOnInsert": {"id": f"scrape_config_{tenant_id}", "tenant_id": tenant_id}},
         upsert=True
     )
-    return await db.scrape_config.find_one({"id": "scrape_config"}, {"_id": 0})
+    return await db.scrape_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
 
 @api_router.post("/scrape/now")
 async def scrape_now(keyword: str, location: str, limit: int = 20):
@@ -1291,16 +1298,19 @@ async def enrich_lead(lead_id: str):
     return result
 
 @api_router.post("/leads/{lead_id}/research")
-async def research_lead(lead_id: str):
+async def research_lead(lead_id: str, user: dict = Depends(get_current_user)):
     """Manually trigger AI research on a lead"""
     from lead_scraper import WebsiteScraper
     from ai_engine import AIResearchEngine
     
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    tenant_id = user["id"]
     
-    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+    lead = await db.leads.find_one({"id": lead_id, "tenant_id": tenant_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Get tenant's config for API keys
+    config = await db.system_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
     
     # Scrape website
     scraper = WebsiteScraper()
@@ -1308,13 +1318,14 @@ async def research_lead(lead_id: str):
     await scraper.close()
     
     # AI research
-    ai_engine = AIResearchEngine(config.get("openai_api_key"))
+    openai_key = config.get("openai_api_key") if config else None
+    ai_engine = AIResearchEngine(openai_key)
     research = await ai_engine.research_lead(lead, website_data)
     await ai_engine.close()
     
     # Update lead
     await db.leads.update_one(
-        {"id": lead_id},
+        {"id": lead_id, "tenant_id": tenant_id},
         {"$set": {
             "research": research,
             "website_data": {
