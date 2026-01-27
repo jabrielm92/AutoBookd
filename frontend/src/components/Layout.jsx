@@ -218,11 +218,6 @@ export default function Layout() {
 
             {/* Right Section - Minimal */}
             <div className="flex items-center gap-2">
-              {/* Theme Toggle */}
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="h-8 w-8 text-slate-300 hover:text-white">
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
-
               {/* Admin Button */}
               {user?.role === 'admin' && (
                 <Button
