@@ -57,10 +57,10 @@ const navItems = [
   { path: '/dashboard/leads', icon: Users, label: 'Leads' },
   { path: '/dashboard/pipeline', icon: Kanban, label: 'Pipeline' },
   { path: '/dashboard/conversations', icon: MessageSquare, label: 'Conversations' },
-  { path: '/discovery', icon: Target, label: 'Discovery' },
-  { path: '/bookings', icon: Calendar, label: 'Bookings' },
-  { path: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/dashboard/discovery', icon: Target, label: 'Discovery' },
+  { path: '/dashboard/bookings', icon: Calendar, label: 'Bookings' },
+  { path: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
+  { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
 
 function NavLinks({ mobile = false, onMobileClick }) {
