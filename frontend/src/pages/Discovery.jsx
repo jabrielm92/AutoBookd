@@ -82,6 +82,7 @@ export default function Discovery() {
     preferred_words: [],
     tone: 'professional',
     max_words: 150,
+    custom_prompt: '',
     rules: {
       no_exclamation_marks: false,
       always_include_question: true,
