@@ -888,14 +888,15 @@ async def start_system(
     }
 
 @api_router.post("/system/stop")
-async def stop_system():
+async def stop_system(user: dict = Depends(get_current_user)):
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     
     await pipeline.stop()
     
+    tenant_id = user["id"]
     await db.system_config.update_one(
-        {"id": "system_config"},
+        {"tenant_id": tenant_id},
         {"$set": {"is_running": False, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
