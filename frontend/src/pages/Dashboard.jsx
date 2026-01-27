@@ -111,9 +111,9 @@ export default function Dashboard() {
             <BookOpen className="w-4 h-4 mr-2" />
             Setup Guide
           </Button>
-          {testMode && (
+          {!autoSendEmails && isRunning && (
             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-              Test Mode Active
+              Drafts Only Mode
             </Badge>
           )}
           <div className={cn(
