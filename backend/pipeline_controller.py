@@ -40,10 +40,20 @@ class PipelineController:
         self.deliverability_tracker = DeliverabilityTracker(db)
     
     async def _get_email_finder(self):
-        """Get the configured email finder (Hunter or Apollo)"""
+        """Get the configured email finder (Hunter or Apollo) with API key from config"""
         config = await self.db.system_config.find_one({"id": "system_config"})
         provider = config.get("enrichment_provider", "hunter") if config else "hunter"
-        return self.apollo_finder if provider == "apollo" else self.hunter_finder
+        
+        if provider == "apollo":
+            api_key = config.get("apollo_api_key") if config else None
+            if api_key:
+                self.apollo_finder.set_api_key(api_key)
+            return self.apollo_finder
+        else:
+            api_key = config.get("hunter_api_key") if config else None
+            if api_key:
+                self.hunter_finder.set_api_key(api_key)
+            return self.hunter_finder
     
     async def _log_activity(self, stage: str, message: str, activity_type: str = "info", lead_name: str = None):
         """Log activity to database for real-time display"""
