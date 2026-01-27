@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [priorityLeads, setPriorityLeads] = useState([]);
   const [followUpLeads, setFollowUpLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
 
   useEffect(() => {
     fetchData();
