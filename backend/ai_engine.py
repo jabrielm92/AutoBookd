@@ -98,33 +98,38 @@ RULES:
             if rule_toggles.get('first_name_only'):
                 rules += "\n12. Use first name only (not Mr./Ms.)"
         
-        prompt = f"""You are a sales research assistant.
-{product_context}
-BUSINESS INFO:
-- Name: {lead.get('business_name')}
-- Industry: {lead.get('category')}
-- Location: {lead.get('city')}, {lead.get('state')}
-- Rating: {lead.get('rating')} ({lead.get('review_count')} reviews)
-- Website: {lead.get('website')}
+        prompt = f"""Analyze this business and provide sales intelligence for cold outreach.
 
-WEBSITE CONTENT:
+BUSINESS:
+- Name: {lead.get('business_name', 'Unknown')}
+- Category: {lead.get('category', 'General Business')}
+- Location: {lead.get('city', 'Unknown')}, {lead.get('state', '')}
+- Rating: {lead.get('rating', 'N/A')} stars ({lead.get('review_count', 0)} reviews)
+- Website: {lead.get('website', 'N/A')}
+
+WEBSITE DATA:
 {website_content}
 
-TASK:
-Analyze this business and identify how your solution can help them.
+{product_context}
+
 {rules}
 
-OUTPUT JSON:
+Analyze their business and return JSON:
 {{
-    "pain_point": "One specific operational pain they likely have",
-    "opportunity": "One specific way your solution could help them",
-    "opener": "A personalized first sentence that proves research",
-    "services": "Their main services (brief)",
-    "target_customer": "Who they serve",
-    "personalization_quality": "high/medium/low"
+    "pain_point": "Specific operational challenge they likely face (be concrete, not generic)",
+    "opportunity": "What improvement or solution would benefit them most",
+    "opener": "A personalized first line that references something SPECIFIC about their business (a service they offer, their location advantage, their reviews, etc.) - must prove you researched them",
+    "services": "What services/products they offer",
+    "target_customer": "Who their ideal customer is",
+    "unique_angle": "What makes this business different from competitors",
+    "personalization_quality": "high" | "medium" | "low"
 }}
 
-Return ONLY valid JSON, no markdown."""
+IMPORTANT: The opener must NOT use these generic phrases:
+- "I noticed your website"
+- "I came across your business"  
+- "I see you're in the [industry] space"
+Instead, reference something SPECIFIC like their service menu, a review theme, their location, or their specialty."""
 
         try:
             response = await self.http_client.post(
