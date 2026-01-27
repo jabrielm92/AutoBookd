@@ -530,10 +530,11 @@ class PipelineController:
                         lead=lead,
                         research=research,
                         sender_name=config.get("sender_name", "Team"),
-                        sender_company=config.get("sender_company", "ARI Solutions"),
+                        sender_company=config.get("sender_company", ""),
                         calendar_link=config.get("calendly_link"),
                         product=product,
-                        follow_up_days=config.get("follow_up_days", 2)
+                        follow_up_days=config.get("follow_up_days", 2),
+                        email_guidelines=config.get("email_guidelines")
                     )
                     
                     # Create sequence
