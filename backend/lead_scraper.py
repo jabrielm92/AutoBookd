@@ -1,7 +1,7 @@
 """
 Production Lead Scraping Engine
 - Google Maps via SerpAPI
-- Email enrichment via Hunter.io
+- Email enrichment via Hunter.io or Apollo.io
 - Website scraping via Playwright/httpx
 """
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 SERPAPI_KEY = os.environ.get('SERPAPI_KEY')
 HUNTER_API_KEY = os.environ.get('HUNTER_API_KEY')
+APOLLO_API_KEY = os.environ.get('APOLLO_API_KEY')
 
 
 class GoogleMapsScraper:
