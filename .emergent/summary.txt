@@ -1,152 +1,205 @@
 <analysis>**original_problem_statement:**
-The user wants to build a fully autonomous Intelligent Lead Automation System to handle lead discovery (Google Maps), enrichment (Hunter.io), AI-powered research and outreach, qualification, and calendar booking. The initial goal is to generate leads for the user's consulting business, with a long-term plan to offer it as a SaaS product. The system should be cost-effective and deployed on Vercel, Railway, and MongoDB under the domain .
+The user wants to transform the existing Intelligent Lead Automation System into a multi-tenant SaaS platform named AutoBookd.
 
-Key requirements include a 4-step email sequence, AI-based reply handling, a full-funnel analytics dashboard, bulk CSV import, bulk lead management, and highly configurable, context-aware email generation that avoids specific keywords like AI.
+**PRODUCT REQUIREMENTS:**
+1.  **Epic Landing Page:** Create a new landing page with sections for features, benefits, FAQ, and a contact form (using Resend to email ). The branding should be Made by ARI Solutions Inc. linking to .
+2.  **SaaS Authentication:** Implement a full authentication system including sign-up, login, and email verification with Resend.
+3.  **Subscription & Billing:**
+    *   Integrate Stripe for payments. Use the provided keys.
+    *   Create a pricing page with a 3-day free trial that converts to a single  subscription plan.
+4.  **Onboarding:** Create a detailed onboarding flow that guides new users on how to set up required accounts and obtain API keys for SerpAPI, Hunter.io, Apollo.io, Calendly, and OpenAI. Allow users to skip the tutorial.
+5.  **Multi-tenancy:** The entire application backend and frontend must be converted to support multiple tenants, ensuring data isolation.
+6.  **Admin Dashboard:**
+    *   Create a full admin page accessible only to the admin user ().
+    *   The dashboard should track all analytics, subscriptions, tenant info, sign-ups, payments, and data usage per tenant.
+    *   Provide full CRUD capabilities for the admin to manage tenants.
+7.  **Feature Enhancements:**
+    *   Integrate Apollo.io as an alternative enrichment provider to Hunter.io, with a toggle in the settings.
+    *   Implement an email warm-up scheduling feature.
+8.  **Deployment:** Configure the application for production deployment on Vercel (frontend), Railway (backend), and MongoDB Atlas using the provided credentials.
+9.  **Cleanup:** Remove the placeholder LinkedIn import functionality.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack React/FastAPI application with a production-grade pipeline for scraping (SerpAPI), enrichment (Hunter.io), and AI research (OpenAI/Playwright). The UI has been completely overhauled with a unique, professional midnight dark mode theme and a top navigation bar, removing all previous branding.
+The application has been transformed into a foundational multi-tenant SaaS platform. A new landing page, authentication flow (signup, login, email verification), pricing, onboarding, and legal pages have been created. The backend now supports multi-tenancy with JWT authentication and tenant-isolated data, although it was reverted to a local MongoDB instance due to SSL connection issues with the production MongoDB Atlas cluster in the preview environment.
 
-The core workflow has been consolidated into the Discovery page, which now acts as a central campaign hub. Users can create and save:
-1.  **Products/Services:** What they are selling.
-2.  **Discovery Sets:** Scraping configurations (keywords, locations).
-3.  **Email Guidelines:** Rules for the AI, such as forbidden words and tone.
-
-A Start Flow modal ensures the user selects a Product and a Discovery Set before initiating the pipeline. The application also features a robust Test Mode, bulk lead deletion, CSV import, and webhooks for Calendly and email replies. All previously reported bugs regarding UI, data fetching, and dark mode visibility have been fixed.
+The existing admin user () can log in and see an Admin button in the navbar. The core lead generation features (scraping, enrichment, outreach) are still functional but now operate within this new tenant-aware structure. The previously mocked LinkedIn functionality has been removed.
 
 **Last working item**:
-- **Last item agent was working:** Implementing a real-time progress modal for the pipeline. The agent began by creating a new  endpoint and started adding activity logging hooks into the  for the scraping and enrichment stages.
+- **Last item agent was working:** Starting the implementation of the Apollo.io enrichment enhancement and the email warm-up schedule. The agent began by adding an  class to  to serve as an alternative to Hunter.io.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
 - **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-  - **Issue 1:** The real-time progress modal is incomplete. (P0)
+  - **Issue 1:** The MongoDB Atlas connection fails with an SSL error in the preview environment. (P0)
 
   **Issues Detail:**
-  - **Issue 1:** The real-time progress modal is incomplete.
-     - **Attempted fixes:** The backend endpoint () and initial logging logic in  were created.
+  - **Issue 1:** MongoDB Atlas SSL Connection Failure
+     - **Attempted fixes:** The agent tried updating the connection string with  but the error persisted. As a workaround, the agent reverted  to use the local MongoDB instance () to allow development to continue.
      - **Next debug checklist:**
-        1.  **Backend:** Add  calls to the remaining loops in  (e.g., research, sequencing).
-        2.  **Frontend:** Create a new modal component ().
-        3.  Trigger this modal on the  page when the pipeline starts.
-        4.  Implement periodic fetching from the  endpoint inside the modal to display a live feed of pipeline activities.
-        5.  Design a visually engaging UI for the activity feed.
-     - **Why fix this issue and what will be achieved with the fix?** To provide the user with a real-time, interactive visual of the autonomous pipeline in action, which was a direct user request.
-     - **Status:** IN PROGRESS
+        1.  Investigate the specific SSL error () in the context of the container environment's Python and OpenSSL versions.
+        2.  Try alternative connection string parameters for PyMongo/MongoDB Atlas.
+        3.  For production, ensure the  contains the correct production  provided by the user, as this issue might be specific to the preview environment.
+     - **Why fix this issue and what will be achieved with the fix?** This is a hard blocker for production deployment. The application cannot connect to the production database without this fix.
+     - **Status:** BLOCKED
      - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** both
+     - **Should Test frontend/backend/both after fix?** backend
      - **Blocked on other issue:** None
 
 **In progress Task List**:
-  - **Task 1:** Complete Real-time Progress Modal (P0)
+  - **Task 1:** Implement Apollo.io Enrichment Enhancement (P0)
      - **Where to resume:**
-        - **Backend:** Finish adding  calls in .
-        - **Frontend:** Create the modal component and integrate it into .
-     - **What will be achieved with this?** A visually engaging real-time progress monitor for the lead generation pipeline.
+        1.  Complete the  class in .
+        2.  Modify  to dynamically choose between  and  based on a new setting.
+        3.  Update  to include a dropdown or toggle for the user to select their preferred enrichment provider (Hunter vs. Apollo).
+     - **What will be achieved with this?** Users will have the flexibility to choose their preferred data enrichment tool.
      - **Status:** IN PROGRESS
+     - **Should Test frontend/backend/both after fix?** both
+     - **Blocked on something:** None
+
+  - **Task 2:** Implement Email Warm-up Scheduling (P1)
+     - **Where to resume:**
+        1.  Modify  to include logic for a gradual sending schedule (e.g., start with X emails/day, increase by Y%).
+        2.  Add a new database model/collection to store warm-up schedules and progress per tenant.
+        3.  Create a new UI component in  to allow users to configure and enable/disable the warm-up schedule.
+     - **What will be achieved with this?** Protects user domain reputation by gradually increasing email sending volume.
+     - **Status:** NOT STARTED
      - **Should Test frontend/backend/both after fix?** both
      - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
-- **Task 1 (P1): ColdIQ Integration:** Integrate the user's external tool () for email optimization. This is blocked until the user provides API documentation or endpoints.
-- **Task 2 (P2): Finalize Deployment Guide:** Review and complete the  with step-by-step instructions for Vercel, Railway, and MongoDB Atlas.
+-   **Task 1 (P0):** Complete Stripe Subscription Integration. Hardcode the  subscription product. Wire the frontend  page to the backend  to create a checkout session and handle the webhook for subscription status updates.
+-   **Task 2 (P1):** Build Out Admin Dashboard. The  is currently a placeholder. It needs to be built out to fetch and display tenant information, subscription status, and data usage analytics from new backend admin endpoints.
+-   **Task 3 (P2):** Finalize Onboarding Flow. The  is a placeholder. It needs to be implemented with the step-by-step guide for acquiring API keys as requested by the user.
 
 **Future Tasks:**
-- Implement a feedback loop to auto-tune AI prompts based on performance.
-- Build multi-tenancy architecture to support the SaaS model.
-- Integrate Stripe for subscription billing.
-- Implement an Email Reputation Engine for domain warming.
-- Implement an Autonomous A/B Testing Engine for message optimization.
+-   **ColdIQ Integration:** Blocked until the user provides API documentation.
+-   **Feedback Loop:** Implement a system to auto-tune AI prompts based on email performance.
+-   **A/B Testing:** Build an autonomous engine for message optimization.
 
 **Completed work in this session**
-- **UI/UX Overhaul:** Replaced sidebar with a top navbar and implemented a unique midnight dark mode theme.
-- **Branding Removal:** Eradicated all Made with Emergent branding from the UI and code.
-- **Workflow Consolidation:** Moved all campaign-related configurations (Products, Discovery Sets, Email Rules) from Settings to a new tabbed interface on the Discovery page.
-- **Feature Implementation:**
-    - Bulk Lead Deletion & CSV Import.
-    - Product/Service Management system.
-    - Saved Discovery Sets.
-    - AI Email Guidelines (forbidden words, tone).
-    - Start Flow modal requiring Product & Discovery Set selection.
-- **Bug Fixes:**
-    - Fixed failed to fetch data error on the Bookings page.
-    - Resolved all dark mode text and background visibility issues.
-    - Corrected a number input bug on the Settings page.
+-   **SaaS Platform Conversion:**
+    -   Implemented multi-tenancy with JWT auth, user/tenant models, and tenant-id scoping on all major API endpoints.
+    -   Created a full suite of public-facing pages: Landing, Login, Signup, Verify Email, Pricing, Terms, and Privacy.
+    -   Created placeholder pages for Onboarding and Admin Dashboard.
+    -   Migrated existing data to the new  database under the admin tenant.
+-   **Leads Page Bug Fixes:**
+    -   **Root Cause:** The  Pydantic model in  was missing the  field, causing it to be stripped from API responses.
+    -   **Fix:** Added  to the  model, which resolved all dropdown filter issues.
+-   **Dashboard & Discovery Stats Fix:**
+    -   **Root Cause:** Pages were fetching from a stale  endpoint.
+    -   **Fix:** Switched data fetching to use a combination of  and the real-time  counts, and added auto-refreshing intervals while the pipeline is active.
+-   **UI Layout Fix:** Relocated the View Activity button in the navbar to prevent it from pushing other elements off-screen.
+-   **Feature Completion:**
+    -   Finished and tested the real-time progress modal.
+    -   Implemented and tested email open/click tracking.
+-   **Deployment & Cleanup:**
+    -   Created a comprehensive  for Vercel, Railway, and MongoDB Atlas.
+    -   Removed all code related to the mocked LinkedIn import feature.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend:** React, TailwindCSS, Shadcn/UI
-- **Backend:** FastAPI
-- **Database:** MongoDB
-- **Architecture:** Autonomous Agent System where a central controller orchestrates specialized modules. Campaigns are now configured as a combination of a Product, a Discovery Set, and Email Guidelines.
-- **Real-time UI:** The new task involves polling a backend endpoint to provide a live feed of activities to the user.
+-   **Frontend:** React, TailwindCSS, Shadcn/UI
+-   **Backend:** FastAPI, Pydantic
+-   **Database:** MongoDB
+-   **Architecture:** Multi-tenant SaaS. Data is isolated by a  on all major collections.
+-   **Authentication:** JWT-based, with access and refresh tokens stored in . Passwords are hashed with .
+-   **Payments:** Stripe for recurring subscriptions.
 
 **key DB schema**
-- **leads:** 
-- **system_config:** 
-- **products:** (new) 
-- **discovery_sets:** (new) 
-- **activity_log:** (new) 
+-   **users:** 
+-   **tenants:** 
+-   **leads:** 
+-   **sequences:** 
+-   **system_config:**  (and other collections are now tenant-scoped)
+-   **activity_log:** 
+
+**changes in tech stack**
+-   **Database:** Attempted migration to production **MongoDB Atlas**, but reverted to local MongoDB due to SSL errors. The production connection string is available in the chat history.
+-   **Payments:** **Stripe** has been added for subscription management.
+-   **Authentication:** **Passlib** and **python-jose** for JWT-based auth.
 
 **All files of reference**
--  (resume adding logs)
--  (reference for activity log endpoint)
--  (to trigger the new modal)
--  (reference for the consolidated workflow)
-- 
+-    (Heavily modified with new routes and multi-tenancy logic)
+-    (New file for all authentication logic)
+-    (New file for Stripe integration)
+-    (Being modified for Apollo.io integration)
+-    (Routes for all new pages)
+-    (Modified for auth state, logout, and admin button)
+-    (Needs to be updated for provider selection)
+-    (Contains instructions for production setup)
+-    (Contains Stripe keys)
+
+**Areas that need refactoring**
+-    has grown excessively large (over 1400 lines). The API routes should be broken down into separate files using  for better maintainability (e.g., , , ).
+
+**key api endpoints**
+-   : Create a new user and tenant.
+-   : Authenticate and receive JWT token.
+-   : Verify user's email.
+-   : Now requires authentication and only returns leads for the user's tenant.
+-   : Creates a Stripe checkout session.
+-   : Listens for events from Stripe.
 
 **Critical Info for New Agent**
-- The user is highly focused on cost efficiency (use as less credits as possible).
-- The Discovery page is now the single source of truth for all campaign configurations. The Settings page is only for system-level keys and parameters.
-- Your immediate priority is to build the frontend for the real-time progress modal and finish wiring the backend logging for it. This is a critical user-facing feature.
-- The ColdIQ integration is blocked pending API documentation from the user. Do not proceed with it.
-- A deployment guide has been started at .
+-   **PRODUCTION DEPLOYMENT IS BLOCKED** by the MongoDB Atlas SSL connection issue. For now, continue development using the local MongoDB instance. The production  is in chat history for when you are ready to tackle deployment.
+-   **Minimize credit usage.** The user has repeatedly emphasized efficiency. Limit testing to critical paths and rely on  and manual verification where possible instead of resource-intensive automated testing agents.
+-   The admin user is .
+-   Stripe integration is hardcoded for a single  plan as requested. Do not build a complex product management system in Stripe.
+-   The user has provided all necessary production keys for **Stripe** and **MongoDB Atlas**. They are in the chat history.
 
 **documents and test reports created in this job**
-- /app/memory/PRD.md
-- /app/DEPLOYMENT_GUIDE.md
+-    (Updated)
+-    (Overwritten)
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requested a real-time progress modal to visualize the pipeline's execution. (IN PROGRESS)
-2.  **User:** Confirmed the plan to move campaign settings to the Discovery page and requested a fix for a number input bug. (DONE)
-3.  **User:** Requested to consolidate all campaign settings (Products, Discovery, Email Rules) into the Discovery page for a unified workflow. (DONE)
-4.  **User:** Reported dark mode UI bugs (text/card colors) and requested removal of Made with Emergent branding. (DONE)
-5.  **User:** Confirmed the plan to add product management, discovery sets, email rules, and dark mode. (DONE)
-6.  **User:** Requested advanced AI controls in Settings: forbidden words and tone selection to ensure emails don't mention AI. (DONE)
-7.  **User:** Acknowledged agent's understanding of a large feature/UI overhaul request. (DONE)
-8.  **User:** Requested a major UI/UX overhaul: replace sidebar with navbar, fix failed to fetch on Bookings page, add bulk delete, CSV import, lead timestamps, and clickable discovery cards. (DONE)
-9.  **User:** Approved adding a Test Mode and completing P0/P1 tasks. (DONE)
-10. **Agent:** Confirmed understanding of the major UI/UX overhaul and feature request.
+1.  **User:** Requested Apollo.io integration, an email warm-up feature, hardcoded Stripe implementation, and a switch to the production MongoDB URL. (IN PROGRESS)
+2.  **Agent:** Confirmed understanding of the major SaaS transformation and asked clarifying questions. (DONE)
+3.  **User:** Provided Stripe/Mongo credentials and initiated the major SaaS transformation request (landing page, auth, multi-tenancy, admin panel, etc.). (IN PROGRESS)
+4.  **User:** Reported that not all dropdown filters on the leads page were working. (RESOLVED)
+5.  **Agent:** Finished fixing dashboard/discovery stats and layout issues, suggested an enhancement. (DONE)
+6.  **User:** Reported layout issues with the View Activity button and broken/non-updating stat cards on the Dashboard and Discovery pages, and broken filters on the Leads page. (RESOLVED)
+7.  **Agent:** Finished implementing email open/click tracking and suggested an enhancement for email warm-up. (DONE)
+8.  **User:** Approved the email tracking enhancement idea. (DONE)
+9.  **Agent:** Finished implementing the real-time progress modal and called the testing agent. (DONE)
+10. **User:** Approved the combined design for the progress modal and reiterated the need for efficiency and deployment readiness. (DONE)
 
 **Project Health Check:**
-- **Broken:** None.
-- **Mocked:** LinkedIn import functionality is a placeholder.
+- **Broken:** Production database connection ().
+- **Mocked:** Apollo.io integration is a placeholder until fully implemented.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4/5** (AI Research & Classification) — requires User LLM Key
-- **SerpAPI** (Google Maps Scraping) — requires User API Key
-- **Hunter.io** (Email Enrichment) — requires User API Key
-- **Resend** (Email Sending) — requires User API Key
-- **Playwright** (Website Scraping) - Integrated.
-- **ColdIQ** (Email Optimization) — Planned, blocked pending user-provided API.
-- **Calendly** (Booking) — Webhook integrated.
-- **Apollo.io** — Placeholder API key field added in settings.
+-   **OpenAI GPT-4/5** (AI Research) — requires User LLM Key
+-   **SerpAPI** (Google Maps Scraping) — requires User API Key
+-   **Hunter.io** (Email Enrichment) — requires User API Key
+-   **Apollo.io** (Email Enrichment) — **IN PROGRESS**, requires User API Key
+-   **Resend** (Transactional Emails & Outreach) — requires User API Key
+-   **Stripe** (Payments) — **IN PROGRESS**, requires User API Key (Provided)
+-   **Calendly** (Booking) — Webhook integrated.
 
 **Testing status**
-- **Testing agent used after significant changes:** NO
-- **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None
-- **Known regressions:** None
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None
+-   **Known regressions:** None
 
 **Credentials to test flow:**
-All necessary API keys (OpenAI, Resend, SerpAPI, Hunter.io) are stored in .
+-   **Admin User:**  (password was set during the session, can be reset if needed).
+-   **Stripe Keys:** Available in .
+-   **Production MongoDB Atlas URL:** Available in chat history (currently not in use due to SSL issue).
+-   **Other API Keys (Hunter, Serp, etc.):** Should be configured in the Settings page UI after logging in.
 
 **What agent forgot to execute**
-- The agent has not finished implementing the logging for all stages of the pipeline in . The research and sequencing loops still need logging hooks added.
-- The frontend component for the real-time progress modal has not been created.</analysis>
+-   The agent did not complete the Apollo.io integration; the pipeline still only uses Hunter.
+-   The agent did not start the email warm-up feature.
+-   The frontend pricing page is not yet connected to the backend Stripe service.
+-   The admin dashboard page is just a placeholder.
+-   The onboarding page is just a placeholder.
+-   The production MongoDB connection issue remains unresolved.</analysis>
