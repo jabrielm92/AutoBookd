@@ -198,23 +198,19 @@ export default function Settings() {
     <div className="space-y-6 max-w-4xl" data-testid="settings-page">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">System configuration and API keys</p>
+          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <p className="text-slate-400">System configuration and API keys</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={toggleDarkMode} data-testid="theme-toggle">
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-          <Button onClick={handleSave} disabled={saving} data-testid="save-settings-btn">
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={saving} data-testid="save-settings-btn" className="bg-red-600 hover:bg-red-700">
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? 'Saving...' : 'Save Changes'}
+        </Button>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-800">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="discovery">Discovery</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
         </TabsList>
@@ -222,18 +218,18 @@ export default function Settings() {
         {/* General Tab */}
         <TabsContent value="general" className="space-y-6">
           {/* Test Mode */}
-          <Card className={config?.test_mode ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20" : ""}>
+          <Card className={config?.test_mode ? "border-amber-500 bg-amber-950/20" : "bg-slate-900 border-slate-800"}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <TestTube className="w-5 h-5" />
                 Test Mode
                 {config?.test_mode && (
-                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                  <Badge variant="outline" className="bg-amber-900/50 text-amber-400 border-amber-700">
                     ACTIVE
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-400">
                 Simulate the full pipeline without sending real emails
               </CardDescription>
             </CardHeader>
