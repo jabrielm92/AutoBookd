@@ -465,21 +465,66 @@ export default function Settings() {
                   />
                   <p className="text-xs text-muted-foreground">Score for priority queue</p>
                 </div>
+                <div className="space-y-2">
+                  <Label>Follow-up Delay (Days)</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={config?.follow_up_days ?? 2}
+                    onChange={(e) => handleNumberChange('follow_up_days', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Days between follow-up emails</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Auto-Reply Settings */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Mail className="w-5 h-5" />
+                Auto-Reply Settings
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Configure how the system handles incoming replies
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800 border border-slate-700">
+                <div>
+                  <p className="font-medium text-white">AI Auto-Reply</p>
+                  <p className="text-sm text-slate-400">Let AI read and respond to replies automatically</p>
+                </div>
+                <Switch
+                  checked={config?.auto_reply_enabled ?? false}
+                  onCheckedChange={(checked) => setConfig({...config, auto_reply_enabled: checked})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Reply Domain</Label>
+                <Input
+                  value={config?.reply_domain || ''}
+                  onChange={(e) => setConfig({...config, reply_domain: e.target.value})}
+                  placeholder="replies.yourdomain.com"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+                <p className="text-xs text-slate-500">Configure MX records in Resend to receive replies</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Info */}
-          <Card className="bg-muted/50">
+          <Card className="bg-slate-800/50 border-slate-700">
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <AlertCircle className="w-5 h-5 text-primary" />
+                <div className="p-2 rounded-lg bg-red-900/30">
+                  <AlertCircle className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Campaign Configuration</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Products, Discovery Sets, and Email Rules are configured on the <strong>Discovery</strong> page.
+                  <h3 className="font-semibold text-white">Campaign Configuration</h3>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Products, Discovery Sets, and Email Guidelines are configured on the <strong className="text-white">Discovery</strong> page.
                     Use the Start button to select which product and target audience to use.
                   </p>
                 </div>
