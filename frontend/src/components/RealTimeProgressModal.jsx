@@ -103,10 +103,10 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col" data-testid="progress-modal">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col bg-slate-900 border-slate-800" data-testid="progress-modal">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-white">
               <div className="relative">
                 <Activity className="w-5 h-5" />
                 {isRunning && (
@@ -119,8 +119,8 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
               variant="outline" 
               className={cn(
                 isRunning 
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400" 
-                  : "bg-slate-100 text-slate-600"
+                  ? "bg-emerald-900/30 text-emerald-400 border-emerald-700" 
+                  : "bg-slate-800 text-slate-400 border-slate-700"
               )}
             >
               {isRunning ? 'Running' : 'Stopped'}
