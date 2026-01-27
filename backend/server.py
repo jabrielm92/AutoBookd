@@ -1711,36 +1711,37 @@ async def create_booking(booking_data: BookingCreate):
     return booking
 
 @api_router.get("/bookings", response_model=List[Booking])
-async def get_bookings(status: Optional[str] = None, limit: int = 50):
-    query = {}
+async def get_bookings(status: Optional[str] = None, limit: int = 50, user: dict = Depends(get_current_user)):
+    query = {"tenant_id": user["id"]}
     if status:
         query['status'] = status
     bookings = await db.bookings.find(query, {"_id": 0}).limit(limit).to_list(limit)
     return bookings
 
 @api_router.get("/bookings/{booking_id}", response_model=Booking)
-async def get_booking(booking_id: str):
-    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+async def get_booking(booking_id: str, user: dict = Depends(get_current_user)):
+    booking = await db.bookings.find_one({"id": booking_id, "tenant_id": user["id"]}, {"_id": 0})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     return booking
 
 @api_router.put("/bookings/{booking_id}", response_model=Booking)
-async def update_booking(booking_id: str, update_data: Dict[str, Any]):
+async def update_booking(booking_id: str, update_data: Dict[str, Any], user: dict = Depends(get_current_user)):
     if 'meeting_date' in update_data and isinstance(update_data['meeting_date'], str):
         update_data['meeting_date'] = datetime.fromisoformat(update_data['meeting_date'].replace('Z', '+00:00')).isoformat()
     
-    await db.bookings.update_one({"id": booking_id}, {"$set": update_data})
-    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    await db.bookings.update_one({"id": booking_id, "tenant_id": user["id"]}, {"$set": update_data})
+    booking = await db.bookings.find_one({"id": booking_id, "tenant_id": user["id"]}, {"_id": 0})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     return booking
 
 # ----- Analytics -----
 @api_router.get("/analytics", response_model=Analytics)
-async def get_analytics():
+async def get_analytics(user: dict = Depends(get_current_user)):
+    tenant_filter = {"tenant_id": user["id"]}
     # Total leads
-    total_leads = await db.leads.count_documents({})
+    total_leads = await db.leads.count_documents(tenant_filter)
     
     # Leads by status
     pipeline = [
