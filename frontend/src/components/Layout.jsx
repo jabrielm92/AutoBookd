@@ -304,8 +304,8 @@ export default function Layout() {
               isRunning ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
             )} />
             {isRunning ? "Pipeline Active" : "Pipeline Idle"}
-            {isRunning && testMode && (
-              <span className="ml-1 text-amber-400 text-xs">(TEST)</span>
+            {isRunning && !autoSendEmails && (
+              <span className="ml-1 text-amber-400 text-xs">(Drafts Only)</span>
             )}
           </div>
           
