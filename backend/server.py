@@ -380,7 +380,357 @@ def calculate_lead_score(lead: dict) -> tuple[int, dict]:
     
     return max(0, min(100, score)), breakdown
 
+# ============== AUTH MODELS ==============
+class UserSignup(BaseModel):
+    email: str
+    password: str
+    name: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class ContactForm(BaseModel):
+    name: str
+    email: str
+    message: str
+
+# ============== AUTH HELPER ==============
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    payload = decode_token(credentials.credentials)
+    user_id = payload.get("sub")
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return user
+
+async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        return None
+    try:
+        return await get_current_user(credentials)
+    except:
+        return None
+
+def get_user_tenant_filter(user: dict) -> dict:
+    """Get MongoDB filter for user's data (tenant isolation)"""
+    if is_admin(user):
+        return {}  # Admin sees all
+    return {"tenant_id": user["id"]}
+
 # ============== API ROUTES ==============
+
+# ----- Auth Routes -----
+@api_router.post("/auth/signup")
+async def signup(data: UserSignup, background_tasks: BackgroundTasks):
+    # Check if user exists
+    existing = await db.users.find_one({"email": data.email.lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user
+    user = create_user_dict(data.email, data.password, data.name)
+    await db.users.insert_one(user)
+    
+    # Get resend API key from system config
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    resend_key = config.get("resend_api_key") if config else None
+    
+    # Send verification email
+    background_tasks.add_task(
+        send_verification_email, 
+        data.email, 
+        user["verification_token"],
+        resend_key
+    )
+    
+    return {"message": "Account created. Please check your email to verify.", "user_id": user["id"]}
+
+@api_router.post("/auth/login")
+async def login(data: UserLogin):
+    user = await db.users.find_one({"email": data.email.lower()})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    if not verify_password(data.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    if not user.get("email_verified"):
+        raise HTTPException(status_code=403, detail="Please verify your email first")
+    
+    # Update last login
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    token = create_access_token({"sub": user["id"], "email": user["email"]})
+    
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+            "role": user.get("role", "user"),
+            "subscription_status": user.get("subscription_status", "none"),
+            "onboarding_completed": user.get("onboarding_completed", False)
+        }
+    }
+
+@api_router.get("/auth/verify-email")
+async def verify_email(token: str):
+    user = await db.users.find_one({"verification_token": token})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"email_verified": True, "verification_token": None}}
+    )
+    
+    return {"message": "Email verified successfully"}
+
+@api_router.get("/auth/me")
+async def get_me(user: dict = Depends(get_current_user)):
+    return {
+        "id": user["id"],
+        "email": user["email"],
+        "name": user["name"],
+        "role": user.get("role", "user"),
+        "subscription_status": user.get("subscription_status", "none"),
+        "trial_ends_at": user.get("trial_ends_at"),
+        "subscription_ends_at": user.get("subscription_ends_at"),
+        "onboarding_completed": user.get("onboarding_completed", False),
+        "api_keys": {k: bool(v) for k, v in user.get("api_keys", {}).items()}  # Return which keys are set, not values
+    }
+
+@api_router.post("/auth/resend-verification")
+async def resend_verification(email: str, background_tasks: BackgroundTasks):
+    user = await db.users.find_one({"email": email.lower()})
+    if not user:
+        return {"message": "If email exists, verification link sent"}
+    
+    if user.get("email_verified"):
+        return {"message": "Email already verified"}
+    
+    new_token = generate_verification_token()
+    await db.users.update_one({"id": user["id"]}, {"$set": {"verification_token": new_token}})
+    
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    resend_key = config.get("resend_api_key") if config else None
+    
+    background_tasks.add_task(send_verification_email, email, new_token, resend_key)
+    
+    return {"message": "If email exists, verification link sent"}
+
+# ----- Contact Form -----
+@api_router.post("/contact")
+async def submit_contact(data: ContactForm, background_tasks: BackgroundTasks):
+    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    resend_key = config.get("resend_api_key") if config else None
+    
+    background_tasks.add_task(send_contact_email, data.name, data.email, data.message, resend_key)
+    
+    # Store in DB for admin
+    await db.contact_submissions.insert_one({
+        "id": str(uuid.uuid4()),
+        "name": data.name,
+        "email": data.email,
+        "message": data.message,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Message sent successfully"}
+
+# ----- Stripe Routes -----
+@api_router.post("/stripe/create-checkout")
+async def create_checkout(user: dict = Depends(get_current_user)):
+    import stripe_service
+    
+    # Create Stripe customer if not exists
+    if not user.get("stripe_customer_id"):
+        customer_id = await stripe_service.create_stripe_customer(user["email"], user["name"])
+        await db.users.update_one({"id": user["id"]}, {"$set": {"stripe_customer_id": customer_id}})
+    else:
+        customer_id = user["stripe_customer_id"]
+    
+    base_url = os.environ.get("TRACKING_BASE_URL", "http://localhost:3000")
+    
+    checkout_url = await stripe_service.create_checkout_session(
+        customer_id=customer_id,
+        user_id=user["id"],
+        success_url=f"{base_url}/onboarding?payment=success",
+        cancel_url=f"{base_url}/pricing?payment=cancelled"
+    )
+    
+    return {"checkout_url": checkout_url}
+
+@api_router.post("/stripe/portal")
+async def create_portal(user: dict = Depends(get_current_user)):
+    import stripe_service
+    
+    if not user.get("stripe_customer_id"):
+        raise HTTPException(status_code=400, detail="No subscription found")
+    
+    base_url = os.environ.get("TRACKING_BASE_URL", "http://localhost:3000")
+    portal_url = await stripe_service.create_portal_session(
+        user["stripe_customer_id"],
+        f"{base_url}/settings"
+    )
+    
+    return {"portal_url": portal_url}
+
+@api_router.post("/stripe/webhook")
+async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
+    import stripe_service
+    
+    payload = await request.body()
+    
+    try:
+        event = stripe_service.handle_webhook_event(payload, stripe_signature)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Handle events
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        user_id = session.get("metadata", {}).get("user_id")
+        if user_id:
+            await db.users.update_one(
+                {"id": user_id},
+                {"$set": {
+                    "subscription_status": "trial",
+                    "subscription_id": session.get("subscription"),
+                    "trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+                }}
+            )
+    
+    elif event["type"] == "customer.subscription.updated":
+        sub = event["data"]["object"]
+        user = await db.users.find_one({"stripe_customer_id": sub["customer"]})
+        if user:
+            status = "active" if sub["status"] == "active" else sub["status"]
+            if sub.get("cancel_at_period_end"):
+                status = "cancelled"
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {
+                    "subscription_status": status,
+                    "subscription_ends_at": datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc).isoformat()
+                }}
+            )
+    
+    elif event["type"] == "customer.subscription.deleted":
+        sub = event["data"]["object"]
+        user = await db.users.find_one({"stripe_customer_id": sub["customer"]})
+        if user:
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"subscription_status": "expired"}}
+            )
+    
+    return {"received": True}
+
+# ----- Onboarding Routes -----
+@api_router.put("/user/api-keys")
+async def update_api_keys(keys: Dict[str, Optional[str]], user: dict = Depends(get_current_user)):
+    update_dict = {}
+    for key, value in keys.items():
+        if key in ["serpapi", "hunter", "apollo", "openai", "calendly", "resend"]:
+            update_dict[f"api_keys.{key}"] = value
+    
+    if update_dict:
+        await db.users.update_one({"id": user["id"]}, {"$set": update_dict})
+    
+    return {"message": "API keys updated"}
+
+@api_router.post("/user/complete-onboarding")
+async def complete_onboarding(user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"onboarding_completed": True}}
+    )
+    return {"message": "Onboarding completed"}
+
+# ----- Admin Routes -----
+@api_router.get("/admin/users")
+async def admin_get_users(user: dict = Depends(get_current_user)):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(500)
+    
+    # Add data usage stats for each user
+    for u in users:
+        lead_count = await db.leads.count_documents({"tenant_id": u["id"]})
+        u["lead_count"] = lead_count
+    
+    return users
+
+@api_router.get("/admin/analytics")
+async def admin_get_analytics(user: dict = Depends(get_current_user)):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    total_users = await db.users.count_documents({})
+    verified_users = await db.users.count_documents({"email_verified": True})
+    subscribed_users = await db.users.count_documents({"subscription_status": {"$in": ["trial", "active"]}})
+    total_leads = await db.leads.count_documents({})
+    total_emails = await db.sequences.count_documents({})
+    
+    # Recent signups
+    recent_signups = await db.users.find(
+        {}, 
+        {"_id": 0, "password_hash": 0}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    return {
+        "total_users": total_users,
+        "verified_users": verified_users,
+        "subscribed_users": subscribed_users,
+        "total_leads": total_leads,
+        "total_email_sequences": total_emails,
+        "recent_signups": recent_signups
+    }
+
+@api_router.get("/admin/subscriptions")
+async def admin_get_subscriptions(user: dict = Depends(get_current_user)):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    import stripe_service
+    subscriptions = await stripe_service.get_all_subscriptions()
+    return subscriptions
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, user: dict = Depends(get_current_user)):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Delete user's data
+    await db.leads.delete_many({"tenant_id": user_id})
+    await db.sequences.delete_many({"tenant_id": user_id})
+    await db.conversations.delete_many({"tenant_id": user_id})
+    await db.users.delete_one({"id": user_id})
+    
+    return {"message": "User and all data deleted"}
+
+@api_router.get("/admin/contact-submissions")
+async def admin_get_contacts(user: dict = Depends(get_current_user)):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    submissions = await db.contact_submissions.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return submissions
 
 # ----- System Config -----
 @api_router.get("/config", response_model=SystemConfig)
