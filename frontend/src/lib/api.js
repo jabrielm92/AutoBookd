@@ -122,6 +122,9 @@ export const getFollowUpQueue = (limit) => api.get('/queue/follow-up', { params:
 export const getAnalytics = () => api.get('/analytics');
 export const getTrackingStats = () => api.get('/tracking/stats');
 
+// Subscription
+export const getMySubscription = () => api.get('/stripe/my-subscription');
+
 // Health
 export const healthCheck = () => api.get('/health');
 
