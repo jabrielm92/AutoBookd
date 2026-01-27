@@ -237,20 +237,15 @@ export default function Leads() {
     }
   };
 
+  // Filter happens client-side on already fetched data (backend already filtered by statusFilter)
   const filteredLeads = leads.filter(lead => {
+    if (!searchTerm) return true;
     const matchesSearch = 
       lead.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (statusFilter === 'all') return matchesSearch;
-    
-    // Check both status and pipeline_stage
-    return matchesSearch && (
-      lead.status === statusFilter || 
-      lead.pipeline_stage === statusFilter
-    );
+    return matchesSearch;
   });
 
   const getScoreBadgeClass = (score) => {
@@ -468,8 +463,9 @@ export default function Leads() {
         </Button>
       </div>
 
-      {/* Leads Table */}
-      <Card>
+      {/* Leads - Desktop Table / Mobile Cards */}
+      {/* Desktop Table */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <table className="data-table">
             <thead>
@@ -526,7 +522,7 @@ export default function Leads() {
                       {lead.email ? (
                         <div className="flex items-center gap-1.5 text-sm">
                           <Mail className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-slate-700 dark:text-slate-200">{lead.email}</span>
+                          <span className="text-slate-700 dark:text-slate-200 truncate max-w-[150px]">{lead.email}</span>
                         </div>
                       ) : (
                         <span className="text-xs text-slate-400 dark:text-slate-500 italic">No email</span>
@@ -604,6 +600,98 @@ export default function Leads() {
           </table>
         </CardContent>
       </Card>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filteredLeads.map((lead) => (
+          <Card key={lead.id} className="bg-slate-900 border-slate-800" data-testid={`lead-card-${lead.id}`}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <Checkbox
+                    checked={selectedIds.has(lead.id)}
+                    onCheckedChange={() => toggleSelect(lead.id)}
+                    className="mt-1"
+                  />
+                  <div className={cn("score-badge flex-shrink-0", getScoreBadgeClass(lead.lead_score))}>
+                    {lead.lead_score || 0}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white truncate">{lead.business_name}</p>
+                    <p className="text-xs text-slate-400">{lead.category}</p>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setSelectedLead(lead)}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleUpdateStatus(lead.id, 'qualified')}>
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      Mark Qualified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              <div className="mt-3 space-y-2 text-sm">
+                {lead.email && (
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <Mail className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <span className="truncate">{lead.email}</span>
+                  </div>
+                )}
+                {lead.phone && (
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{lead.phone}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-slate-400">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{lead.city}{lead.state && `, ${lead.state}`}</span>
+                </div>
+                {lead.website && (
+                  <a 
+                    href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-blue-400 hover:underline"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">{lead.website.replace(/^https?:\/\//, '')}</span>
+                  </a>
+                )}
+              </div>
+              
+              <div className="mt-3 flex items-center justify-between">
+                <Badge className={cn(
+                  "text-xs",
+                  lead.pipeline_stage ? `status-${lead.pipeline_stage.replace(/_/g, '')}` : `status-${lead.status}`
+                )}>
+                  {pipelineLabels[lead.pipeline_stage] || statusLabels[lead.status] || lead.status}
+                </Badge>
+                <span className="text-xs text-slate-500">{formatDate(lead.created_at)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {filteredLeads.length === 0 && (
+          <div className="text-center py-12 text-slate-400">
+            {loading ? 'Loading...' : 'No leads found'}
+          </div>
+        )}
+      </div>
 
       {/* Lead Detail Dialog */}
       <Dialog open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
