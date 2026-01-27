@@ -67,15 +67,23 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] Stripe checkout integration
 - [x] Trial messaging
 
-### Onboarding Wizard ✅ (NEW)
-- [x] Step-by-step API key setup
-- [x] SerpAPI instructions
-- [x] Hunter.io instructions
-- [x] Apollo.io instructions (optional)
-- [x] Calendly setup
-- [x] OpenAI setup
-- [x] Skip option for each step
-- [x] Progress indicators
+### Onboarding Wizard ✅ (Updated Jan 27, 2025)
+- [x] Comprehensive SetupGuide component
+- [x] Collapsible cards for each integration
+- [x] Quick Start section (minimum required APIs)
+- [x] SerpAPI instructions with link
+- [x] Hunter.io instructions with link
+- [x] Apollo.io instructions (optional) with link
+- [x] OpenAI instructions with link
+- [x] Resend instructions with link
+- [x] Calendly setup with link
+- [x] Auto-Reply setup detailed guide
+- [x] DNS configuration guide for GoDaddy/Resend
+- [x] Inbound webhook setup instructions
+- [x] Free tier information for each service
+- [x] "Go to Settings" button
+- [x] Skip setup option
+- [x] Setup Guide accessible from Dashboard via modal
 
 ### Admin Dashboard ✅ (NEW)
 - [x] Overview tab with recent signups
