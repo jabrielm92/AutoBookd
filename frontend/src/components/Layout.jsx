@@ -17,7 +17,9 @@ import {
   Zap,
   Moon,
   Sun,
-  Activity
+  Activity,
+  Shield,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -36,6 +38,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -44,10 +53,10 @@ import { toast } from 'sonner';
 import RealTimeProgressModal from './RealTimeProgressModal';
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/leads', icon: Users, label: 'Leads' },
-  { path: '/pipeline', icon: Kanban, label: 'Pipeline' },
-  { path: '/conversations', icon: MessageSquare, label: 'Conversations' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/dashboard/leads', icon: Users, label: 'Leads' },
+  { path: '/dashboard/pipeline', icon: Kanban, label: 'Pipeline' },
+  { path: '/dashboard/conversations', icon: MessageSquare, label: 'Conversations' },
   { path: '/discovery', icon: Target, label: 'Discovery' },
   { path: '/bookings', icon: Calendar, label: 'Bookings' },
   { path: '/analytics', icon: BarChart3, label: 'Analytics' },
