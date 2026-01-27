@@ -137,34 +137,34 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
               <div
                 key={stage.key}
                 className={cn(
-                  "flex flex-col items-center justify-center p-3 rounded-lg border",
+                  "flex flex-col items-center justify-center p-3 rounded-lg border border-slate-700",
                   config.bg
                 )}
                 data-testid={`stage-${stage.key}`}
               >
                 <Icon className={cn("w-5 h-5 mb-1", config.color)} />
-                <span className="text-2xl font-bold">{stage.count}</span>
-                <span className="text-xs text-muted-foreground">{stage.label}</span>
+                <span className="text-2xl font-bold text-white">{stage.count}</span>
+                <span className="text-xs text-slate-400">{stage.label}</span>
               </div>
             );
           })}
         </div>
 
         {/* Activity Feed */}
-        <div className="flex-1 min-h-0 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
-          <div className="p-2 border-b bg-white dark:bg-slate-950 rounded-t-lg flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">ACTIVITY LOG</span>
-            <span className="text-xs text-muted-foreground">{activities.length} events</span>
+        <div className="flex-1 min-h-0 border border-slate-700 rounded-lg bg-slate-950">
+          <div className="p-2 border-b border-slate-700 bg-slate-900 rounded-t-lg flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-400">ACTIVITY LOG</span>
+            <span className="text-xs text-slate-500">{activities.length} events</span>
           </div>
           <ScrollArea className="h-[300px]" ref={scrollRef}>
             <div className="p-2 space-y-1 font-mono text-xs">
               {loading ? (
-                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <div className="flex items-center justify-center py-8 text-slate-500">
                   <Activity className="w-4 h-4 mr-2 animate-spin" />
                   Loading activities...
                 </div>
               ) : activities.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-8 text-slate-500">
                   <Activity className="w-8 h-8 mb-2 opacity-50" />
                   <p>No activities yet</p>
                   <p className="text-xs">Start the pipeline to see real-time updates</p>
@@ -181,23 +181,23 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
                       key={activity.id || idx}
                       className={cn(
                         "flex items-start gap-2 p-2 rounded transition-colors",
-                        activity.type === 'success' && "bg-emerald-50/50 dark:bg-emerald-900/10",
-                        activity.type === 'error' && "bg-red-50/50 dark:bg-red-900/10",
-                        activity.type === 'warning' && "bg-amber-50/50 dark:bg-amber-900/10"
+                        activity.type === 'success' && "bg-emerald-900/20",
+                        activity.type === 'error' && "bg-red-900/20",
+                        activity.type === 'warning' && "bg-amber-900/20"
                       )}
                       data-testid={`activity-${idx}`}
                     >
-                      <span className="text-slate-400 dark:text-slate-600 flex-shrink-0">
+                      <span className="text-slate-500 flex-shrink-0">
                         {formatTime(activity.timestamp)}
                       </span>
                       <div className={cn("flex-shrink-0 p-1 rounded", stageConf.bg)}>
                         <StageIcon className={cn("w-3 h-3", stageConf.color)} />
                       </div>
                       <TypeIcon className={cn("w-3.5 h-3.5 flex-shrink-0 mt-0.5", typeColor)} />
-                      <span className="flex-1 text-slate-700 dark:text-slate-300">
+                      <span className="flex-1 text-slate-300">
                         {activity.message}
                         {activity.lead_name && (
-                          <span className="ml-1 text-slate-500 dark:text-slate-500">
+                          <span className="ml-1 text-slate-500">
                             [{activity.lead_name}]
                           </span>
                         )}
