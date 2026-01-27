@@ -211,15 +211,29 @@ export default function Conversations() {
                     ? "bg-primary text-primary-foreground rounded-br-md"
                     : "bg-muted rounded-bl-md"
                 )}>
-                  <p className="text-sm break-words">{message.content}</p>
-                  <p className={cn(
-                    "text-xs mt-1",
-                    message.direction === 'outbound' 
-                      ? "text-primary-foreground/70" 
-                      : "text-muted-foreground"
-                  )}>
-                    {format(new Date(message.timestamp), 'h:mm a')}
-                  </p>
+                  <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className={cn(
+                      "text-xs",
+                      message.direction === 'outbound' 
+                        ? "text-primary-foreground/70" 
+                        : "text-muted-foreground"
+                    )}>
+                      {format(new Date(message.timestamp), 'h:mm a')}
+                      {message.status === 'draft' && <span className="ml-2 text-amber-300">(Draft)</span>}
+                    </p>
+                    {message.direction === 'outbound' && message.status !== 'sent' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => handleEditEmail(message, conv.lead_id)}
+                      >
+                        <Edit3 className="w-3 h-3 mr-1" />
+                        Edit & Send
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
