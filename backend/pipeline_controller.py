@@ -130,18 +130,24 @@ class PipelineController:
         return config or {}
     
     async def _get_scrape_config(self) -> Dict[str, Any]:
-        """Get scraping configuration"""
-        config = await self.db.scrape_config.find_one({"id": "scrape_config"}, {"_id": 0})
+        """Get scraping configuration for active tenant"""
+        # Get the running config's tenant
+        system_config = await self._get_config()
+        tenant_id = system_config.get("tenant_id")
+        
+        if tenant_id:
+            config = await self.db.scrape_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
+        else:
+            config = await self.db.scrape_config.find_one({}, {"_id": 0})
+        
         if not config:
             config = {
-                "id": "scrape_config",
-                "keywords": ["accounting firm", "law firm", "plumber", "electrician", "HVAC"],
-                "locations": ["Philadelphia, PA"],
-                "min_reviews": 5,
+                "keywords": [],
+                "locations": [],
+                "daily_limit": 100,
                 "max_per_search": 20,
-                "daily_limit": 100
+                "min_reviews": 5
             }
-            await self.db.scrape_config.insert_one(config)
         return config
     
     # ==================== SCRAPING LOOP ====================
