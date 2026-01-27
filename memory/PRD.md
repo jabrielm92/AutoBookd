@@ -1,9 +1,9 @@
-# AutoBookd - AI-Powered Lead Automation
+# AutoBookd - AI-Powered Lead Automation SaaS
 
 ## Product Overview
-AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. that:
+AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 1. Discovers leads via Google Maps (SerpAPI) 
-2. Enriches with email finding (Hunter.io)
+2. Enriches with email finding (Hunter.io + Apollo)
 3. AI-researches websites to find pain points
 4. Sends hyper-personalized email sequences via Resend
 5. Classifies replies and triggers auto-booking
@@ -11,131 +11,186 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine for ARI Solutions Inc. tha
 
 **Domain**: autobookd.arisolutionsinc.com
 **Company**: ARI Solutions Inc.
+**Admin**: jabriel@arisolutionsinc.com
 
-## What's Been Implemented (Jan 26, 2025)
+---
 
-### Real-Time Progress Modal ✅ (NEW)
-- [x] Stage progress cards showing counts (Scraped, Enriched, Researched, In Sequence)
-- [x] Auto-scrolling activity log with timestamps
-- [x] Color-coded stage icons (Search, Mail, Brain, Send)
-- [x] Success/Error/Warning indicators per activity
+## What's Been Implemented (Jan 27, 2025)
+
+### Multi-Tenancy SaaS Platform ✅ (NEW)
+- [x] User authentication (signup, login, email verification)
+- [x] JWT-based session management
+- [x] Tenant data isolation (each user owns their data)
+- [x] Admin role with full access
+- [x] User profile management
+
+### Landing Page ✅ (NEW)
+- [x] Epic hero section with red ocean gradient theme
+- [x] Features showcase
+- [x] "How it works" section
+- [x] Pricing section ($29.99/month)
+- [x] FAQ accordion
+- [x] Contact form (emails to autobookd@arisolutionsinc.com via Resend)
+- [x] ARI Solutions Inc. branding with link
+
+### Auth System ✅ (NEW)
+- [x] Signup page with email/password
+- [x] Login page with redirect to dashboard
+- [x] Email verification via Resend
+- [x] Password hashing with bcrypt
+- [x] Protected routes
+
+### Stripe Integration ✅ (NEW)
+- [x] Checkout session creation
+- [x] 3-day free trial
+- [x] $29.99/month subscription
+- [x] Webhook handling for subscription events
+- [x] Billing portal integration
+- [x] Subscription status tracking
+
+### Pricing Page ✅ (NEW)
+- [x] Feature list display
+- [x] Stripe checkout integration
+- [x] Trial messaging
+
+### Onboarding Wizard ✅ (NEW)
+- [x] Step-by-step API key setup
+- [x] SerpAPI instructions
+- [x] Hunter.io instructions
+- [x] Apollo.io instructions (optional)
+- [x] Calendly setup
+- [x] OpenAI setup
+- [x] Skip option for each step
+- [x] Progress indicators
+
+### Admin Dashboard ✅ (NEW)
+- [x] Overview tab with recent signups
+- [x] Users tab with full CRUD
+- [x] Subscriptions tab (Stripe data)
+- [x] Contact submissions tab
+- [x] Per-user lead counts
+- [x] Delete user with all data
+- [x] Admin button in navbar
+
+### Legal Pages ✅ (NEW)
+- [x] Terms of Service
+- [x] Privacy Policy
+
+### User Experience ✅ (NEW)
+- [x] User dropdown menu in navbar
+- [x] Logout functionality
+- [x] Admin badge for admin users
+- [x] Automatic redirect to login when unauthenticated
+
+### Real-Time Progress Modal ✅
+- [x] Stage progress cards (Scraped, Enriched, Researched, In Sequence)
+- [x] Auto-scrolling activity log
+- [x] Color-coded stage icons
 - [x] Auto-refresh every 2 seconds
-- [x] "View Activity" button in navbar when pipeline is running
-- [x] Activity logging in all pipeline loops (scrape, enrich, research, sequence, analytics)
 
-### Email Open/Click Tracking ✅ (NEW)
-- [x] Tracking pixel injection for open tracking
-- [x] Link wrapping with click tracking and redirect
-- [x] /api/track/open/{tracking_id} - returns 1x1 GIF
-- [x] /api/track/click/{tracking_id} - redirects to original URL
-- [x] /api/tracking/stats - engagement statistics
-- [x] Analytics page shows: Sent, Open Rate, Click Rate, Bounce Rate
-- [x] "Most Engaged Leads" section showing opens/clicks per lead
-- [x] Tracking data stored in email_tracking collection
+### Email Open/Click Tracking ✅
+- [x] Tracking pixel injection
+- [x] Link click tracking with redirect
+- [x] Engagement statistics in Analytics page
+- [x] "Most Engaged Leads" section
 
-### Dashboard & Stats Auto-Refresh ✅ (FIXED)
-- [x] Dashboard cards now use /api/pipeline/activity for accurate counts
-- [x] Auto-refresh every 5 seconds when pipeline is running
-- [x] Niche Performance computed from actual lead categories
-- [x] Discovery page cards also use live pipeline counts
-- [x] "View Activity" button placement fixed (next to Stop button)
-
-### Leads Filter ✅ (FIXED)
-- [x] Backend supports both `status` and `pipeline_stage` filtering
-- [x] Frontend correctly distinguishes pipeline stages vs lead statuses
-- [x] Added `pipeline_stage` field to Lead Pydantic model (was missing)
-- [x] Added email tracking fields to Lead model (email_opens, email_clicks, etc.)
-
-### UI/UX Overhaul ✅
-- [x] Top Navbar instead of sidebar
-- [x] Clean "Swiss Utility" design
-- [x] Dark Mode with rich midnight colors
-- [x] All Emergent branding removed
-- [x] Start Flow Modal (select product + discovery set before starting)
-
-### Product & Discovery Management ✅
-- [x] Products/Services - save multiple offerings with name, description, features
-- [x] Discovery Sets - save named configurations (keywords, locations)
-- [x] Start Modal - select which product + discovery set to use
-- [x] AI uses product context to personalize all outreach
-
-### Email Guidelines (AI Rules) ✅
-- [x] Forbidden Words - words AI will NEVER use (e.g., "AI", "automation")
-- [x] Preferred Words - words to favor (e.g., "solutions", "streamline")
-- [x] Tone Selection - Professional/Friendly/Conversational/Direct
-- [x] Max Words Per Email
-- [x] Rule Toggles:
-  - No exclamation marks
-  - Always end with question
-  - First name only (no Mr./Ms.)
-  - Never mention competitors
-  - No ROI/results promises
-
-### Core Features ✅
-- [x] Google Maps scraping via SerpAPI
-- [x] Email enrichment via Hunter.io (priority over phone)
-- [x] Website scraping + AI research
-- [x] 4-step email sequence generator
-- [x] Email sending via Resend
-- [x] Bulk delete leads
-- [x] CSV import
-- [x] Timestamps on leads
-- [x] Clickable Discovery pipeline cards
-- [x] Calendly webhook integration
-- [x] Test Mode (simulate without sending)
+---
 
 ## Key API Endpoints
 
+### Auth
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| /api/products | GET/POST | Manage products/services |
-| /api/discovery-sets | GET/POST | Manage discovery configurations |
-| /api/system/start | POST | Start pipeline with selections |
-| /api/pipeline/activity | GET | Real-time activity log + counts |
-| /api/track/open/{id} | GET | Track email opens (returns pixel) |
-| /api/track/click/{id} | GET | Track clicks (redirects to URL) |
-| /api/tracking/stats | GET | Email engagement statistics |
-| /api/leads/bulk-delete | POST | Delete multiple leads |
-| /api/leads/import/csv | POST | Upload CSV file |
-| /api/webhooks/calendly | POST | Booking webhook |
+| /api/auth/signup | POST | Create new user |
+| /api/auth/login | POST | Login, get JWT token |
+| /api/auth/verify-email | GET | Verify email with token |
+| /api/auth/me | GET | Get current user |
+
+### Stripe
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /api/stripe/create-checkout | POST | Create checkout session |
+| /api/stripe/portal | POST | Create billing portal |
+| /api/stripe/webhook | POST | Handle Stripe events |
+
+### Admin
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /api/admin/users | GET | List all users |
+| /api/admin/analytics | GET | Admin analytics |
+| /api/admin/subscriptions | GET | All Stripe subscriptions |
+| /api/admin/users/{id} | DELETE | Delete user + data |
+
+### Core
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /api/leads | GET | Get leads (tenant filtered) |
+| /api/system/start | POST | Start pipeline |
+| /api/pipeline/activity | GET | Real-time activity |
+| /api/contact | POST | Contact form submission |
+
+---
 
 ## Architecture
 
 ### Backend (FastAPI + MongoDB)
 ```
 /app/backend/
-├── server.py              # API routes + data models
+├── server.py              # API routes + models
+├── auth.py                # Authentication module
+├── stripe_service.py      # Stripe integration
 ├── lead_scraper.py        # SerpAPI, Hunter.io
-├── ai_engine.py           # OpenAI research + sequence generation
-├── email_engine.py        # Resend integration
+├── ai_engine.py           # OpenAI integration
+├── email_engine.py        # Resend + tracking
 ├── pipeline_controller.py # 5 autonomous loops
-└── .env                   # API keys
+└── .env                   # Environment variables
 ```
 
 ### Frontend (React + TailwindCSS + Shadcn)
 ```
 /app/frontend/src/
-├── components/
-│   ├── Layout.jsx               # Navbar + Start Modal + Progress Modal trigger
-│   └── RealTimeProgressModal.jsx # Activity feed + stage cards
 ├── pages/
-│   ├── Dashboard.jsx      # KPIs + queues
-│   ├── Leads.jsx          # Bulk select, CSV import
-│   ├── Discovery.jsx      # Clickable funnel cards
-│   ├── Settings.jsx       # Tabbed: General, Products, Discovery, Email Rules, API Keys
+│   ├── LandingPage.jsx    # Public landing
+│   ├── SignupPage.jsx     # Registration
+│   ├── LoginPage.jsx      # Authentication
+│   ├── VerifyEmailPage.jsx # Email verification
+│   ├── PricingPage.jsx    # Stripe checkout
+│   ├── OnboardingPage.jsx # API key wizard
+│   ├── AdminPage.jsx      # Admin dashboard
+│   ├── TermsPage.jsx      # Terms of Service
+│   ├── PrivacyPage.jsx    # Privacy Policy
+│   ├── Dashboard.jsx      # Main dashboard
 │   └── ...
-└── lib/api.js             # API client (includes getPipelineActivity)
+├── components/
+│   ├── Layout.jsx         # App shell with auth
+│   └── ...
+└── lib/api.js             # API client with JWT
 ```
 
-## Settings Tabs
+---
 
-1. **General** - Test mode, sender info, calendar, system settings
-2. **Products** - CRUD for products/services
-3. **Discovery** - CRUD for discovery sets
-4. **Email Rules** - Forbidden/preferred words, tone, rules
-5. **API Keys** - OpenAI, Resend, Apollo (future)
+## Deployment
 
-## Future Integrations
+### Production Stack
+- **Frontend**: Vercel
+- **Backend**: Railway
+- **Database**: MongoDB Atlas
+- **Payments**: Stripe
+- **Email**: Resend
 
-- **ColdIQ** (coldiq.arisolutionsinc.com) - Email optimization API
-- **Apollo.io** - Richer lead enrichment
+### Environment Variables
+See `/app/DEPLOYMENT_GUIDE.md` for complete setup.
+
+---
+
+## Credentials
+
+### Admin Account
+- Email: jabriel@arisolutionsinc.com
+- Password: AutoBookd2025!
+- Role: admin
+
+---
+
+## Removed Features
+- LinkedIn import (removed placeholder)
