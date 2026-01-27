@@ -243,7 +243,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-slate-400 text-lg">Start free, scale when ready</p>
+            <p className="text-slate-200 text-lg">Start free, scale when ready</p>
           </div>
           <div className="bg-gradient-to-br from-slate-900 to-slate-900/50 rounded-3xl border border-red-900/30 p-8 md:p-12">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -267,7 +267,7 @@ export default function LandingPage() {
             <div className="border-t border-slate-800 mt-8 pt-8">
               <div className="grid md:grid-cols-2 gap-4">
                 {[
-                  "Unlimited lead discovery",
+                  "Automated lead discovery",
                   "AI-powered website research",
                   "Hyper-personalized emails",
                   "4-step email sequences",
