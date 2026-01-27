@@ -46,6 +46,7 @@ export const startSystem = (testMode = false, productId = null, discoverySetId =
 };
 export const stopSystem = () => api.post('/system/stop');
 export const getSystemStatus = () => api.get('/system/status');
+export const resetDailyLimits = () => api.post('/reset-daily-limits');
 
 // Products
 export const getProducts = () => api.get('/products');
