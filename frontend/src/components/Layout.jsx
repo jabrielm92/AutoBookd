@@ -202,54 +202,66 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Navbar */}
-      <nav className="sticky top-0 z-50 w-full bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+    <div className="min-h-screen bg-slate-950">
+      {/* Top Navbar - Simplified */}
+      <nav className="sticky top-0 z-50 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-14">
             {/* Logo */}
-            <div className="flex items-center gap-8">
-              <NavLink to="/" className="flex items-center gap-2" data-testid="logo">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-100 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white dark:text-slate-900" />
-                </div>
-                <span className="font-bold text-lg tracking-tight">AutoBookd</span>
-              </NavLink>
-
-              {/* Desktop Nav */}
-              <div className="hidden lg:flex items-center gap-1">
-                <NavLinks />
+            <NavLink to="/" className="flex items-center gap-2" data-testid="logo">
+              <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
               </div>
+              <span className="font-bold text-lg text-white">AutoBookd</span>
+            </NavLink>
+
+            {/* Desktop Nav - Icons only on medium screens */}
+            <div className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) => cn(
+                    "flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    isActive 
+                      ? "bg-red-600 text-white" 
+                      : "text-slate-300 hover:text-white hover:bg-slate-800"
+                  )}
+                  data-testid={`nav-${item.label.toLowerCase()}`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span className="hidden lg:inline">{item.label}</span>
+                </NavLink>
+              ))}
             </div>
 
-            {/* Right Section */}
-            <div className="flex items-center gap-1 sm:gap-3">
-              {/* Theme Toggle - Mobile hidden */}
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="hidden md:flex h-8 w-8">
+            {/* Right Section - Minimal */}
+            <div className="flex items-center gap-2">
+              {/* Theme Toggle */}
+              <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="h-8 w-8 text-slate-300 hover:text-white">
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
 
-              {/* Admin Button - Compact */}
+              {/* Admin Button */}
               {user?.role === 'admin' && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => navigate('/admin')}
-                  className="hidden sm:flex h-8 w-8 text-amber-600 hover:text-amber-500"
+                  className="h-8 w-8 text-amber-400 hover:text-amber-300"
                   title="Admin"
                 >
                   <Shield className="w-4 h-4" />
                 </Button>
               )}
 
-              {/* User Menu - Compact */}
+              {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1 h-8 px-2">
+                  <Button variant="ghost" size="sm" className="gap-1.5 h-8 px-2 text-slate-300 hover:text-white">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white text-xs font-medium">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
-                    <span className="hidden lg:inline text-sm max-w-[80px] truncate">{user?.name || 'User'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -276,88 +288,96 @@ export default function Layout() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* System Status - More compact */}
-              <div className="hidden md:flex items-center gap-1">
-                {isRunning && testMode && (
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium">
-                    <TestTube className="w-3 h-3" />
-                  </div>
-                )}
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
-                  isRunning 
-                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" 
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                )}>
-                  <span className={cn(
-                    "w-1.5 h-1.5 rounded-full",
-                    isRunning ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
-                  )} />
-                  <span className="hidden lg:inline">{isRunning ? "Active" : "Idle"}</span>
-                </div>
-              </div>
-
-              {/* System Toggle - Compact */}
-              <div className="flex items-center gap-1">
-                {isRunning ? (
-                  <Button
-                    onClick={handleStop}
-                    disabled={loading}
-                    size="sm"
-                    data-testid="system-stop-btn"
-                    className="gap-1 h-8 px-2 sm:px-3 font-medium bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    <Square className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Stop</span>
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={openStartModal}
-                    disabled={loading}
-                    size="sm"
-                    data-testid="system-start-btn"
-                    className="gap-1 h-8 px-2 sm:px-3 font-medium bg-emerald-500 hover:bg-emerald-600 text-white"
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Start</span>
-                  </Button>
-                )}
-                {isRunning && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsProgressModalOpen(true)}
-                    className="gap-1 h-8 px-2 text-xs"
-                    data-testid="view-activity-btn"
-                  >
-                    <Activity className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
-
               {/* Mobile Menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                <SheetTrigger asChild className="lg:hidden">
-                  <Button variant="ghost" size="icon" data-testid="mobile-menu-btn">
+                <SheetTrigger asChild className="md:hidden">
+                  <Button variant="ghost" size="icon" className="text-slate-300" data-testid="mobile-menu-btn">
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-72">
+                <SheetContent side="right" className="w-72 bg-slate-900 border-slate-800">
                   <div className="flex flex-col gap-6 mt-6">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-100 flex items-center justify-center">
-                        <Zap className="w-5 h-5 text-white dark:text-slate-900" />
+                      <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-white" />
                       </div>
-                      <span className="font-bold text-lg">AutoBookd</span>
+                      <span className="font-bold text-lg text-white">AutoBookd</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <NavLinks mobile onMobileClick={() => setMobileOpen(false)} />
                     </div>
-                    <div className="pt-4 border-t flex items-center justify-between">
-                      <p className="text-xs text-slate-500">ARI Solutions Inc.</p>
-                      <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
+                    <div className="pt-4 border-t border-slate-700 flex items-center justify-between">
+                      <p className="text-xs text-slate-400">ARI Solutions Inc.</p>
+                      <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="text-slate-300">
                         {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                       </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Control Bar - Below Nav */}
+      <div className="sticky top-14 z-40 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
+            isRunning 
+              ? "bg-emerald-900/50 text-emerald-400 border border-emerald-700" 
+              : "bg-slate-800 text-slate-400 border border-slate-700"
+          )}>
+            <span className={cn(
+              "w-2 h-2 rounded-full",
+              isRunning ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
+            )} />
+            {isRunning ? "Pipeline Active" : "Pipeline Idle"}
+            {isRunning && testMode && (
+              <span className="ml-1 text-amber-400 text-xs">(TEST)</span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {isRunning ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsProgressModalOpen(true)}
+                  className="gap-1.5 border-slate-600 text-slate-300 hover:text-white"
+                  data-testid="view-activity-btn"
+                >
+                  <Activity className="w-4 h-4" />
+                  Activity
+                </Button>
+                <Button
+                  onClick={handleStop}
+                  disabled={loading}
+                  size="sm"
+                  data-testid="system-stop-btn"
+                  className="gap-1.5 font-medium bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <Square className="w-4 h-4" />
+                  Stop
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={openStartModal}
+                disabled={loading}
+                size="sm"
+                data-testid="system-start-btn"
+                className="gap-1.5 font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Play className="w-4 h-4" />
+                Start Pipeline
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
                     </div>
                   </div>
                 </SheetContent>
