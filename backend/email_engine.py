@@ -25,7 +25,8 @@ class EmailSender:
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.base_url = "https://api.resend.com"
         self.test_mode = False
-        self.tracking_base_url = os.environ.get('TRACKING_BASE_URL', '')
+        # Use FRONTEND_URL for tracking (production frontend URL)
+        self.tracking_base_url = os.environ.get('FRONTEND_URL', '')
     
     def _inject_tracking(self, body: str, tracking_id: str, is_html: bool = False) -> tuple:
         """
