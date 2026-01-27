@@ -87,7 +87,7 @@ function NavLinks({ mobile = false, onMobileClick }) {
 
 export default function Layout() {
   const [isRunning, setIsRunning] = useState(false);
-  const [testMode, setTestMode] = useState(false);
+  const [autoSendEmails, setAutoSendEmails] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -100,7 +100,7 @@ export default function Layout() {
   const [discoverySets, setDiscoverySets] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedDiscoverySet, setSelectedDiscoverySet] = useState('');
-  const [startTestMode, setStartTestMode] = useState(false);
+  const [startAutoSend, setStartAutoSend] = useState(false);
 
   useEffect(() => {
     fetchStatus();
@@ -122,7 +122,7 @@ export default function Layout() {
     try {
       const { data } = await getSystemStatus();
       setIsRunning(data.is_running);
-      setTestMode(data.test_mode || false);
+      setAutoSendEmails(data.auto_send_emails || false);
     } catch (error) {
       console.error('Failed to fetch status:', error);
     }
