@@ -164,10 +164,15 @@ export default function Discovery() {
   const handleAddProduct = async () => {
     try {
       const features = newProduct.features.split(',').map(f => f.trim()).filter(f => f);
-      await createProduct({ ...newProduct, features });
+      await createProduct({ 
+        name: newProduct.name,
+        description: newProduct.description,
+        features,
+        email_guidelines: newProduct.email_guidelines || null
+      });
       toast.success('Product added');
       setIsProductDialogOpen(false);
-      setNewProduct({ name: '', description: '', features: '' });
+      setNewProduct({ name: '', description: '', features: '', email_guidelines: '' });
       fetchData();
     } catch (error) {
       toast.error('Failed to add product');
