@@ -249,7 +249,7 @@ class SystemConfig(BaseModel):
     resend_api_key: Optional[str] = None
     from_email: Optional[str] = None
     sender_name: Optional[str] = None
-    sender_company: Optional[str] = "ARI Solutions"
+    sender_company: Optional[str] = None
     calendly_api_key: Optional[str] = None
     calendly_link: Optional[str] = None
     hunter_api_key: Optional[str] = None
