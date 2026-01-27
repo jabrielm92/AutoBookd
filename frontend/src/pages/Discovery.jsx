@@ -653,10 +653,20 @@ export default function Discovery() {
                             ))}
                           </div>
                         )}
+                        {product.email_guidelines && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">
+                            Has custom email guidelines
+                          </p>
+                        )}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditProduct(product)} data-testid={`edit-product-${product.id}`}>
+                          <Pencil className="w-4 h-4 text-slate-400 hover:text-blue-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)} data-testid={`delete-product-${product.id}`}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
