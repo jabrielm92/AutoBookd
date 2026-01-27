@@ -265,6 +265,7 @@ class SystemConfigUpdate(BaseModel):
     max_follow_ups: Optional[int] = None
     outreach_score_threshold: Optional[int] = None
     priority_score_threshold: Optional[int] = None
+    serpapi_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     resend_api_key: Optional[str] = None
     from_email: Optional[str] = None
