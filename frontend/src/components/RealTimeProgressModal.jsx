@@ -26,12 +26,12 @@ import { cn } from '@/lib/utils';
 import { getPipelineActivity } from '@/lib/api';
 
 const stageConfig = {
-  system: { icon: Activity, color: 'text-slate-500', bg: 'bg-slate-100 dark:bg-slate-800' },
-  scrape: { icon: Search, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  enrich: { icon: Mail, color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-  research: { icon: Brain, color: 'text-cyan-500', bg: 'bg-cyan-100 dark:bg-cyan-900/30' },
-  sequence: { icon: Send, color: 'text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
-  analytics: { icon: BarChart3, color: 'text-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30' },
+  system: { icon: Activity, color: 'text-slate-400', bg: 'bg-slate-800' },
+  scrape: { icon: Search, color: 'text-blue-400', bg: 'bg-blue-900/30' },
+  enrich: { icon: Mail, color: 'text-purple-400', bg: 'bg-purple-900/30' },
+  research: { icon: Brain, color: 'text-cyan-400', bg: 'bg-cyan-900/30' },
+  sequence: { icon: Send, color: 'text-emerald-400', bg: 'bg-emerald-900/30' },
+  analytics: { icon: BarChart3, color: 'text-amber-400', bg: 'bg-amber-900/30' },
 };
 
 const typeIcons = {
