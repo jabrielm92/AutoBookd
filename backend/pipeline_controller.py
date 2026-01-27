@@ -95,14 +95,16 @@ class PipelineController:
             asyncio.create_task(self._analytics_loop())
         ]
         
-        await self.db.system_config.update_one(
-            {"id": "system_config"},
-            {"$set": {
-                "is_running": True,
-                "pipeline_started_at": datetime.now(timezone.utc).isoformat()
-            }},
-            upsert=True
-        )
+        # Mark config as running (tenant-aware update happens in server.py)
+        config = await self._get_config()
+        if config and config.get("tenant_id"):
+            await self.db.system_config.update_one(
+                {"tenant_id": config.get("tenant_id")},
+                {"$set": {
+                    "is_running": True,
+                    "pipeline_started_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
         
         logger.info("Pipeline started with all components")
         return {"status": "started", "components": ["scraping", "enrichment", "research", "sequence", "analytics"]}
