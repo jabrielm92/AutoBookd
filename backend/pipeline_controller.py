@@ -121,8 +121,12 @@ class PipelineController:
         return {"status": "stopped"}
     
     async def _get_config(self) -> Dict[str, Any]:
-        """Get system configuration"""
-        config = await self.db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+        """Get system configuration for active tenant"""
+        # Find the config that's marked as running
+        config = await self.db.system_config.find_one({"is_running": True}, {"_id": 0})
+        if not config:
+            # Fallback to any config
+            config = await self.db.system_config.find_one({}, {"_id": 0})
         return config or {}
     
     async def _get_scrape_config(self) -> Dict[str, Any]:
