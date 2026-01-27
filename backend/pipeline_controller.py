@@ -513,15 +513,21 @@ class PipelineController:
                     
                     research = lead.get("research", {})
                     
-                    await self._log_activity("sequence", f"Generating email sequence for {lead.get('business_name')}", "info", lead.get('business_name'))
+                    await self._log_activity("sequence", f"Generating AI email sequence for {lead.get('business_name')}", "info", lead.get('business_name'))
                     
-                    # Generate sequence
-                    emails = self.sequence_generator.generate_sequence(
+                    # Get product info if available
+                    product = None
+                    if config.get("active_product_id"):
+                        product = await self.db.products.find_one({"id": config.get("active_product_id")}, {"_id": 0})
+                    
+                    # Generate AI-powered sequence (not template)
+                    emails = await self.sequence_generator.generate_ai_sequence(
                         lead=lead,
                         research=research,
                         sender_name=config.get("sender_name", "Team"),
                         sender_company=config.get("sender_company", "ARI Solutions"),
-                        calendar_link=config.get("calendly_link")
+                        calendar_link=config.get("calendly_link"),
+                        product=product
                     )
                     
                     # Create sequence
