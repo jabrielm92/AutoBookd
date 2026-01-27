@@ -8,7 +8,8 @@ import {
   Mail,
   Phone,
   Search,
-  X
+  X,
+  Edit3
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +17,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { getConversations, getLeads, createConversation } from '@/lib/api';
+import api from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -30,6 +33,9 @@ export default function Conversations() {
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+  const [editEmailOpen, setEditEmailOpen] = useState(false);
+  const [editingEmail, setEditingEmail] = useState({ subject: '', body: '', leadId: '' });
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchData();
