@@ -1476,37 +1476,43 @@ async def update_lead(lead_id: str, update_data: Dict[str, Any], user: dict = De
         query['tenant_id'] = user["id"]
     
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    # Prevent tenant_id tampering
+    update_data.pop('tenant_id', None)
     
     # Recalculate score if relevant fields changed
     if any(k in update_data for k in ['category', 'website', 'review_count', 'rating', 'email', 'competitor_detected']):
-        current = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+        current = await db.leads.find_one(query, {"_id": 0})
         if current:
             merged = {**current, **update_data}
             score, breakdown = calculate_lead_score(merged)
             update_data['lead_score'] = score
             update_data['score_breakdown'] = breakdown
     
-    await db.leads.update_one({"id": lead_id}, {"$set": update_data})
-    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+    await db.leads.update_one(query, {"$set": update_data})
+    lead = await db.leads.find_one(query, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return lead
 
 @api_router.delete("/leads/{lead_id}")
-async def delete_lead(lead_id: str):
-    result = await db.leads.delete_one({"id": lead_id})
+async def delete_lead(lead_id: str, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    query = {"id": lead_id, "tenant_id": tenant_id} if not is_admin(user) else {"id": lead_id}
+    result = await db.leads.delete_one(query)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Lead not found")
     return {"message": "Lead deleted"}
 
 @api_router.post("/leads/bulk-delete")
-async def bulk_delete_leads(data: Dict[str, List[str]]):
+async def bulk_delete_leads(data: Dict[str, List[str]], user: dict = Depends(get_current_user)):
     """Delete multiple leads at once"""
     ids = data.get("ids", [])
     if not ids:
         raise HTTPException(status_code=400, detail="No IDs provided")
     
-    result = await db.leads.delete_many({"id": {"$in": ids}})
+    tenant_id = user["id"]
+    query = {"id": {"$in": ids}, "tenant_id": tenant_id} if not is_admin(user) else {"id": {"$in": ids}}
+    result = await db.leads.delete_many(query)
     return {"deleted": result.deleted_count, "requested": len(ids)}
 
 @api_router.get("/leads/export/csv")
@@ -1608,14 +1614,16 @@ async def import_csv_leads(file: UploadFile = File(...)):
     }
 
 @api_router.post("/leads/{lead_id}/rescore", response_model=Lead)
-async def rescore_lead(lead_id: str):
-    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+async def rescore_lead(lead_id: str, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    query = {"id": lead_id, "tenant_id": tenant_id} if not is_admin(user) else {"id": lead_id}
+    lead = await db.leads.find_one(query, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
     score, breakdown = calculate_lead_score(lead)
     await db.leads.update_one(
-        {"id": lead_id},
+        query,
         {"$set": {"lead_score": score, "score_breakdown": breakdown, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     lead['lead_score'] = score
