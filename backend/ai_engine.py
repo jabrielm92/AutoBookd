@@ -409,7 +409,8 @@ But if you're curious about what's possible, I'm happy to do a quick no-pressure
         sender_company: str,
         calendar_link: str = None,
         product: Dict[str, Any] = None,
-        follow_up_days: int = 2
+        follow_up_days: int = 2,
+        email_guidelines: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """
         Generate fully AI-personalized sequence with industry-specific messaging
@@ -426,12 +427,46 @@ YOUR PRODUCT/SERVICE TO SELL:
 - Description: {product.get('description', '')}
 - Key Benefits: {', '.join(product.get('features', []))}
 """
-            # Add custom email guidelines if provided
+            # Add custom email guidelines if provided per-product
             if product.get('email_guidelines'):
                 custom_guidelines = f"""
-CUSTOM GUIDELINES FROM USER (FOLLOW THESE STRICTLY):
+PRODUCT-SPECIFIC GUIDELINES:
 {product.get('email_guidelines')}
 """
+        
+        # Add global email guidelines from config
+        global_guidelines = ""
+        if email_guidelines:
+            parts = []
+            forbidden = email_guidelines.get('forbidden_words', [])
+            if forbidden:
+                parts.append(f"- NEVER use these words: {', '.join(forbidden)}")
+            preferred = email_guidelines.get('preferred_words', [])
+            if preferred:
+                parts.append(f"- Prefer using these words: {', '.join(preferred)}")
+            tone = email_guidelines.get('tone', 'professional')
+            parts.append(f"- Tone: {tone}")
+            max_words = email_guidelines.get('max_words', 150)
+            parts.append(f"- Keep emails under {max_words} words")
+            
+            rules = email_guidelines.get('rules', {})
+            if rules.get('no_exclamation_marks'):
+                parts.append("- Do NOT use exclamation marks")
+            if rules.get('always_include_question'):
+                parts.append("- End with a question")
+            if rules.get('first_name_only'):
+                parts.append("- Use first name only (not Mr./Ms.)")
+            if rules.get('no_competitor_mentions'):
+                parts.append("- Never mention competitors")
+            if rules.get('no_roi_promises'):
+                parts.append("- Don't make specific ROI promises")
+            
+            custom_prompt = email_guidelines.get('custom_prompt', '')
+            if custom_prompt and custom_prompt.strip():
+                parts.append(f"\nUSER'S CUSTOM INSTRUCTIONS:\n{custom_prompt.strip()}")
+            
+            if parts:
+                global_guidelines = "\nEMAIL GUIDELINES (FOLLOW STRICTLY):\n" + "\n".join(parts)
         
         calendar_context = ""
         if calendar_link:
