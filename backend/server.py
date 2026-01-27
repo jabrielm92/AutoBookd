@@ -786,25 +786,29 @@ async def admin_get_contacts(user: dict = Depends(get_current_user)):
 
 # ----- System Config -----
 @api_router.get("/config", response_model=SystemConfig)
-async def get_config():
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+async def get_config(user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    config = await db.system_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
     if not config:
         config = SystemConfig().model_dump()
         config['updated_at'] = config['updated_at'].isoformat()
+        config['tenant_id'] = tenant_id
+        config['id'] = f"config_{tenant_id}"
         await db.system_config.insert_one(config)
     return config
 
 @api_router.put("/config", response_model=SystemConfig)
-async def update_config(update: SystemConfigUpdate):
+async def update_config(update: SystemConfigUpdate, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     await db.system_config.update_one(
-        {"id": "system_config"},
+        {"tenant_id": tenant_id},
         {"$set": update_data},
         upsert=True
     )
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    config = await db.system_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
     return config
 
 @api_router.post("/system/start")
