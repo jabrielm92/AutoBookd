@@ -79,7 +79,10 @@ async def send_verification_email(email: str, token: str, resend_api_key: str):
         print(f"[DEV] Verification link: /verify-email?token={token}")
         return True
     
-    base_url = os.environ.get("TRACKING_BASE_URL", "http://localhost:3000")
+    base_url = os.environ.get("FRONTEND_URL")
+    if not base_url:
+        print(f"[DEV] FRONTEND_URL not set. Verification link: /verify-email?token={token}")
+        return True
     verify_url = f"{base_url}/verify-email?token={token}"
     
     async with httpx.AsyncClient() as client:
