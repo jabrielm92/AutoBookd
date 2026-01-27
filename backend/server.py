@@ -454,9 +454,9 @@ async def signup(data: UserSignup, background_tasks: BackgroundTasks):
     user = create_user_dict(data.email, data.password, data.name)
     await db.users.insert_one(user)
     
-    # Get resend API key from system config
+    # Get resend API key from system config or env var
     config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    resend_key = config.get("resend_api_key") if config else None
+    resend_key = (config.get("resend_api_key") if config else None) or os.environ.get("RESEND_API_KEY")
     
     # Send verification email
     background_tasks.add_task(
