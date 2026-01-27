@@ -1141,10 +1141,13 @@ async def process_email_reply(payload: Dict[str, Any]):
     if not lead:
         return {"status": "no_matching_lead", "email": sender_email}
     
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
+    # Get tenant's config for AI processing
+    tenant_id = lead.get("tenant_id")
+    config = await db.system_config.find_one({"tenant_id": tenant_id}, {"_id": 0}) if tenant_id else None
     
     # Classify reply with AI
-    ai_engine = AIResearchEngine(config.get("openai_api_key"))
+    openai_key = config.get("openai_api_key") if config else os.environ.get("OPENAI_API_KEY")
+    ai_engine = AIResearchEngine(openai_key)
     classification = await ai_engine.classify_reply(body)
     await ai_engine.close()
     
