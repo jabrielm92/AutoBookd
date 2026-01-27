@@ -540,9 +540,14 @@ export default function Discovery() {
                           Min {set.min_reviews} reviews • Max {set.max_per_search}/search • {set.daily_limit}/day
                         </p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteDiscoverySet(set.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditDiscoverySet(set)} data-testid={`edit-discovery-set-${set.id}`}>
+                          <Pencil className="w-4 h-4 text-slate-400 hover:text-blue-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteDiscoverySet(set.id)} data-testid={`delete-discovery-set-${set.id}`}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
