@@ -25,10 +25,14 @@ APOLLO_API_KEY = os.environ.get('APOLLO_API_KEY')
 class GoogleMapsScraper:
     """Scrape Google Maps via SerpAPI"""
     
-    def __init__(self):
-        self.api_key = SERPAPI_KEY
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or SERPAPI_KEY
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.base_url = "https://serpapi.com/search"
+    
+    def set_api_key(self, api_key: str):
+        """Update API key dynamically"""
+        self.api_key = api_key
     
     async def search_businesses(
         self,
