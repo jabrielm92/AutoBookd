@@ -5,101 +5,94 @@ The user wants to transform the existing Intelligent Lead Automation System into
 1.  **Epic Landing Page:** Create a new landing page with sections for features, benefits, FAQ, and a contact form (using Resend to email ). The branding should be Made by ARI Solutions Inc. linking to .
 2.  **SaaS Authentication:** Implement a full authentication system including sign-up, login, and email verification with Resend.
 3.  **Subscription & Billing:**
-    *   Integrate Stripe for payments. Use the provided keys.
+    *   Integrate Stripe for payments.
     *   Create a pricing page with a 3-day free trial that converts to a single  subscription plan.
-4.  **Onboarding:** Create a detailed onboarding flow that guides new users on how to set up required accounts and obtain API keys for SerpAPI, Hunter.io, Apollo.io, Calendly, and OpenAI. Allow users to skip the tutorial.
+4.  **Onboarding:** Create a detailed onboarding flow that guides new users on how to set up required accounts and obtain API keys for SerpAPI, Hunter.io, Apollo.io, Calendly, and OpenAI.
 5.  **Multi-tenancy:** The entire application backend and frontend must be converted to support multiple tenants, ensuring data isolation.
 6.  **Admin Dashboard:**
     *   Create a full admin page accessible only to the admin user ().
-    *   The dashboard should track all analytics, subscriptions, tenant info, sign-ups, payments, and data usage per tenant.
+    *   The dashboard should track analytics, subscriptions, tenant info, etc.
     *   Provide full CRUD capabilities for the admin to manage tenants.
 7.  **Feature Enhancements:**
-    *   Integrate Apollo.io as an alternative enrichment provider to Hunter.io, with a toggle in the settings.
+    *   Integrate Apollo.io as an alternative enrichment provider.
     *   Implement an email warm-up scheduling feature.
-8.  **Deployment:** Configure the application for production deployment on Vercel (frontend), Railway (backend), and MongoDB Atlas using the provided credentials.
+    *   Implement inbound reply handling and automated follow-ups.
+    *   Allow user customization of AI email generation prompts.
+8.  **Deployment:** Configure the application for production deployment on Vercel (frontend), Railway (backend), and MongoDB Atlas.
 9.  **Cleanup:** Remove the placeholder LinkedIn import functionality.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application has been transformed into a foundational multi-tenant SaaS platform. A new landing page, authentication flow (signup, login, email verification), pricing, onboarding, and legal pages have been created. The backend now supports multi-tenancy with JWT authentication and tenant-isolated data, although it was reverted to a local MongoDB instance due to SSL connection issues with the production MongoDB Atlas cluster in the preview environment.
+The application is a multi-tenant SaaS platform deployed on Vercel and Railway, connected to a production MongoDB Atlas database. The initial transformation is largely complete, including a landing page, authentication, Stripe integration basics, and multi-tenancy.
 
-The existing admin user () can log in and see an Admin button in the navbar. The core lead generation features (scraping, enrichment, outreach) are still functional but now operate within this new tenant-aware structure. The previously mocked LinkedIn functionality has been removed.
+Recent work focused on resolving numerous deployment-related bugs for both Vercel (frontend) and Railway (backend). Key feature enhancements were also implemented, including a dynamic enrichment provider (Hunter/Apollo) toggle, significantly improved AI email generation (using GPT-4o and custom prompts), and the backend logic for handling inbound email replies and automated follow-ups. A dark theme has been enforced across the application for a consistent look and feel. A comprehensive setup guide component has been created but not yet integrated into the UI.
 
 **Last working item**:
-- **Last item agent was working:** Starting the implementation of the Apollo.io enrichment enhancement and the email warm-up schedule. The agent began by adding an  class to  to serve as an alternative to Hunter.io.
+- **Last item agent was working:** The agent was tasked with creating a comprehensive setup guide, integrating it into the onboarding flow, and making it accessible from the dashboard. The user also requested step-by-step instructions for configuring Resend and GoDaddy for inbound replies. The agent created the guide component () and a detailed marketing/cost analysis document (). The final step was to integrate the guide into the UI.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** both
+- **Which testing method agent to use?** frontend testing agent
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-  - **Issue 1:** The MongoDB Atlas connection fails with an SSL error in the preview environment. (P0)
+- **Issue 1:** The production deployment has been unstable and required multiple rounds of debugging. (P0)
 
   **Issues Detail:**
-  - **Issue 1:** MongoDB Atlas SSL Connection Failure
-     - **Attempted fixes:** The agent tried updating the connection string with  but the error persisted. As a workaround, the agent reverted  to use the local MongoDB instance () to allow development to continue.
+  - **Issue 1:** Production Deployment Instability
+     - **Attempted fixes:** Numerous fixes were applied to address deployment failures on both Vercel and Railway. These included correcting dependency versions (, ), removing unused packages (), creating platform-specific configuration files (, , ), fixing ESLint warnings, and resolving CORS issues. The app is now running, but the user has experienced slow load times and data discrepancies.
      - **Next debug checklist:**
-        1.  Investigate the specific SSL error () in the context of the container environment's Python and OpenSSL versions.
-        2.  Try alternative connection string parameters for PyMongo/MongoDB Atlas.
-        3.  For production, ensure the  contains the correct production  provided by the user, as this issue might be specific to the preview environment.
-     - **Why fix this issue and what will be achieved with the fix?** This is a hard blocker for production deployment. The application cannot connect to the production database without this fix.
-     - **Status:** BLOCKED
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** backend
+        1.  The user's latest complaint was about slow page loads. Monitor network requests on the deployed site to identify bottlenecks.
+        2.  Verify all environment variables on Vercel and Railway are correct, especially .
+        3.  Confirm the database connection to MongoDB Atlas is stable and performant under load.
+     - **Why fix this issue and what will be achieved with the fix?** The application must be stable and performant for users. This is critical for customer retention and the overall success of the SaaS platform.
+     - **Status:** USER VERIFICATION PENDING
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** both
      - **Blocked on other issue:** None
 
 **In progress Task List**:
-  - **Task 1:** Implement Apollo.io Enrichment Enhancement (P0)
-     - **Where to resume:**
-        1.  Complete the  class in .
-        2.  Modify  to dynamically choose between  and  based on a new setting.
-        3.  Update  to include a dropdown or toggle for the user to select their preferred enrichment provider (Hunter vs. Apollo).
-     - **What will be achieved with this?** Users will have the flexibility to choose their preferred data enrichment tool.
+- **Task 1:** Integrate the Setup Guide into the UI (P0)
+     - **Where to resume:** The guide component exists at .
+        1.  Modify  to render the  component, replacing the current placeholder content.
+        2.  Modify  to add a button (e.g., How to Set Up AutoBookd) that opens the  in a modal.
+     - **What will be achieved with this?** Users will have a clear, accessible guide for configuring the application, including the new auto-reply feature, improving user onboarding and reducing support requests.
      - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on something:** None
-
-  - **Task 2:** Implement Email Warm-up Scheduling (P1)
-     - **Where to resume:**
-        1.  Modify  to include logic for a gradual sending schedule (e.g., start with X emails/day, increase by Y%).
-        2.  Add a new database model/collection to store warm-up schedules and progress per tenant.
-        3.  Create a new UI component in  to allow users to configure and enable/disable the warm-up schedule.
-     - **What will be achieved with this?** Protects user domain reputation by gradually increasing email sending volume.
-     - **Status:** NOT STARTED
-     - **Should Test frontend/backend/both after fix?** both
+     - **Should Test frontend/backend/both after fix?** frontend
      - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Task 1 (P0):** Complete Stripe Subscription Integration. Hardcode the  subscription product. Wire the frontend  page to the backend  to create a checkout session and handle the webhook for subscription status updates.
--   **Task 2 (P1):** Build Out Admin Dashboard. The  is currently a placeholder. It needs to be built out to fetch and display tenant information, subscription status, and data usage analytics from new backend admin endpoints.
--   **Task 3 (P2):** Finalize Onboarding Flow. The  is a placeholder. It needs to be implemented with the step-by-step guide for acquiring API keys as requested by the user.
+-   **Task 1 (P1):** Build Out Admin Dashboard. The  needs to be fully implemented to display tenant information, subscription status, and data usage analytics fetched from the backend.
+-   **Task 2 (P1):** Finalize Stripe Subscription Flow. While backend endpoints exist, the full checkout-to-active-subscription lifecycle needs to be tested end-to-end, including webhook handling for subscription updates and failures.
+-   **Task 3 (P2):** Implement Email Warm-up feature. The UI has a Coming Soon badge; this needs to be built out with scheduling logic in  and a configuration UI in settings.
 
 **Future Tasks:**
 -   **ColdIQ Integration:** Blocked until the user provides API documentation.
--   **Feedback Loop:** Implement a system to auto-tune AI prompts based on email performance.
+-   **Feedback Loop:** Implement a system to auto-tune AI prompts based on email performance (open/reply rates).
 -   **A/B Testing:** Build an autonomous engine for message optimization.
 
 **Completed work in this session**
--   **SaaS Platform Conversion:**
-    -   Implemented multi-tenancy with JWT auth, user/tenant models, and tenant-id scoping on all major API endpoints.
-    -   Created a full suite of public-facing pages: Landing, Login, Signup, Verify Email, Pricing, Terms, and Privacy.
-    -   Created placeholder pages for Onboarding and Admin Dashboard.
-    -   Migrated existing data to the new  database under the admin tenant.
--   **Leads Page Bug Fixes:**
-    -   **Root Cause:** The  Pydantic model in  was missing the  field, causing it to be stripped from API responses.
-    -   **Fix:** Added  to the  model, which resolved all dropdown filter issues.
--   **Dashboard & Discovery Stats Fix:**
-    -   **Root Cause:** Pages were fetching from a stale  endpoint.
-    -   **Fix:** Switched data fetching to use a combination of  and the real-time  counts, and added auto-refreshing intervals while the pipeline is active.
--   **UI Layout Fix:** Relocated the View Activity button in the navbar to prevent it from pushing other elements off-screen.
--   **Feature Completion:**
-    -   Finished and tested the real-time progress modal.
-    -   Implemented and tested email open/click tracking.
--   **Deployment & Cleanup:**
-    -   Created a comprehensive  for Vercel, Railway, and MongoDB Atlas.
-    -   Removed all code related to the mocked LinkedIn import feature.
+-   **Deployment & Debugging:**
+    -   Resolved multiple Vercel build failures related to dependencies (, ) and ESLint errors.
+    -   Fixed Railway deployment failures by removing unused packages, adding  and , and correcting the runtime port.
+    -   Solved Resend  error by correcting the API key and using a verified from email address.
+    -   Fixed  error by adding a reset endpoint and UI button.
+-   **AI & Pipeline Enhancements:**
+    -   Upgraded AI email generation to use GPT-4o with greatly improved, structured prompts to ensure variance and quality.
+    -   Fixed the pipeline to call the correct  method instead of a legacy template-based one.
+    -   Added the SerpAPI key to the settings UI and integrated it into the pipeline.
+-   **Feature Implementation:**
+    -   **Inbound Replies:** Implemented backend models and an endpoint for handling inbound email replies, with a toggle in settings to enable/disable AI auto-replies.
+    -   **Custom Prompts:** Added a field for users to provide custom email guidelines on a per-product basis, which are injected into the AI prompt.
+    -   **Follow-up Control:** Added a configurable follow-up delay in settings.
+-   **UI/UX Improvements:**
+    -   Enforced a global dark theme and removed the light/dark mode toggle.
+    -   Optimized the main navigation layout to be more compact and mobile-friendly.
+    -   Fixed UI elements on Dashboard and Modals that had hardcoded white backgrounds.
+-   **Content Creation:**
+    -   Generated a  for marketing and a  for user data import.
+    -   Created a new  component to consolidate setup instructions.
 
 **Code Architecture**
 
@@ -107,99 +100,88 @@ The existing admin user () can log in and see an Admin button in the navbar. The
 **Key Technical Concepts**
 -   **Frontend:** React, TailwindCSS, Shadcn/UI
 -   **Backend:** FastAPI, Pydantic
--   **Database:** MongoDB
--   **Architecture:** Multi-tenant SaaS. Data is isolated by a  on all major collections.
--   **Authentication:** JWT-based, with access and refresh tokens stored in . Passwords are hashed with .
--   **Payments:** Stripe for recurring subscriptions.
+-   **Database:** MongoDB Atlas (Production)
+-   **Deployment:** Vercel (Frontend), Railway (Backend)
+-   **Email:** Resend (for both outbound and inbound webhook processing)
+-   **AI:** OpenAI GPT-4o for email generation and reply classification.
 
 **key DB schema**
 -   **users:** 
--   **tenants:** 
--   **leads:** 
--   **sequences:** 
--   **system_config:**  (and other collections are now tenant-scoped)
--   **activity_log:** 
+-   **products:**  (NEW FIELD)
+-   **system_config:**  (NEW FIELDS)
+-   **daily_scrape_stats:**  (This is the collection that needed manual resets)
 
 **changes in tech stack**
--   **Database:** Attempted migration to production **MongoDB Atlas**, but reverted to local MongoDB due to SSL errors. The production connection string is available in the chat history.
--   **Payments:** **Stripe** has been added for subscription management.
--   **Authentication:** **Passlib** and **python-jose** for JWT-based auth.
+-   **AI Model:** Upgraded from default to GPT-4o for email generation.
 
 **All files of reference**
--    (Heavily modified with new routes and multi-tenancy logic)
--    (New file for all authentication logic)
--    (New file for Stripe integration)
--    (Being modified for Apollo.io integration)
--    (Routes for all new pages)
--    (Modified for auth state, logout, and admin button)
--    (Needs to be updated for provider selection)
--    (Contains instructions for production setup)
--    (Contains Stripe keys)
+-    (New models and endpoints)
+-    (New prompts and email generation logic)
+-    (Passing new config values)
+-    (New Discovery tab, reset button, auto-reply config)
+-    (Updated product creation form)
+-    (Refactored navigation and theme)
+-    (New component to be integrated)
+-    (Target for  integration)
+-    (Updated with troubleshooting notes)
 
-**Areas that need refactoring**
--    has grown excessively large (over 1400 lines). The API routes should be broken down into separate files using  for better maintainability (e.g., , , ).
+**Areas that need refactoring**:
+-    is extremely large and contains business logic that should be in separate service files. API routes should be broken out into routers (e.g., , ).
+-    is becoming very large and could be broken down into smaller components for each tab.
 
 **key api endpoints**
--   : Create a new user and tenant.
--   : Authenticate and receive JWT token.
--   : Verify user's email.
--   : Now requires authentication and only returns leads for the user's tenant.
--   : Creates a Stripe checkout session.
--   : Listens for events from Stripe.
+-   : **NEW** - Resets the daily scrape counter for the current tenant.
+-   : **NEW** - Updates an existing discovery set.
+-   : **NEW** (logic added) - Handles inbound email replies from Resend.
+-   : Updated to handle new system config fields (, , etc.).
 
 **Critical Info for New Agent**
--   **PRODUCTION DEPLOYMENT IS BLOCKED** by the MongoDB Atlas SSL connection issue. For now, continue development using the local MongoDB instance. The production  is in chat history for when you are ready to tackle deployment.
--   **Minimize credit usage.** The user has repeatedly emphasized efficiency. Limit testing to critical paths and rely on  and manual verification where possible instead of resource-intensive automated testing agents.
--   The admin user is .
--   Stripe integration is hardcoded for a single  plan as requested. Do not build a complex product management system in Stripe.
--   The user has provided all necessary production keys for **Stripe** and **MongoDB Atlas**. They are in the chat history.
+-   The application is now live, and the user is testing in a production environment. Stability and performance are top priorities. The user is sensitive to credit usage.
+-   The production database (MongoDB Atlas) was initially empty. Previous test data from the Emergent environment does not exist there.
+-   Deployment has been the biggest challenge. Be extra cautious with changes that might affect Vercel or Railway builds.
+-   The next immediate task is to integrate the  component into the  and .
 
 **documents and test reports created in this job**
 -    (Updated)
--    (Overwritten)
--   
+-    (Updated)
+-    (New)
+-    (New)
+-    (New)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requested Apollo.io integration, an email warm-up feature, hardcoded Stripe implementation, and a switch to the production MongoDB URL. (IN PROGRESS)
-2.  **Agent:** Confirmed understanding of the major SaaS transformation and asked clarifying questions. (DONE)
-3.  **User:** Provided Stripe/Mongo credentials and initiated the major SaaS transformation request (landing page, auth, multi-tenancy, admin panel, etc.). (IN PROGRESS)
-4.  **User:** Reported that not all dropdown filters on the leads page were working. (RESOLVED)
-5.  **Agent:** Finished fixing dashboard/discovery stats and layout issues, suggested an enhancement. (DONE)
-6.  **User:** Reported layout issues with the View Activity button and broken/non-updating stat cards on the Dashboard and Discovery pages, and broken filters on the Leads page. (RESOLVED)
-7.  **Agent:** Finished implementing email open/click tracking and suggested an enhancement for email warm-up. (DONE)
-8.  **User:** Approved the email tracking enhancement idea. (DONE)
-9.  **Agent:** Finished implementing the real-time progress modal and called the testing agent. (DONE)
-10. **User:** Approved the combined design for the progress modal and reiterated the need for efficiency and deployment readiness. (DONE)
+1.  **User:** Requested to add a setup guide for auto-reply to the onboarding flow and make the full onboarding flow accessible from the dashboard. Also asked for instructions on setting up Resend/GoDaddy for inbound replies. (IN PROGRESS)
+2.  **User:** Reported the pipeline returned no results after deployment. (RESOLVED - Daily scrape limit was hit).
+3.  **User:** Requested to remove the light/dark mode toggle and create a cost/ROI estimate for marketing purposes. (DONE)
+4.  **User:** Noticed bad AI-generated emails in their inbox from before the latest fixes. (EXPLAINED - Caused by old code, new code is not yet deployed).
+5.  **User:** Reported that Dashboard and Discovery pages have white backgrounds, breaking the dark theme. (RESOLVED)
+6.  **User:** Reported that the AI is still sending bad emails with the same subject line and asked how replies/bookings are handled. (RESOLVED - Pipeline was using old template method, fixed to use new AI method. Explained booking/reply mechanism).
+7.  **User:** Asked to add a field for the SerpAPI key. (DONE)
+8.  **User:** Complained about mobile view (nav items scrolling off-screen) and bad AI emails (typos, run-on sentences, same template). (DONE - Refactored nav and improved AI prompts).
+9.  **User:** Asked for a CSV of sample leads to import into the new empty database. (DONE)
+10. **User:** Reported slow page loads, missing data from testing, and a blank leads page after deployment. (RESOLVED - Explained empty DB, fixed blank page rendering).
 
 **Project Health Check:**
-- **Broken:** Production database connection ().
-- **Mocked:** Apollo.io integration is a placeholder until fully implemented.
+-   **Broken:** None.
+-   **Mocked:** Email warm-up feature is marked as Coming Soon in the UI.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4/5** (AI Research) — requires User LLM Key
--   **SerpAPI** (Google Maps Scraping) — requires User API Key
--   **Hunter.io** (Email Enrichment) — requires User API Key
--   **Apollo.io** (Email Enrichment) — **IN PROGRESS**, requires User API Key
--   **Resend** (Transactional Emails & Outreach) — requires User API Key
--   **Stripe** (Payments) — **IN PROGRESS**, requires User API Key (Provided)
--   **Calendly** (Booking) — Webhook integrated.
+-   **OpenAI GPT-4o** — requires User API Key (for email generation)
+-   **SerpAPI** — requires User API Key (for lead scraping)
+-   **Hunter.io** — requires User API Key (for email enrichment)
+-   **Apollo.io** — requires User API Key (for email enrichment)
+-   **Resend** — requires User API Key (for outbound emails and inbound webhooks)
+-   **Stripe** — requires User API Key (for payments)
+-   **Calendly** — Webhook integrated.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
+-   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None
--   **Known regressions:** None
+-   **Known regressions:** None, but the user has reported multiple issues post-deployment which were subsequently fixed.
 
 **Credentials to test flow:**
--   **Admin User:**  (password was set during the session, can be reset if needed).
--   **Stripe Keys:** Available in .
--   **Production MongoDB Atlas URL:** Available in chat history (currently not in use due to SSL issue).
--   **Other API Keys (Hunter, Serp, etc.):** Should be configured in the Settings page UI after logging in.
+-   **Admin User:**  (password: )
+-   **API Keys (Stripe, Resend, etc.):** The user has configured these as environment variables in their production Railway deployment.
 
 **What agent forgot to execute**
--   The agent did not complete the Apollo.io integration; the pipeline still only uses Hunter.
--   The agent did not start the email warm-up feature.
--   The frontend pricing page is not yet connected to the backend Stripe service.
--   The admin dashboard page is just a placeholder.
--   The onboarding page is just a placeholder.
--   The production MongoDB connection issue remains unresolved.</analysis>
+- The agent created the  component as requested but did not complete the full task of integrating it into the  and adding a trigger for it on the . This is the immediate next step.</analysis>
