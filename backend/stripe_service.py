@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 PRICE_AMOUNT = 2999  # $29.99 in cents
-TRIAL_DAYS = 3
+TRIAL_DAYS = 1  # 24-hour trial
 
 
 async def create_stripe_customer(email: str, name: str) -> str:
