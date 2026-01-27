@@ -304,7 +304,6 @@ class EmailSequenceGenerator:
         business_name = lead.get('business_name', 'your business')
         
         # Use product info if available
-        product_name = product.get('name', sender_company) if product else sender_company
         product_desc = product.get('description', '') if product else ''
         
         # Build value proposition from product
