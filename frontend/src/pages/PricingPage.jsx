@@ -58,7 +58,7 @@ export default function PricingPage() {
               <span className="text-4xl font-bold text-white">$29.99</span>
               <span className="text-red-200">/month</span>
             </div>
-            <p className="text-red-200 text-sm mt-2">3-day free trial included</p>
+            <p className="text-red-200 text-sm mt-2">24-hour free trial included</p>
           </div>
 
           {/* Features */}
