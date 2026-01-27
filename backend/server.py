@@ -217,6 +217,7 @@ class Product(BaseModel):
     name: str
     description: str
     features: Optional[List[str]] = Field(default_factory=list)
+    email_guidelines: Optional[str] = None  # Custom AI prompt guidelines per product
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class DiscoverySet(BaseModel):
@@ -238,6 +239,9 @@ class SystemConfig(BaseModel):
     active_discovery_set_id: Optional[str] = None
     daily_outreach_limit: int = 50
     max_follow_ups: int = 2
+    follow_up_days: int = 2  # Days to wait before follow-up if no reply
+    auto_reply_enabled: bool = False  # Toggle AI auto-replies
+    reply_domain: Optional[str] = None  # Domain for inbound replies (e.g., replies.domain.com)
     outreach_score_threshold: int = 70
     priority_score_threshold: int = 80
     serpapi_key: Optional[str] = None
