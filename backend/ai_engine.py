@@ -453,7 +453,7 @@ RESEARCH INSIGHTS:
 - Target Customer: {research.get('target_customer', 'local customers')}
 - Personalized Opener: {research.get('opener')}
 {product_context}
-
+{custom_guidelines}
 SENDER:
 - Name: {sender_name}
 - Company: {sender_company}
@@ -468,19 +468,19 @@ EMAIL 1 (Day 0 - Personal Opener):
 - Soft CTA: "Would it make sense to chat?"
 - Max 80 words
 
-EMAIL 2 (Day 3 - Pattern Interrupt):
+EMAIL 2 (Day {delays[1]} - Pattern Interrupt):
 - Very short (under 40 words)
 - Ask ONE specific question about their current process
 - No links, no pitch
 - Casual tone
 
-EMAIL 3 (Day 6 - Value & Proof):
+EMAIL 3 (Day {delays[2]} - Value & Proof):
 - Lead with a specific result or case study
 - Make it relevant to their industry ({lead.get('category')})
 - Bridge to how this applies to them
 - Max 70 words
 
-EMAIL 4 (Day 10 - Breakup):
+EMAIL 4 (Day {delays[3]} - Breakup):
 - Acknowledge the busy reality
 - Offer a clear "close the loop" out
 - Leave door open without being pushy
@@ -498,9 +498,9 @@ CRITICAL RULES:
 OUTPUT valid JSON array:
 [
     {{"sequence_number": 1, "delay_days": 0, "subject": "...", "body": "...", "type": "opener"}},
-    {{"sequence_number": 2, "delay_days": 3, "subject": "Re: [Email 1 subject]", "body": "...", "type": "follow_up"}},
-    {{"sequence_number": 3, "delay_days": 6, "subject": "Re: [Email 1 subject]", "body": "...", "type": "proof"}},
-    {{"sequence_number": 4, "delay_days": 10, "subject": "Closing the loop", "body": "...", "type": "breakup"}}
+    {{"sequence_number": 2, "delay_days": {delays[1]}, "subject": "Re: [Email 1 subject]", "body": "...", "type": "follow_up"}},
+    {{"sequence_number": 3, "delay_days": {delays[2]}, "subject": "Re: [Email 1 subject]", "body": "...", "type": "proof"}},
+    {{"sequence_number": 4, "delay_days": {delays[3]}, "subject": "Closing the loop", "body": "...", "type": "breakup"}}
 ]"""
 
         try:
