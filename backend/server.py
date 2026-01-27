@@ -233,6 +233,7 @@ class DiscoverySet(BaseModel):
 class SystemConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "system_config"
+    tenant_id: Optional[str] = None
     is_running: bool = False
     test_mode: bool = False
     active_product_id: Optional[str] = None
