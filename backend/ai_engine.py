@@ -405,7 +405,8 @@ But if you're curious about what's possible, I'm happy to do a quick no-pressure
         sender_name: str,
         sender_company: str,
         calendar_link: str = None,
-        product: Dict[str, Any] = None
+        product: Dict[str, Any] = None,
+        follow_up_days: int = 2
     ) -> List[Dict[str, Any]]:
         """
         Generate fully AI-personalized sequence with industry-specific messaging
@@ -414,6 +415,7 @@ But if you're curious about what's possible, I'm happy to do a quick no-pressure
             return self.generate_sequence(lead, research, sender_name, sender_company)
         
         product_context = ""
+        custom_guidelines = ""
         if product:
             product_context = f"""
 YOUR PRODUCT/SERVICE TO SELL:
@@ -421,10 +423,19 @@ YOUR PRODUCT/SERVICE TO SELL:
 - Description: {product.get('description', '')}
 - Key Benefits: {', '.join(product.get('features', []))}
 """
+            # Add custom email guidelines if provided
+            if product.get('email_guidelines'):
+                custom_guidelines = f"""
+CUSTOM GUIDELINES FROM USER (FOLLOW THESE STRICTLY):
+{product.get('email_guidelines')}
+"""
         
         calendar_context = ""
         if calendar_link:
             calendar_context = f"\nInclude this booking link in Email 1: {calendar_link}"
+        
+        # Calculate delays based on follow_up_days
+        delays = [0, follow_up_days, follow_up_days * 2, follow_up_days * 3]
         
         prompt = f"""You are an expert cold email copywriter. Generate a highly personalized 4-email sequence.
 
