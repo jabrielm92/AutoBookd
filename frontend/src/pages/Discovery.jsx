@@ -720,6 +720,22 @@ export default function Discovery() {
                   ))}
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Custom AI Prompt */}
+              <div className="space-y-3">
+                <Label className="text-blue-600 dark:text-blue-400">Custom AI Instructions</Label>
+                <p className="text-sm text-slate-500">
+                  Provide specific instructions for the AI to follow when writing emails. Be as detailed as you want.
+                </p>
+                <Textarea
+                  value={emailGuidelines.custom_prompt || ''}
+                  onChange={(e) => setEmailGuidelines({...emailGuidelines, custom_prompt: e.target.value})}
+                  placeholder="e.g., Always mention our 10-year track record. Focus on cost savings. Reference their Google reviews when relevant. Keep subject lines under 6 words..."
+                  className="min-h-[150px]"
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
