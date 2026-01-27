@@ -94,6 +94,7 @@ export default function Layout() {
   const [loading, setLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   // Start flow modal state
@@ -107,13 +108,25 @@ export default function Layout() {
 
   useEffect(() => {
     fetchStatus();
-    // Check for saved theme
+    // Load user from localStorage
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+    // Check for saved theme - default to dark
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
+    if (savedTheme !== 'light') {
       setDarkMode(true);
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    navigate('/');
+    toast.success('Logged out successfully');
+  };
 
   const fetchStatus = async () => {
     try {
