@@ -162,9 +162,10 @@ CNAME api   your-app.railway.app
 ## 7. Troubleshooting
 
 ### MongoDB Connection Issues
-- Ensure IP whitelist includes Railway IPs
-- Check connection string format
-- Verify user credentials
+- Ensure IP whitelist includes `0.0.0.0/0` for Railway (or Railway's static IPs)
+- Check connection string format: `mongodb+srv://user:password@cluster.mongodb.net/?retryWrites=true&w=majority`
+- Verify user credentials and database roles
+- **SSL Note**: The backend automatically configures TLS for MongoDB Atlas connections
 
 ### CORS Errors
 - Add frontend domain to CORS_ORIGINS
