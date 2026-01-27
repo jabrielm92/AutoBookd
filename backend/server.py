@@ -612,6 +612,35 @@ async def create_portal(user: dict = Depends(get_current_user)):
     
     return {"portal_url": portal_url}
 
+@api_router.get("/stripe/my-subscription")
+async def get_my_subscription(user: dict = Depends(get_current_user)):
+    """Get current user's subscription info"""
+    import stripe_service
+    
+    result = {
+        "subscription_status": user.get("subscription_status", "none"),
+        "trial_ends_at": user.get("trial_ends_at"),
+        "subscription_ends_at": user.get("subscription_ends_at"),
+        "stripe_customer_id": user.get("stripe_customer_id"),
+        "subscription_id": user.get("subscription_id"),
+        "next_payment_date": None,
+        "plan_name": "AutoBookd Pro",
+        "plan_price": "$29.99/month"
+    }
+    
+    # Get live subscription data from Stripe if available
+    if user.get("subscription_id"):
+        try:
+            sub_details = await stripe_service.get_subscription_status(user["subscription_id"])
+            if sub_details:
+                result["next_payment_date"] = sub_details.get("current_period_end")
+                result["cancel_at_period_end"] = sub_details.get("cancel_at_period_end", False)
+                result["trial_end"] = sub_details.get("trial_end")
+        except Exception as e:
+            print(f"Error fetching subscription: {e}")
+    
+    return result
+
 @api_router.post("/stripe/webhook")
 async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
     import stripe_service
@@ -633,7 +662,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 {"$set": {
                     "subscription_status": "trial",
                     "subscription_id": session.get("subscription"),
-                    "trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+                    "trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
                 }}
             )
     
