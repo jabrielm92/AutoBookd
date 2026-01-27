@@ -957,7 +957,7 @@ async def get_system_status():
     
     return {
         "is_running": pipeline.is_running,
-        "test_mode": config.get("test_mode", False) if config else False,
+        "auto_send_emails": config.get("auto_send_emails", False) if config else False,
         "active_product_id": config.get("active_product_id") if config else None,
         "active_discovery_set_id": config.get("active_discovery_set_id") if config else None,
         "config": config,
