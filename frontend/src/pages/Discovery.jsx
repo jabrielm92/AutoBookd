@@ -46,7 +46,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import api, { getConfig, updateConfig, getProducts, createProduct, deleteProduct, getDiscoverySets, createDiscoverySet, deleteDiscoverySet, getPipelineActivity } from '@/lib/api';
+import api, { getConfig, updateConfig, getProducts, createProduct, deleteProduct, updateProduct, getDiscoverySets, createDiscoverySet, deleteDiscoverySet, updateDiscoverySet, getPipelineActivity } from '@/lib/api';
 
 export default function Discovery() {
   const navigate = useNavigate();
