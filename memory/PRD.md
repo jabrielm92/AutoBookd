@@ -40,14 +40,15 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] Password hashing with bcrypt
 - [x] Protected routes
 
-### Stripe Integration ✅ (NEW)
+### Stripe Integration ✅ (Updated Jan 27, 2025)
 - [x] Checkout session creation
-- [x] 3-day free trial
+- [x] 24-hour free trial (changed from 3-day)
 - [x] $29.99/month subscription
 - [x] Webhook handling for subscription events
 - [x] Billing portal integration
 - [x] Subscription status tracking
 - [x] Frontend connected to backend checkout
+- [x] Subscription tab in Settings with plan info, next payment date, manage button
 
 ### Apollo.io Enrichment ✅ (Jan 27, 2025)
 - [x] ApolloEmailFinder class in lead_scraper.py
