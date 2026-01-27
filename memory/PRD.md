@@ -17,12 +17,13 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 
 ## What's Been Implemented (Jan 27, 2025)
 
-### Multi-Tenancy SaaS Platform ✅ (NEW)
+### Multi-Tenancy SaaS Platform ✅ (Updated Jan 27, 2025)
 - [x] User authentication (signup, login, email verification)
 - [x] JWT-based session management
-- [x] Tenant data isolation (each user owns their data)
+- [x] **Tenant data isolation (FIXED - each user now sees only their data)**
 - [x] Admin role with full access
 - [x] User profile management
+- [x] All endpoints protected with tenant_id filtering (config, products, leads, discovery-sets, sequences, conversations, bookings, analytics, niches)
 
 ### Landing Page ✅ (Updated Jan 27, 2025)
 - [x] Epic hero section with red ocean gradient theme
