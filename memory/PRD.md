@@ -24,7 +24,7 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] Admin role with full access
 - [x] User profile management
 
-### Landing Page ✅ (NEW)
+### Landing Page ✅ (Updated Jan 27, 2025)
 - [x] Epic hero section with red ocean gradient theme
 - [x] Features showcase
 - [x] "How it works" section
@@ -32,6 +32,8 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] FAQ accordion
 - [x] Contact form (emails to autobookd@arisolutionsinc.com via Resend)
 - [x] ARI Solutions Inc. branding with link
+- [x] Demo button removed
+- [x] 24-hour free trial CTA
 
 ### Auth System ✅ (NEW)
 - [x] Signup page with email/password
