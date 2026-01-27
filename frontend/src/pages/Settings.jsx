@@ -565,6 +565,31 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {/* Email Sending Settings */}
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Mail className="w-5 h-5" />
+                Email Sending
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Control how emails are handled during pipeline runs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800 border border-slate-700">
+                <div>
+                  <p className="font-medium text-white">Auto-Send Emails</p>
+                  <p className="text-sm text-slate-400">When OFF, emails are generated as drafts only (you can review and send manually)</p>
+                </div>
+                <Switch
+                  checked={config?.auto_send_emails ?? false}
+                  onCheckedChange={(checked) => setConfig({...config, auto_send_emails: checked})}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Auto-Reply Settings */}
           <Card className="bg-slate-900 border-slate-800">
             <CardHeader>
