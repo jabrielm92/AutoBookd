@@ -199,6 +199,32 @@ export default function Discovery() {
     }
   };
 
+  const handleEditProduct = (product) => {
+    setEditingProduct({
+      ...product,
+      features: product.features?.join(', ') || ''
+    });
+    setIsEditProductDialogOpen(true);
+  };
+
+  const handleUpdateProduct = async () => {
+    try {
+      const features = editingProduct.features.split(',').map(f => f.trim()).filter(f => f);
+      await updateProduct(editingProduct.id, {
+        name: editingProduct.name,
+        description: editingProduct.description,
+        features,
+        email_guidelines: editingProduct.email_guidelines || null
+      });
+      toast.success('Product updated');
+      setIsEditProductDialogOpen(false);
+      setEditingProduct(null);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update product');
+    }
+  };
+
   const handleAddDiscoverySet = async () => {
     try {
       const keywords = newDiscoverySet.keywords.split(',').map(k => k.trim()).filter(k => k);
