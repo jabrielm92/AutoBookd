@@ -271,6 +271,7 @@ class SystemConfigUpdate(BaseModel):
     max_follow_ups: Optional[int] = None
     follow_up_days: Optional[int] = None
     auto_reply_enabled: Optional[bool] = None
+    auto_send_emails: Optional[bool] = None
     reply_domain: Optional[str] = None
     outreach_score_threshold: Optional[int] = None
     priority_score_threshold: Optional[int] = None
