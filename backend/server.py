@@ -1638,36 +1638,37 @@ async def get_conversation(lead_id: str, user: dict = Depends(get_current_user))
 
 # ----- Niches -----
 @api_router.post("/niches", response_model=Niche)
-async def create_niche(niche_data: NicheCreate):
+async def create_niche(niche_data: NicheCreate, user: dict = Depends(get_current_user)):
     niche = Niche(**niche_data.model_dump())
     doc = niche.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['tenant_id'] = user["id"]
     await db.niches.insert_one(doc)
     return niche
 
 @api_router.get("/niches", response_model=List[Niche])
-async def get_niches():
-    niches = await db.niches.find({}, {"_id": 0}).to_list(100)
+async def get_niches(user: dict = Depends(get_current_user)):
+    niches = await db.niches.find({"tenant_id": user["id"]}, {"_id": 0}).to_list(100)
     return niches
 
 @api_router.get("/niches/{niche_id}", response_model=Niche)
-async def get_niche(niche_id: str):
-    niche = await db.niches.find_one({"id": niche_id}, {"_id": 0})
+async def get_niche(niche_id: str, user: dict = Depends(get_current_user)):
+    niche = await db.niches.find_one({"id": niche_id, "tenant_id": user["id"]}, {"_id": 0})
     if not niche:
         raise HTTPException(status_code=404, detail="Niche not found")
     return niche
 
 @api_router.put("/niches/{niche_id}", response_model=Niche)
-async def update_niche(niche_id: str, update_data: Dict[str, Any]):
-    await db.niches.update_one({"id": niche_id}, {"$set": update_data})
-    niche = await db.niches.find_one({"id": niche_id}, {"_id": 0})
+async def update_niche(niche_id: str, update_data: Dict[str, Any], user: dict = Depends(get_current_user)):
+    await db.niches.update_one({"id": niche_id, "tenant_id": user["id"]}, {"$set": update_data})
+    niche = await db.niches.find_one({"id": niche_id, "tenant_id": user["id"]}, {"_id": 0})
     if not niche:
         raise HTTPException(status_code=404, detail="Niche not found")
     return niche
 
 @api_router.delete("/niches/{niche_id}")
-async def delete_niche(niche_id: str):
-    result = await db.niches.delete_one({"id": niche_id})
+async def delete_niche(niche_id: str, user: dict = Depends(get_current_user)):
+    result = await db.niches.delete_one({"id": niche_id, "tenant_id": user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Niche not found")
     return {"message": "Niche deleted"}
