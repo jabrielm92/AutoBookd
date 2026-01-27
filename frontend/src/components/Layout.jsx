@@ -142,7 +142,7 @@ export default function Layout() {
       ]);
       setProducts(productsRes.data || []);
       setDiscoverySets(setsRes.data || []);
-      setStartTestMode(configRes.data?.test_mode || false);
+      setStartAutoSend(configRes.data?.auto_send_emails || false);
       setIsStartModalOpen(true);
     } catch (error) {
       toast.error('Failed to load configuration');
@@ -154,11 +154,11 @@ export default function Layout() {
     try {
       const productId = selectedProduct === 'none' ? null : selectedProduct || null;
       const discoverySetId = selectedDiscoverySet === 'none' ? null : selectedDiscoverySet || null;
-      await startSystem(startTestMode, productId, discoverySetId);
+      await startSystem(startAutoSend, productId, discoverySetId);
       setIsRunning(true);
-      setTestMode(startTestMode);
+      setAutoSendEmails(startAutoSend);
       setIsStartModalOpen(false);
-      toast.success(startTestMode ? 'Pipeline started (Test Mode)' : 'Pipeline started');
+      toast.success(startAutoSend ? 'Pipeline started (Emails will be sent)' : 'Pipeline started (Drafts only)');
     } catch (error) {
       toast.error('Failed to start pipeline');
     } finally {
