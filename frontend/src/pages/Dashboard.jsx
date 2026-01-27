@@ -34,7 +34,7 @@ const statusLabels = {
 };
 
 export default function Dashboard() {
-  const { isRunning, testMode } = useOutletContext();
+  const { isRunning, autoSendEmails } = useOutletContext();
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [pipelineCounts, setPipelineCounts] = useState({});
