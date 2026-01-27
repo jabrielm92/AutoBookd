@@ -388,6 +388,13 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Setup Guide Modal */}
+      <SetupGuide 
+        isOpen={showSetupGuide} 
+        onClose={() => setShowSetupGuide(false)} 
+        isModal={true}
+      />
     </div>
   );
 }
