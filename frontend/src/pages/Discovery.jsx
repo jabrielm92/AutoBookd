@@ -66,6 +66,10 @@ export default function Discovery() {
   const [newProduct, setNewProduct] = useState({ name: '', description: '', features: '', email_guidelines: '' });
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   
+  // Edit product
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isEditProductDialogOpen, setIsEditProductDialogOpen] = useState(false);
+  
   // New discovery set form
   const [newDiscoverySet, setNewDiscoverySet] = useState({ 
     name: '', 
@@ -76,6 +80,10 @@ export default function Discovery() {
     daily_limit: 50
   });
   const [isDiscoveryDialogOpen, setIsDiscoveryDialogOpen] = useState(false);
+  
+  // Edit discovery set
+  const [editingDiscoverySet, setEditingDiscoverySet] = useState(null);
+  const [isEditDiscoveryDialogOpen, setIsEditDiscoveryDialogOpen] = useState(false);
   
   // Email guidelines
   const [emailGuidelines, setEmailGuidelines] = useState({
