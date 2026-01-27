@@ -1493,6 +1493,35 @@ async def bulk_delete_leads(data: Dict[str, List[str]]):
     result = await db.leads.delete_many({"id": {"$in": ids}})
     return {"deleted": result.deleted_count, "requested": len(ids)}
 
+@api_router.get("/leads/export/csv")
+async def export_leads_csv(user: dict = Depends(get_current_user)):
+    """Export all leads as CSV"""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+    
+    tenant_id = user["id"]
+    leads = await db.leads.find({"tenant_id": tenant_id}, {"_id": 0}).to_list(10000)
+    
+    if not leads:
+        raise HTTPException(status_code=404, detail="No leads to export")
+    
+    output = io.StringIO()
+    fieldnames = ['business_name', 'email', 'phone', 'website', 'address', 'city', 'state', 'category', 'rating', 'review_count', 'lead_score', 'status', 'created_at']
+    writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
+    writer.writeheader()
+    
+    for lead in leads:
+        writer.writerow(lead)
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=autobookd_leads.csv"}
+    )
+
 @api_router.post("/leads/import/csv")
 async def import_csv_leads(file: UploadFile = File(...)):
     """Import leads from CSV file"""
