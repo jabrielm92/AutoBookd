@@ -1,218 +1,210 @@
 # AutoBookd Deployment Guide
 
-## Overview
-Deploy AutoBookd to production using:
-- **Frontend**: Vercel
-- **Backend**: Railway
-- **Database**: MongoDB Atlas
-- **Domain**: autobookd.arisolutionsinc.com
+Complete deployment guide for Railway (backend), Vercel (frontend), and MongoDB Atlas.
+
+## Prerequisites
+
+- GitHub account with repository access
+- Railway account (railway.app)
+- Vercel account (vercel.com)
+- MongoDB Atlas account
+- Stripe account with API keys
+- Domain: autobookd.arisolutionsinc.com
 
 ---
 
-## Step 1: MongoDB Atlas Setup
+## 1. MongoDB Atlas Setup
 
-1. **Go to** [MongoDB Atlas](https://cloud.mongodb.com)
-2. **Create account** or sign in
-3. **Create a new cluster** (free tier M0 works)
-4. **Create database user**:
-   - Database Access → Add New Database User
-   - Username: `autobookd_user`
-   - Password: Generate secure password (save this!)
-   - Privileges: "Read and Write to any database"
-5. **Whitelist IPs**:
-   - Network Access → Add IP Address
-   - Click "Allow Access from Anywhere" (0.0.0.0/0) for Railway
-6. **Get connection string**:
-   - Clusters → Connect → Connect your application
-   - Copy the connection string (looks like): 
+### Create Cluster
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com)
+2. Create a new project called "AutoBookd"
+3. Build a new cluster (M0 free tier works for testing)
+4. Choose your preferred region
+
+### Configure Access
+1. **Database Access**: Create a database user
+   - Username: `arisolutionsinc_db_user`
+   - Password: Use a strong password
+   - Role: `readWriteAnyDatabase`
+
+2. **Network Access**: Add IP addresses
+   - For Railway: Add `0.0.0.0/0` (allow from anywhere)
+   - Or get Railway's static IPs if using their addon
+
+3. **Get Connection String**:
    ```
-   mongodb+srv://autobookd_user:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   ```
-   - Replace `<password>` with your actual password
-
----
-
-## Step 2: Railway Backend Deployment
-
-1. **Go to** [Railway.app](https://railway.app)
-2. **Sign in** with GitHub
-3. **New Project** → Deploy from GitHub repo
-4. Select your repository or use "Deploy from Template"
-5. **Configure Backend Service**:
-   - Root Directory: `backend`
-   - Start Command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
-   
-6. **Add Environment Variables** (Settings → Variables):
-   ```
-   MONGO_URL=mongodb+srv://autobookd_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   DB_NAME=autobookd
-   SERPAPI_KEY=your_serpapi_key
-   HUNTER_API_KEY=your_hunter_key
+   mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
    ```
 
-7. **Generate Domain**:
-   - Settings → Networking → Generate Domain
-   - Or add custom domain: `api.autobookd.arisolutionsinc.com`
-   
-8. **Note the Railway URL** (e.g., `https://autobookd-backend.up.railway.app`)
-
 ---
 
-## Step 3: Vercel Frontend Deployment
+## 2. Railway Backend Deployment
 
-1. **Go to** [Vercel.com](https://vercel.com)
-2. **Sign in** with GitHub
-3. **Import Project** → Select your repository
-4. **Configure**:
-   - Framework: Create React App
-   - Root Directory: `frontend`
-   - Build Command: `yarn build`
-   - Output Directory: `build`
+### Create Project
+1. Go to [Railway](https://railway.app)
+2. New Project → Deploy from GitHub repo
+3. Select your repository, choose `/app/backend` as root directory
 
-5. **Add Environment Variable**:
-   ```
-   REACT_APP_BACKEND_URL=https://autobookd-backend.up.railway.app
-   ```
-   (Use your Railway backend URL from Step 2)
+### Environment Variables
+Add these in Railway's environment settings:
 
-6. **Deploy**
-
-7. **Add Custom Domain**:
-   - Project Settings → Domains
-   - Add: `autobookd.arisolutionsinc.com`
-   - Follow DNS instructions (add CNAME record)
-
----
-
-## Step 4: DNS Configuration (arisolutionsinc.com)
-
-Add these DNS records in your domain registrar:
-
-### For Frontend (Vercel):
-```
-Type: CNAME
-Name: autobookd
-Value: cname.vercel-dns.com
-```
-
-### For Backend API (Railway) - Optional:
-```
-Type: CNAME
-Name: api.autobookd
-Value: your-railway-domain.up.railway.app
-```
-
----
-
-## Step 5: Configure API Keys in App
-
-After deployment, go to `https://autobookd.arisolutionsinc.com/settings`:
-
-1. **OpenAI API Key** - For AI research and personalization
-2. **Resend API Key** - For email sending
-3. **Calendly Link** - Your booking link for auto-send
-4. **From Email** - Must match verified Resend domain
-
----
-
-## Step 6: Resend Email Setup
-
-1. **Go to** [Resend.com](https://resend.com)
-2. **Verify your domain** (arisolutionsinc.com):
-   - Domains → Add Domain
-   - Add DNS records as instructed (SPF, DKIM, DMARC)
-3. **Create API Key**
-4. **Add to AutoBookd Settings**
-
----
-
-## Step 7: Calendly Webhook Setup
-
-1. **Go to** [Calendly Developer Portal](https://developer.calendly.com)
-2. **Create Webhook**:
-   - URL: `https://api.autobookd.arisolutionsinc.com/api/webhooks/calendly`
-   - Events: `invitee.created`, `invitee.canceled`
-3. **Copy webhook signing key** to AutoBookd Settings (optional)
-
----
-
-## Environment Variables Summary
-
-### Backend (Railway):
-```
-MONGO_URL=mongodb+srv://...
+```env
+# MongoDB
+MONGO_URL=mongodb+srv://user:password@cluster.mongodb.net/?retryWrites=true&w=majority
 DB_NAME=autobookd
-SERPAPI_KEY=xxx
-HUNTER_API_KEY=xxx
+
+# Security
+JWT_SECRET=your_secure_random_string_min_32_chars
+ADMIN_EMAIL=jabriel@arisolutionsinc.com
+
+# Stripe
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Tracking URL (your Vercel frontend domain)
+TRACKING_BASE_URL=https://autobookd.arisolutionsinc.com
+
+# CORS
+CORS_ORIGINS=https://autobookd.arisolutionsinc.com,https://www.autobookd.arisolutionsinc.com
 ```
 
-### Frontend (Vercel):
-```
+### Railway Settings
+1. **Root Directory**: `/app/backend`
+2. **Build Command**: `pip install -r requirements.txt`
+3. **Start Command**: `uvicorn server:app --host 0.0.0.0 --port $PORT`
+
+### Custom Domain (Optional)
+1. Go to Settings → Networking → Custom Domain
+2. Add: `api.autobookd.arisolutionsinc.com`
+3. Configure DNS CNAME record
+
+---
+
+## 3. Vercel Frontend Deployment
+
+### Create Project
+1. Go to [Vercel](https://vercel.com)
+2. New Project → Import Git Repository
+3. Select your repository
+
+### Configuration
+1. **Framework Preset**: Create React App
+2. **Root Directory**: `frontend`
+3. **Build Command**: `yarn build`
+4. **Output Directory**: `build`
+
+### Environment Variables
+```env
 REACT_APP_BACKEND_URL=https://api.autobookd.arisolutionsinc.com
+# Or use Railway's generated URL: https://your-app.railway.app
 ```
 
-### In-App Settings:
-- OpenAI API Key
-- Resend API Key  
-- From Email
-- Sender Name
-- Company Name
-- Calendly Link
-- Apollo API Key (future)
+### Custom Domain
+1. Go to Project Settings → Domains
+2. Add: `autobookd.arisolutionsinc.com`
+3. Add: `www.autobookd.arisolutionsinc.com`
+4. Configure DNS:
+   - A Record: `@` → Vercel IP (76.76.21.21)
+   - CNAME: `www` → `cname.vercel-dns.com`
 
 ---
 
-## Verification Checklist
+## 4. Stripe Webhook Setup
 
-- [ ] MongoDB Atlas cluster created and accessible
-- [ ] Railway backend deployed and healthy (`/api/health` returns 200)
-- [ ] Vercel frontend deployed and loading
-- [ ] DNS configured for autobookd.arisolutionsinc.com
-- [ ] API keys configured in Settings
-- [ ] Resend domain verified
-- [ ] Test mode works (start pipeline, check logs)
-- [ ] Quick Scrape works on Discovery page
-- [ ] Calendly webhook configured (optional)
-
----
-
-## Troubleshooting
-
-### Backend not connecting to MongoDB:
-- Check MONGO_URL has correct password
-- Verify IP whitelist includes 0.0.0.0/0
-- Check Railway logs for connection errors
-
-### Frontend not loading:
-- Verify REACT_APP_BACKEND_URL is correct
-- Check browser console for CORS errors
-- Ensure Railway backend is running
-
-### Emails not sending:
-- Verify Resend domain is fully verified
-- Check from_email matches verified domain
-- Test with Test Mode first
+1. Go to Stripe Dashboard → Developers → Webhooks
+2. Add endpoint: `https://api.autobookd.arisolutionsinc.com/api/stripe/webhook`
+3. Select events:
+   - `checkout.session.completed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_succeeded`
+   - `invoice.payment_failed`
+4. Copy the webhook signing secret to Railway env vars
 
 ---
 
-## Cost Estimates (Monthly)
+## 5. DNS Configuration
 
-| Service | Free Tier | Paid |
-|---------|-----------|------|
-| MongoDB Atlas | 512MB free | $9+/mo |
-| Railway | $5 credit | ~$5-20/mo |
-| Vercel | 100GB free | $20/mo pro |
-| Resend | 100 emails/day | $20/mo |
-| SerpAPI | 100 searches/mo | $50/mo |
-| Hunter.io | 50 credits/mo | $49/mo |
+For `autobookd.arisolutionsinc.com`:
 
-**Estimated Total**: $0-150/mo depending on usage
+```
+# Frontend (Vercel)
+A     @     76.76.21.21
+CNAME www   cname.vercel-dns.com
+
+# Backend API (Railway - optional subdomain)
+CNAME api   your-app.railway.app
+```
+
+---
+
+## 6. Post-Deployment Checklist
+
+### Backend
+- [ ] Health check: `curl https://api.autobookd.arisolutionsinc.com/api/health`
+- [ ] Test auth: Sign up, verify email, login
+- [ ] Test Stripe webhook: Check Railway logs after test payment
+
+### Frontend
+- [ ] Landing page loads at autobookd.arisolutionsinc.com
+- [ ] Login/signup flows work
+- [ ] Dashboard loads after login
+- [ ] Admin panel accessible for jabriel@arisolutionsinc.com
+
+### Stripe
+- [ ] Test checkout flow with test card
+- [ ] Webhook events received
+- [ ] Subscription status updates correctly
+
+---
+
+## 7. Troubleshooting
+
+### MongoDB Connection Issues
+- Ensure IP whitelist includes Railway IPs
+- Check connection string format
+- Verify user credentials
+
+### CORS Errors
+- Add frontend domain to CORS_ORIGINS
+- Ensure HTTPS is used everywhere
+
+### Stripe Webhook Failures
+- Check webhook signing secret matches
+- Ensure endpoint URL is correct
+- Check Railway logs for errors
+
+### Build Failures
+**Backend**: Check requirements.txt for compatible versions
+**Frontend**: Run `yarn build` locally first to catch errors
+
+---
+
+## 8. Environment Variables Summary
+
+### Backend (Railway)
+| Variable | Description |
+|----------|-------------|
+| MONGO_URL | MongoDB Atlas connection string |
+| DB_NAME | Database name (autobookd) |
+| JWT_SECRET | Secret for JWT tokens |
+| ADMIN_EMAIL | Admin user email |
+| STRIPE_PUBLISHABLE_KEY | Stripe public key |
+| STRIPE_SECRET_KEY | Stripe secret key |
+| STRIPE_WEBHOOK_SECRET | Webhook signing secret |
+| TRACKING_BASE_URL | Frontend URL for email tracking |
+| CORS_ORIGINS | Allowed frontend origins |
+
+### Frontend (Vercel)
+| Variable | Description |
+|----------|-------------|
+| REACT_APP_BACKEND_URL | Backend API URL |
 
 ---
 
 ## Support
 
-For issues, check:
-- Railway Logs: Project → Deployments → View Logs
-- Vercel Logs: Project → Deployments → Functions
-- MongoDB: Cluster → Metrics → Real-time
+For deployment issues:
+- Email: autobookd@arisolutionsinc.com
+- Website: https://arisolutionsinc.com
