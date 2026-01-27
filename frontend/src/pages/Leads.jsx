@@ -18,7 +18,8 @@ import {
   Square,
   FileSpreadsheet,
   Clock,
-  X
+  X,
+  Download
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
