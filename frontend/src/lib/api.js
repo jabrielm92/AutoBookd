@@ -37,9 +37,9 @@ api.interceptors.response.use(
 // System
 export const getConfig = () => api.get('/config');
 export const updateConfig = (data) => api.put('/config', data);
-export const startSystem = (testMode = false, productId = null, discoverySetId = null) => {
+export const startSystem = (autoSendEmails = false, productId = null, discoverySetId = null) => {
   const params = new URLSearchParams();
-  params.append('test_mode', testMode);
+  params.append('auto_send_emails', autoSendEmails);
   if (productId) params.append('product_id', productId);
   if (discoverySetId) params.append('discovery_set_id', discoverySetId);
   return api.post(`/system/start?${params.toString()}`);
