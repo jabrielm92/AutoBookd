@@ -1337,9 +1337,14 @@ async def get_leads(
     min_score: Optional[int] = None,
     niche_id: Optional[str] = None,
     limit: int = Query(100, le=500),
-    skip: int = 0
+    skip: int = 0,
+    user: dict = Depends(get_current_user_optional)
 ):
     query = {}
+    # Apply tenant filter if authenticated
+    if user and not is_admin(user):
+        query['tenant_id'] = user["id"]
+    
     if status:
         query['status'] = status.value
     if pipeline_stage:
@@ -1353,14 +1358,22 @@ async def get_leads(
     return leads
 
 @api_router.get("/leads/{lead_id}", response_model=Lead)
-async def get_lead(lead_id: str):
-    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+async def get_lead(lead_id: str, user: dict = Depends(get_current_user_optional)):
+    query = {"id": lead_id}
+    if user and not is_admin(user):
+        query['tenant_id'] = user["id"]
+    
+    lead = await db.leads.find_one(query, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return lead
 
 @api_router.put("/leads/{lead_id}", response_model=Lead)
-async def update_lead(lead_id: str, update_data: Dict[str, Any]):
+async def update_lead(lead_id: str, update_data: Dict[str, Any], user: dict = Depends(get_current_user_optional)):
+    query = {"id": lead_id}
+    if user and not is_admin(user):
+        query['tenant_id'] = user["id"]
+    
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     # Recalculate score if relevant fields changed
