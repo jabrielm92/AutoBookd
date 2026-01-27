@@ -24,7 +24,7 @@ const setupSteps = [
     color: 'text-blue-400',
     bg: 'bg-blue-900/30',
     description: 'Find leads from Google Maps based on keywords and locations.',
-    freeCredits: '100 searches/month free',
+    freeCredits: '250 searches/month free',
     instructions: [
       'Go to serpapi.com and create a free account',
       'Navigate to your Dashboard',
@@ -42,7 +42,7 @@ const setupSteps = [
     color: 'text-orange-400',
     bg: 'bg-orange-900/30',
     description: 'Find verified email addresses for discovered leads.',
-    freeCredits: '25 searches/month free',
+    freeCredits: '50 credits/month free',
     instructions: [
       'Go to hunter.io and sign up for free',
       'Navigate to API settings',
