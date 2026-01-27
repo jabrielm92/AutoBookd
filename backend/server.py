@@ -984,6 +984,20 @@ async def delete_discovery_set(set_id: str):
     await db.discovery_sets.delete_one({"id": set_id})
     return {"status": "deleted"}
 
+# ----- Reset Daily Limits -----
+@api_router.post("/reset-daily-limits")
+async def reset_daily_limits(user: dict = Depends(get_current_user)):
+    """Reset daily scrape counter for the current tenant"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Delete today's stats for this tenant
+    await db.daily_scrape_stats.delete_one({"date": today, "tenant_id": user.get("tenant_id")})
+    
+    # Also delete stats without tenant_id (legacy)
+    await db.daily_scrape_stats.delete_one({"date": today, "tenant_id": {"$exists": False}})
+    
+    return {"status": "success", "message": "Daily limits reset successfully"}
+
 # ----- Calendly Webhook -----
 @api_router.post("/webhooks/calendly")
 async def calendly_webhook(payload: Dict[str, Any]):
