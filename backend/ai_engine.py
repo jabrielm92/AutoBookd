@@ -492,6 +492,7 @@ RESEARCH INSIGHTS:
 - Personalized Opener: {research.get('opener')}
 {product_context}
 {custom_guidelines}
+{global_guidelines}
 SENDER:
 - Name: {sender_name}
 - Company: {sender_company}
