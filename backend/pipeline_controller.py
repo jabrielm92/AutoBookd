@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 import uuid
 
-from lead_scraper import GoogleMapsScraper, HunterEmailFinder, WebsiteScraper, LeadCleaner
+from lead_scraper import GoogleMapsScraper, HunterEmailFinder, ApolloEmailFinder, WebsiteScraper, LeadCleaner
 from ai_engine import AIResearchEngine, EmailSequenceGenerator
 from email_engine import EmailSender, SequenceManager, DeliverabilityTracker
 
@@ -30,13 +30,20 @@ class PipelineController:
         
         # Initialize components
         self.maps_scraper = GoogleMapsScraper()
-        self.email_finder = HunterEmailFinder()
+        self.hunter_finder = HunterEmailFinder()
+        self.apollo_finder = ApolloEmailFinder()
         self.website_scraper = WebsiteScraper()
         self.ai_engine = AIResearchEngine()
         self.sequence_generator = EmailSequenceGenerator()
         self.email_sender = EmailSender()
         self.sequence_manager = SequenceManager(db, self.email_sender)
         self.deliverability_tracker = DeliverabilityTracker(db)
+    
+    async def _get_email_finder(self):
+        """Get the configured email finder (Hunter or Apollo)"""
+        config = await self.db.system_config.find_one({"id": "system_config"})
+        provider = config.get("enrichment_provider", "hunter") if config else "hunter"
+        return self.apollo_finder if provider == "apollo" else self.hunter_finder
     
     async def _log_activity(self, stage: str, message: str, activity_type: str = "info", lead_name: str = None):
         """Log activity to database for real-time display"""
