@@ -415,6 +415,41 @@ export default function Settings() {
 
               <Separator />
 
+              {/* SerpAPI */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    SerpAPI Key
+                    {config?.serpapi_key ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Configured
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Not Set
+                      </Badge>
+                    )}
+                  </Label>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type={showKeys.serpapi ? 'text' : 'password'}
+                    value={config?.serpapi_key || ''}
+                    onChange={(e) => setConfig({...config, serpapi_key: e.target.value})}
+                    placeholder="SerpAPI key"
+                  />
+                  <Button variant="outline" size="icon" onClick={() => toggleShowKey('serpapi')}>
+                    {showKeys.serpapi ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">For Google Maps lead discovery</p>
+              </div>
+
+              <Separator />
+
               {/* Resend */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
