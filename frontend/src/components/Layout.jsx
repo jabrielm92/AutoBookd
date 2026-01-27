@@ -468,13 +468,13 @@ export default function Layout() {
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-6">
         <Outlet context={{ isRunning, testMode, fetchConfig, navigate }} />
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <footer className="border-t border-slate-800 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <p className="text-xs text-slate-500 text-center">
             © 2025 ARI Solutions Inc. All rights reserved.
           </p>
