@@ -256,6 +256,36 @@ export default function Discovery() {
     }
   };
 
+  const handleEditDiscoverySet = (set) => {
+    setEditingDiscoverySet({
+      ...set,
+      keywords: set.keywords?.join(', ') || '',
+      locations: set.locations?.join(', ') || ''
+    });
+    setIsEditDiscoveryDialogOpen(true);
+  };
+
+  const handleUpdateDiscoverySet = async () => {
+    try {
+      const keywords = editingDiscoverySet.keywords.split(',').map(k => k.trim()).filter(k => k);
+      const locations = editingDiscoverySet.locations.split(',').map(l => l.trim()).filter(l => l);
+      await updateDiscoverySet(editingDiscoverySet.id, {
+        name: editingDiscoverySet.name,
+        keywords,
+        locations,
+        min_reviews: editingDiscoverySet.min_reviews,
+        max_per_search: editingDiscoverySet.max_per_search,
+        daily_limit: editingDiscoverySet.daily_limit
+      });
+      toast.success('Discovery set updated');
+      setIsEditDiscoveryDialogOpen(false);
+      setEditingDiscoverySet(null);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update discovery set');
+    }
+  };
+
   const addForbiddenWord = () => {
     if (!forbiddenInput.trim()) return;
     setEmailGuidelines(prev => ({
