@@ -1775,12 +1775,13 @@ async def get_analytics(user: dict = Depends(get_current_user)):
     booking_rate = (total_bookings / contacted * 100) if contacted > 0 else 0
     
     # Average score
-    score_pipeline = [{"$group": {"_id": None, "avg": {"$avg": "$lead_score"}}}]
+    score_pipeline = [{"$match": tenant_filter}, {"$group": {"_id": None, "avg": {"$avg": "$lead_score"}}}]
     avg_result = await db.leads.aggregate(score_pipeline).to_list(1)
     avg_score = avg_result[0]['avg'] if avg_result else 0
     
     # Niches/Categories performance - compute from leads directly
     category_pipeline = [
+        {"$match": tenant_filter},
         {"$group": {
             "_id": "$category",
             "leads_scraped": {"$sum": 1},
