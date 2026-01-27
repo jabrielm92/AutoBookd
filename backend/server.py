@@ -1622,16 +1622,16 @@ async def create_conversation(message: MessageCreate):
     return conv
 
 @api_router.get("/conversations", response_model=List[Conversation])
-async def get_conversations(lead_id: Optional[str] = None, limit: int = 50):
-    query = {}
+async def get_conversations(lead_id: Optional[str] = None, limit: int = 50, user: dict = Depends(get_current_user)):
+    query = {"tenant_id": user["id"]}
     if lead_id:
         query['lead_id'] = lead_id
     convs = await db.conversations.find(query, {"_id": 0}).limit(limit).to_list(limit)
     return convs
 
 @api_router.get("/conversations/{lead_id}", response_model=Conversation)
-async def get_conversation(lead_id: str):
-    conv = await db.conversations.find_one({"lead_id": lead_id}, {"_id": 0})
+async def get_conversation(lead_id: str, user: dict = Depends(get_current_user)):
+    conv = await db.conversations.find_one({"lead_id": lead_id, "tenant_id": user["id"]}, {"_id": 0})
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conv
