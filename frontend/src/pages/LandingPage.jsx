@@ -69,7 +69,7 @@ const faqs = [
   },
   {
     q: "What's included in the free trial?",
-    a: "Full access to all features for 3 days. You can scrape leads, send emails, and book meetings - everything the paid plan offers."
+    a: "Full access to all features for 24 hours. You can scrape leads, send emails, and book meetings - everything the paid plan offers."
   },
   {
     q: "Can I cancel anytime?",
@@ -154,16 +154,8 @@ export default function LandingPage() {
               onClick={() => navigate('/signup')}
               className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-lg px-8 py-6"
             >
-              Start Free 3-Day Trial
+              Start Free 24-Hour Trial
               <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              onClick={() => navigate('/login')}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800 text-lg px-8 py-6"
-            >
-              Watch Demo
             </Button>
           </div>
           <p className="text-slate-500 text-sm mt-4">No credit card required • Cancel anytime</p>
@@ -253,7 +245,7 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$29.99</span>
                   <span className="text-slate-400">/month</span>
                 </div>
-                <p className="text-slate-400 mt-2">3-day free trial included</p>
+                <p className="text-slate-400 mt-2">24-hour free trial included</p>
               </div>
               <Button 
                 size="lg"
