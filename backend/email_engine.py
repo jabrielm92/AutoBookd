@@ -480,14 +480,16 @@ class DeliverabilityTracker:
             upsert=True
         )
     
-    async def get_deliverability_stats(self, days: int = 7) -> Dict[str, Any]:
-        """Get deliverability stats for the last N days"""
+    async def get_deliverability_stats(self, days: int = 7, tenant_id: str = None) -> Dict[str, Any]:
+        """Get deliverability stats for the last N days, optionally filtered by tenant"""
         
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
         
-        stats = await self.db.daily_email_stats.find(
-            {"date": {"$gte": cutoff}}
-        ).to_list(days)
+        query = {"date": {"$gte": cutoff}}
+        if tenant_id:
+            query["tenant_id"] = tenant_id
+        
+        stats = await self.db.daily_email_stats.find(query).to_list(days)
         
         totals = {
             "sent": 0,
