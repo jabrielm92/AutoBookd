@@ -360,6 +360,111 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
+        {/* Subscription Tab */}
+        <TabsContent value="subscription" className="space-y-6">
+          <Card className="bg-slate-900 border-slate-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <CreditCard className="w-5 h-5" />
+                Subscription Status
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Manage your AutoBookd subscription
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {loadingSubscription ? (
+                <div className="h-32 skeleton rounded-lg" />
+              ) : subscription ? (
+                <>
+                  {/* Current Plan */}
+                  <div className="p-4 rounded-lg bg-slate-800 border border-slate-700">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="font-semibold text-white text-lg">{subscription.plan_name}</h3>
+                        <p className="text-slate-400">{subscription.plan_price}</p>
+                      </div>
+                      <Badge className={
+                        subscription.subscription_status === 'active' ? 'bg-emerald-600' :
+                        subscription.subscription_status === 'trial' ? 'bg-blue-600' :
+                        subscription.subscription_status === 'cancelled' ? 'bg-orange-600' :
+                        'bg-slate-600'
+                      }>
+                        {subscription.subscription_status === 'none' ? 'No Subscription' : 
+                         subscription.subscription_status.charAt(0).toUpperCase() + subscription.subscription_status.slice(1)}
+                      </Badge>
+                    </div>
+                    
+                    <Separator className="bg-slate-700 my-4" />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      {subscription.trial_ends_at && (
+                        <div>
+                          <p className="text-slate-500">Trial Ends</p>
+                          <p className="text-white font-medium">
+                            {format(new Date(subscription.trial_ends_at), 'MMM d, yyyy h:mm a')}
+                          </p>
+                        </div>
+                      )}
+                      {subscription.next_payment_date && (
+                        <div>
+                          <p className="text-slate-500">Next Payment</p>
+                          <p className="text-white font-medium">
+                            {format(new Date(subscription.next_payment_date), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                      )}
+                      {subscription.subscription_ends_at && subscription.subscription_status === 'cancelled' && (
+                        <div>
+                          <p className="text-slate-500">Access Until</p>
+                          <p className="text-white font-medium">
+                            {format(new Date(subscription.subscription_ends_at), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {subscription.cancel_at_period_end && (
+                      <div className="mt-4 p-3 rounded bg-orange-900/30 border border-orange-700">
+                        <p className="text-orange-400 text-sm">
+                          Your subscription is set to cancel at the end of the current billing period.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {subscription.subscription_status === 'none' || subscription.subscription_status === 'expired' ? (
+                      <Button 
+                        onClick={handleSubscribe}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Subscribe Now
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleManageSubscription}
+                        variant="outline"
+                        className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Manage Subscription
+                      </Button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <CreditCard className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+                  <p className="text-slate-400">Unable to load subscription info</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Discovery Tab */}
         <TabsContent value="discovery" className="space-y-6">
           {/* Reset Daily Limits */}
