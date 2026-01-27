@@ -236,6 +236,143 @@ class HunterEmailFinder:
         await self.http_client.aclose()
 
 
+class ApolloEmailFinder:
+    """Find and enrich leads via Apollo.io"""
+    
+    def __init__(self):
+        self.api_key = APOLLO_API_KEY
+        self.http_client = httpx.AsyncClient(timeout=30.0)
+        self.base_url = "https://api.apollo.io/v1"
+    
+    async def find_email(self, domain: str, company_name: str = None) -> Optional[Dict[str, Any]]:
+        """
+        Find email and company info via Apollo.io
+        """
+        if not self.api_key:
+            logger.error("Apollo API key not configured")
+            return None
+        
+        try:
+            # Search for organization
+            headers = {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-cache",
+                "X-Api-Key": self.api_key
+            }
+            
+            # First, search for the organization
+            org_response = await self.http_client.post(
+                f"{self.base_url}/organizations/enrich",
+                headers=headers,
+                json={"domain": domain}
+            )
+            
+            org_data = {}
+            if org_response.status_code == 200:
+                org_data = org_response.json().get("organization", {})
+            
+            # Search for people at the organization
+            people_response = await self.http_client.post(
+                f"{self.base_url}/mixed_people/search",
+                headers=headers,
+                json={
+                    "q_organization_domains": domain,
+                    "page": 1,
+                    "per_page": 5,
+                    "person_titles": ["owner", "ceo", "founder", "president", "manager", "director"]
+                }
+            )
+            
+            if people_response.status_code == 200:
+                people_data = people_response.json()
+                people = people_data.get("people", [])
+                
+                if people:
+                    # Get the first person with an email
+                    for person in people:
+                        email = person.get("email")
+                        if email:
+                            return {
+                                "email": email,
+                                "confidence": 90 if person.get("email_status") == "verified" else 70,
+                                "type": "personal",
+                                "first_name": person.get("first_name"),
+                                "last_name": person.get("last_name"),
+                                "position": person.get("title"),
+                                "verified": person.get("email_status") == "verified",
+                                "linkedin_url": person.get("linkedin_url"),
+                                "company_info": {
+                                    "name": org_data.get("name"),
+                                    "industry": org_data.get("industry"),
+                                    "employee_count": org_data.get("estimated_num_employees"),
+                                    "annual_revenue": org_data.get("annual_revenue"),
+                                    "founded_year": org_data.get("founded_year")
+                                }
+                            }
+                    
+                    # If no email found, try to get company generic email
+                    if org_data.get("primary_domain"):
+                        return {
+                            "email": f"info@{domain}",
+                            "confidence": 30,
+                            "type": "guessed",
+                            "company_info": {
+                                "name": org_data.get("name"),
+                                "industry": org_data.get("industry"),
+                                "employee_count": org_data.get("estimated_num_employees")
+                            }
+                        }
+            
+            elif people_response.status_code == 401:
+                logger.error("Apollo API: Invalid API key")
+            elif people_response.status_code == 429:
+                logger.warning("Apollo API: Rate limit reached")
+            else:
+                logger.debug(f"Apollo API: No results for {domain}")
+                
+        except Exception as e:
+            logger.error(f"Apollo email finder error: {e}")
+        
+        return None
+    
+    async def enrich_lead(self, domain: str) -> Dict[str, Any]:
+        """Get additional company information"""
+        if not self.api_key:
+            return {}
+        
+        try:
+            headers = {
+                "Content-Type": "application/json",
+                "X-Api-Key": self.api_key
+            }
+            
+            response = await self.http_client.post(
+                f"{self.base_url}/organizations/enrich",
+                headers=headers,
+                json={"domain": domain}
+            )
+            
+            if response.status_code == 200:
+                org = response.json().get("organization", {})
+                return {
+                    "company_name": org.get("name"),
+                    "industry": org.get("industry"),
+                    "employee_count": org.get("estimated_num_employees"),
+                    "annual_revenue": org.get("annual_revenue"),
+                    "founded_year": org.get("founded_year"),
+                    "technologies": org.get("technologies", []),
+                    "keywords": org.get("keywords", []),
+                    "seo_description": org.get("seo_description")
+                }
+        except Exception as e:
+            logger.error(f"Apollo enrichment error: {e}")
+        
+        return {}
+    
+    async def close(self):
+        await self.http_client.aclose()
+
+
 class WebsiteScraper:
     """Scrape websites for research data"""
     
