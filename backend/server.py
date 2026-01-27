@@ -1745,16 +1745,17 @@ async def get_analytics(user: dict = Depends(get_current_user)):
     
     # Leads by status
     pipeline = [
+        {"$match": tenant_filter},
         {"$group": {"_id": "$status", "count": {"$sum": 1}}}
     ]
     status_counts = await db.leads.aggregate(pipeline).to_list(20)
     leads_by_status = {item['_id']: item['count'] for item in status_counts}
     
     # Total conversations
-    total_conversations = await db.conversations.count_documents({})
+    total_conversations = await db.conversations.count_documents(tenant_filter)
     
     # Total bookings
-    total_bookings = await db.bookings.count_documents({})
+    total_bookings = await db.bookings.count_documents(tenant_filter)
     
     # Calculate rates
     contacted = leads_by_status.get(LeadStatus.OUTREACH_SENT.value, 0) + \
