@@ -821,6 +821,151 @@ export default function Discovery() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={isEditProductDialogOpen} onOpenChange={setIsEditProductDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Product / Service</DialogTitle>
+          </DialogHeader>
+          {editingProduct && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Name *</Label>
+                <Input
+                  value={editingProduct.name}
+                  onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
+                  placeholder="Business Process Solutions"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Description *</Label>
+                <Textarea
+                  value={editingProduct.description}
+                  onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
+                  placeholder="We help businesses streamline operations..."
+                  rows={3}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Key Features (comma separated)</Label>
+                <Input
+                  value={editingProduct.features}
+                  onChange={(e) => setEditingProduct({...editingProduct, features: e.target.value})}
+                  placeholder="Lead capture, Customer response"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Email Guidelines (Optional)</Label>
+                <Textarea
+                  value={editingProduct.email_guidelines || ''}
+                  onChange={(e) => setEditingProduct({...editingProduct, email_guidelines: e.target.value})}
+                  placeholder="Custom instructions for AI email generation..."
+                  rows={4}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" className="border-slate-700 text-slate-300">Cancel</Button>
+            </DialogClose>
+            <Button 
+              onClick={handleUpdateProduct} 
+              disabled={!editingProduct?.name || !editingProduct?.description} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Discovery Set Dialog */}
+      <Dialog open={isEditDiscoveryDialogOpen} onOpenChange={setIsEditDiscoveryDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Discovery Set</DialogTitle>
+          </DialogHeader>
+          {editingDiscoverySet && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Set Name *</Label>
+                <Input
+                  value={editingDiscoverySet.name}
+                  onChange={(e) => setEditingDiscoverySet({...editingDiscoverySet, name: e.target.value})}
+                  placeholder="e.g., Service Businesses - Philly"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Keywords * (comma separated)</Label>
+                <Textarea
+                  value={editingDiscoverySet.keywords}
+                  onChange={(e) => setEditingDiscoverySet({...editingDiscoverySet, keywords: e.target.value})}
+                  placeholder="plumber, electrician, HVAC contractor"
+                  rows={2}
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Locations * (comma separated)</Label>
+                <Input
+                  value={editingDiscoverySet.locations}
+                  onChange={(e) => setEditingDiscoverySet({...editingDiscoverySet, locations: e.target.value})}
+                  placeholder="Philadelphia PA, Camden NJ"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Min Reviews</Label>
+                  <Input
+                    type="number"
+                    value={editingDiscoverySet.min_reviews}
+                    onChange={(e) => setEditingDiscoverySet({...editingDiscoverySet, min_reviews: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Max/Search</Label>
+                  <Input
+                    type="number"
+                    value={editingDiscoverySet.max_per_search}
+                    onChange={(e) => setEditingDiscoverySet({...editingDiscoverySet, max_per_search: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Daily Limit</Label>
+                  <Input
+                    type="number"
+                    value={editingDiscoverySet.daily_limit}
+                    onChange={(e) => setEditingDiscoverySet({...editingDiscoverySet, daily_limit: e.target.value === '' ? '' : parseInt(e.target.value) || 0})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" className="border-slate-700 text-slate-300">Cancel</Button>
+            </DialogClose>
+            <Button 
+              onClick={handleUpdateDiscoverySet} 
+              disabled={!editingDiscoverySet?.name || !editingDiscoverySet?.keywords}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
