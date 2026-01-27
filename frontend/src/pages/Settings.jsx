@@ -58,11 +58,50 @@ export default function Settings() {
     max_per_search: 20,
     min_reviews: 0
   });
+  
+  // Subscription state
+  const [subscription, setSubscription] = useState(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(false);
 
   useEffect(() => {
     fetchConfig();
     fetchDiscoverySets();
+    fetchSubscription();
   }, []);
+  
+  const fetchSubscription = async () => {
+    setLoadingSubscription(true);
+    try {
+      const { data } = await getMySubscription();
+      setSubscription(data);
+    } catch (error) {
+      console.error('Failed to load subscription');
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
+  
+  const handleManageSubscription = async () => {
+    try {
+      const { data } = await api.post('/stripe/portal');
+      if (data.portal_url) {
+        window.open(data.portal_url, '_blank');
+      }
+    } catch (error) {
+      toast.error('Failed to open billing portal');
+    }
+  };
+  
+  const handleSubscribe = async () => {
+    try {
+      const { data } = await api.post('/stripe/create-checkout');
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch (error) {
+      toast.error('Failed to start checkout');
+    }
+  };
 
   const fetchConfig = async () => {
     try {
