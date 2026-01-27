@@ -58,12 +58,17 @@ class PipelineController:
     async def _log_activity(self, stage: str, message: str, activity_type: str = "info", lead_name: str = None):
         """Log activity to database for real-time display"""
         try:
+            # Get tenant_id from running config
+            config = await self._get_config()
+            tenant_id = config.get("tenant_id") if config else None
+            
             activity = {
                 "id": str(uuid.uuid4()),
                 "type": activity_type,
                 "stage": stage,
                 "message": message,
                 "lead_name": lead_name,
+                "tenant_id": tenant_id,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             await self.db.pipeline_activity.insert_one(activity)
