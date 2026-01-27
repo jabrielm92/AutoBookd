@@ -234,6 +234,10 @@ class PipelineController:
         
         while self.is_running:
             try:
+                # Get the configured email finder
+                email_finder = await self._get_email_finder()
+                provider_name = "Apollo" if isinstance(email_finder, ApolloEmailFinder) else "Hunter"
+                
                 # Get leads needing enrichment
                 leads = await self.db.leads.find({
                     "pipeline_stage": "needs_enrichment",
@@ -241,7 +245,7 @@ class PipelineController:
                 }).limit(10).to_list(10)
                 
                 if leads:
-                    await self._log_activity("enrich", f"Processing {len(leads)} leads for enrichment", "info")
+                    await self._log_activity("enrich", f"Processing {len(leads)} leads via {provider_name}", "info")
                 
                 for lead in leads:
                     if not self.is_running:
@@ -257,10 +261,10 @@ class PipelineController:
                         await self._log_activity("enrich", f"No domain for {lead.get('business_name')}", "warning", lead.get('business_name'))
                         continue
                     
-                    await self._log_activity("enrich", f"Looking up email for {lead.get('business_name')}", "info", lead.get('business_name'))
+                    await self._log_activity("enrich", f"Looking up email for {lead.get('business_name')} ({provider_name})", "info", lead.get('business_name'))
                     
-                    # Find email
-                    email_data = await self.email_finder.find_email(domain, lead.get("business_name"))
+                    # Find email using configured provider
+                    email_data = await email_finder.find_email(domain, lead.get("business_name"))
                     
                     if email_data and email_data.get("email"):
                         update_data = {
@@ -269,9 +273,16 @@ class PipelineController:
                             "email_type": email_data.get("type"),
                             "contact_name": f"{email_data.get('first_name', '')} {email_data.get('last_name', '')}".strip() or None,
                             "contact_position": email_data.get("position"),
+                            "enrichment_provider": provider_name.lower(),
                             "pipeline_stage": "needs_research",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }
+                        # Add Apollo-specific company info if available
+                        if email_data.get("company_info"):
+                            update_data["company_info"] = email_data["company_info"]
+                        if email_data.get("linkedin_url"):
+                            update_data["linkedin_url"] = email_data["linkedin_url"]
+                            
                         await self._log_activity("enrich", f"Email found: {email_data['email']}", "success", lead.get('business_name'))
                     else:
                         update_data = {
@@ -287,7 +298,7 @@ class PipelineController:
                     
                     logger.info(f"Enriched {lead['business_name']}: {'email found' if email_data else 'no email'}")
                     
-                    # Rate limit Hunter API
+                    # Rate limit API
                     await asyncio.sleep(2)
                 
                 # Wait before next batch
