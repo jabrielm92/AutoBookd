@@ -63,6 +63,9 @@ function App() {
           {/* Alternate paths for nested routes */}
           <Route path="/leads" element={<Navigate to="/dashboard/leads" replace />} />
           <Route path="/pipeline" element={<Navigate to="/dashboard/pipeline" replace />} />
+          <Route path="/conversations" element={<Navigate to="/dashboard/conversations" replace />} />
+          <Route path="/discovery" element={<Navigate to="/dashboard/discovery" replace />} />
+          <Route path="/bookings" element={<Navigate to="/dashboard/bookings" replace />} />
           <Route path="/analytics" element={<Navigate to="/dashboard/analytics" replace />} />
           <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
           
