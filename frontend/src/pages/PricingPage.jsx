@@ -63,7 +63,7 @@ export default function PricingPage() {
 
           {/* Features */}
           <div className="p-6">
-            <p className="text-slate-400 text-sm mb-4 text-center">Everything you need to automate your outreach</p>
+            <p className="text-slate-300 text-sm mb-4 text-center">Everything you need to automate your outreach</p>
             <div className="space-y-3 mb-6">
               {features.map((feature, i) => (
                 <div key={i} className="flex items-center gap-3">
