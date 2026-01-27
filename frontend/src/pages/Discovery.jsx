@@ -290,8 +290,8 @@ export default function Discovery() {
         </Button>
       </div>
 
-      {/* Pipeline Funnel */}
-      <div className="grid grid-cols-5 gap-4">
+      {/* Pipeline Funnel - Responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
         {pipelineStages.map((stage) => (
           <Card 
             key={stage.key}
@@ -299,12 +299,12 @@ export default function Discovery() {
             onClick={() => navigateToStage(stage.stage)}
             data-testid={`pipeline-card-${stage.key}`}
           >
-            <CardContent className="pt-6 text-center">
-              <div className={cn("w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center", stage.color.split(' ').slice(1).join(' '))}>
-                <stage.icon className={cn("w-5 h-5", stage.color.split(' ')[0])} />
+            <CardContent className="pt-4 pb-3 px-3 text-center">
+              <div className={cn("w-8 h-8 md:w-10 md:h-10 rounded-lg mx-auto mb-2 flex items-center justify-center", stage.color.split(' ').slice(1).join(' '))}>
+                <stage.icon className={cn("w-4 h-4 md:w-5 md:h-5", stage.color.split(' ')[0])} />
               </div>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{stage.value}</p>
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{stage.label}</p>
+              <p className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white">{stage.value}</p>
+              <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 font-medium truncate">{stage.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -312,11 +312,11 @@ export default function Discovery() {
 
       {/* Tabs */}
       <Tabs defaultValue="scrape" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="scrape">Quick Scrape</TabsTrigger>
-          <TabsTrigger value="targets">Discovery Sets</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="email">Email Rules</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsTrigger value="scrape" className="text-xs md:text-sm">Quick Scrape</TabsTrigger>
+          <TabsTrigger value="targets" className="text-xs md:text-sm">Discovery Sets</TabsTrigger>
+          <TabsTrigger value="products" className="text-xs md:text-sm">Products</TabsTrigger>
+          <TabsTrigger value="email" className="text-xs md:text-sm">Email Rules</TabsTrigger>
         </TabsList>
 
         {/* Quick Scrape Tab */}
@@ -330,7 +330,7 @@ export default function Discovery() {
               <CardDescription>Test scraping with a single search - uses 1 API credit</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
+              <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <Label className="text-xs text-slate-500 dark:text-slate-400">Keyword</Label>
                   <Input
@@ -350,7 +350,7 @@ export default function Discovery() {
                   />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={handleScrapeNow} disabled={scraping} data-testid="scrape-now-btn">
+                  <Button onClick={handleScrapeNow} disabled={scraping} className="w-full md:w-auto" data-testid="scrape-now-btn">
                     {scraping ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
                     Scrape Now
                   </Button>
@@ -666,7 +666,7 @@ export default function Discovery() {
               <Separator />
 
               {/* Tone & Length */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Email Tone</Label>
                   <Select 
