@@ -520,6 +520,11 @@ class PipelineController:
                     if config.get("active_product_id"):
                         product = await self.db.products.find_one({"id": config.get("active_product_id")}, {"_id": 0})
                     
+                    # Set OpenAI API key from config for AI sequence generation
+                    openai_key = config.get("openai_api_key")
+                    if openai_key:
+                        self.sequence_generator.api_key = openai_key
+                    
                     # Generate AI-powered sequence (not template)
                     emails = await self.sequence_generator.generate_ai_sequence(
                         lead=lead,
