@@ -74,9 +74,6 @@ export const getSequences = (params) => api.get('/sequences', { params });
 export const pauseSequence = (id) => api.post(`/sequences/${id}/pause`);
 export const resumeSequence = (id) => api.post(`/sequences/${id}/resume`);
 
-// LinkedIn Import
-export const importLinkedInLead = (data) => api.post('/leads/import/linkedin', data);
-
 // Discovery
 export const getDiscoveryConfig = () => api.get('/discovery/config');
 export const updateDiscoveryConfig = (data) => api.put('/discovery/config', data);
