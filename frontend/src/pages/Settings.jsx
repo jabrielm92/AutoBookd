@@ -13,10 +13,13 @@ import {
   TestTube,
   Link,
   Database,
-  Moon,
-  Sun,
   Flame,
-  Clock
+  Clock,
+  RotateCcw,
+  MapPin,
+  Pencil,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +30,9 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getConfig, updateConfig } from '@/lib/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { getConfig, updateConfig, resetDailyLimits, getDiscoverySets, createDiscoverySet, updateDiscoverySet, deleteDiscoverySet } from '@/lib/api';
 import { toast } from 'sonner';
 
 export default function Settings() {
@@ -35,7 +40,20 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showKeys, setShowKeys] = useState({});
-  const [darkMode, setDarkMode] = useState(false);
+  const [resettingLimits, setResettingLimits] = useState(false);
+  
+  // Discovery Sets state
+  const [discoverySets, setDiscoverySets] = useState([]);
+  const [editingSet, setEditingSet] = useState(null);
+  const [isSetDialogOpen, setIsSetDialogOpen] = useState(false);
+  const [setForm, setSetForm] = useState({
+    name: '',
+    keywords: '',
+    locations: '',
+    daily_limit: 100,
+    max_per_search: 20,
+    min_reviews: 0
+  });
 
   useEffect(() => {
     fetchConfig();
