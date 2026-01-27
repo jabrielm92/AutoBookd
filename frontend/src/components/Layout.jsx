@@ -12,11 +12,8 @@ import {
   Play,
   Square,
   Menu,
-  X,
   TestTube,
   Zap,
-  Moon,
-  Sun,
   Activity,
   Shield,
   LogOut
