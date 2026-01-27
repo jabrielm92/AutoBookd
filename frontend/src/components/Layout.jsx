@@ -282,11 +282,8 @@ export default function Layout() {
                     <div className="flex flex-col gap-1">
                       <NavLinks mobile onMobileClick={() => setMobileOpen(false)} />
                     </div>
-                    <div className="pt-4 border-t border-slate-700 flex items-center justify-between">
+                    <div className="pt-4 border-t border-slate-700">
                       <p className="text-xs text-slate-400">ARI Solutions Inc.</p>
-                      <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="text-slate-300">
-                        {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                      </Button>
                     </div>
                   </div>
                 </SheetContent>
