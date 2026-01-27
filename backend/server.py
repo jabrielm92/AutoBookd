@@ -891,20 +891,22 @@ async def stop_system():
     return {"status": "stopped", "message": "Pipeline stopped"}
 
 @api_router.get("/pipeline/activity")
-async def get_pipeline_activity(limit: int = 20):
+async def get_pipeline_activity(limit: int = 20, user: dict = Depends(get_current_user)):
     """Get real-time pipeline activity log"""
+    tenant_id = user["id"]
     activities = await db.pipeline_activity.find(
-        {},
+        {"tenant_id": tenant_id},
         {"_id": 0}
     ).sort("timestamp", -1).limit(limit).to_list(limit)
     
-    # Get current counts
+    # Get current counts for this tenant
+    tenant_filter = {"tenant_id": tenant_id}
     counts = {
-        "scraped": await db.leads.count_documents({}),
-        "enriched": await db.leads.count_documents({"email": {"$exists": True, "$ne": None}}),
-        "researched": await db.leads.count_documents({"research": {"$exists": True}}),
-        "in_sequence": await db.leads.count_documents({"pipeline_stage": "in_sequence"}),
-        "emails_sent": await db.sequences.count_documents({"current_step": {"$gt": 0}})
+        "scraped": await db.leads.count_documents(tenant_filter),
+        "enriched": await db.leads.count_documents({**tenant_filter, "email": {"$exists": True, "$ne": None}}),
+        "researched": await db.leads.count_documents({**tenant_filter, "research": {"$exists": True}}),
+        "in_sequence": await db.leads.count_documents({**tenant_filter, "pipeline_stage": "in_sequence"}),
+        "emails_sent": await db.sequences.count_documents({**tenant_filter, "current_step": {"$gt": 0}})
     }
     
     return {
