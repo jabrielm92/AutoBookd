@@ -8,11 +8,14 @@ import {
   Calendar,
   CalendarCheck,
   XCircle,
-  Clock
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getLeads, updateLead } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -32,10 +35,14 @@ const secondaryStages = [
   { id: 'disqualified', label: 'Disqualified', icon: XCircle, color: 'bg-red-500' },
 ];
 
+const allStages = [...pipelineStages, ...secondaryStages];
+
 export default function Pipeline() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [draggedLead, setDraggedLead] = useState(null);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -86,6 +93,32 @@ export default function Pipeline() {
     }
   };
 
+  const handleMobileMove = async (newStatus) => {
+    if (!selectedLead || selectedLead.status === newStatus) {
+      setIsMoveModalOpen(false);
+      setSelectedLead(null);
+      return;
+    }
+
+    try {
+      await updateLead(selectedLead.id, { status: newStatus });
+      setLeads(leads.map(l => 
+        l.id === selectedLead.id ? { ...l, status: newStatus } : l
+      ));
+      toast.success(`Moved to ${newStatus.replace(/_/g, ' ')}`);
+    } catch (error) {
+      toast.error('Failed to update lead');
+    } finally {
+      setIsMoveModalOpen(false);
+      setSelectedLead(null);
+    }
+  };
+
+  const openMoveModal = (lead) => {
+    setSelectedLead(lead);
+    setIsMoveModalOpen(true);
+  };
+
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400';
     if (score >= 60) return 'text-amber-600 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-400';
@@ -96,9 +129,14 @@ export default function Pipeline() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Pipeline</h1>
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="hidden md:flex gap-4 overflow-x-auto pb-4">
           {[...Array(7)].map((_, i) => (
             <div key={i} className="flex-shrink-0 w-72 h-96 skeleton rounded-xl" />
+          ))}
+        </div>
+        <div className="md:hidden space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 skeleton rounded-xl" />
           ))}
         </div>
       </div>
@@ -110,12 +148,13 @@ export default function Pipeline() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Pipeline</h1>
-          <p className="text-muted-foreground">Drag leads between stages</p>
+          <p className="text-muted-foreground hidden sm:block">Drag leads between stages</p>
+          <p className="text-muted-foreground sm:hidden">Tap to move leads</p>
         </div>
       </div>
 
-      {/* Main Pipeline */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      {/* Desktop: Horizontal Pipeline */}
+      <div className="hidden md:flex gap-4 overflow-x-auto pb-4">
         {pipelineStages.map((stage) => {
           const stageLeads = getLeadsByStatus(stage.id);
           return (
@@ -183,8 +222,8 @@ export default function Pipeline() {
         })}
       </div>
 
-      {/* Secondary Stages */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Desktop: Secondary Stages */}
+      <div className="hidden md:grid grid-cols-2 gap-4">
         {secondaryStages.map((stage) => {
           const stageLeads = getLeadsByStatus(stage.id);
           return (
@@ -225,6 +264,103 @@ export default function Pipeline() {
           );
         })}
       </div>
+
+      {/* Mobile: Vertical Stage List */}
+      <div className="md:hidden space-y-4">
+        {allStages.map((stage) => {
+          const stageLeads = getLeadsByStatus(stage.id);
+          const StageIcon = stage.icon;
+          return (
+            <Card key={stage.id} className="bg-slate-900 border-slate-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", stage.color)}>
+                      <StageIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-white">{stage.label}</span>
+                  </div>
+                  <Badge variant="secondary" className="bg-slate-800 text-slate-300">{stageLeads.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {stageLeads.length === 0 ? (
+                  <p className="text-slate-500 text-sm text-center py-4">No leads</p>
+                ) : (
+                  <div className="space-y-2">
+                    {stageLeads.slice(0, 5).map((lead) => (
+                      <div
+                        key={lead.id}
+                        onClick={() => openMoveModal(lead)}
+                        className="flex items-center justify-between p-3 rounded-lg bg-slate-800 border border-slate-700 cursor-pointer active:bg-slate-700"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
+                            getScoreColor(lead.lead_score)
+                          )}>
+                            {lead.lead_score}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-white truncate">{lead.business_name}</p>
+                            <p className="text-xs text-slate-400 truncate">{lead.city}</p>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                      </div>
+                    ))}
+                    {stageLeads.length > 5 && (
+                      <p className="text-xs text-slate-500 text-center">+{stageLeads.length - 5} more</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Mobile Move Modal */}
+      <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white">Move Lead</DialogTitle>
+          </DialogHeader>
+          {selectedLead && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-slate-800 border border-slate-700">
+                <p className="font-medium text-white">{selectedLead.business_name}</p>
+                <p className="text-sm text-slate-400">{selectedLead.category} • {selectedLead.city}</p>
+              </div>
+              <p className="text-sm text-slate-400">Select new stage:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {allStages.map((stage) => {
+                  const StageIcon = stage.icon;
+                  const isCurrentStage = selectedLead.status === stage.id;
+                  return (
+                    <Button
+                      key={stage.id}
+                      variant={isCurrentStage ? "secondary" : "outline"}
+                      className={cn(
+                        "justify-start h-auto py-3",
+                        isCurrentStage && "bg-slate-700 border-slate-600",
+                        !isCurrentStage && "border-slate-700 text-slate-300 hover:bg-slate-800"
+                      )}
+                      onClick={() => handleMobileMove(stage.id)}
+                      disabled={isCurrentStage}
+                    >
+                      <div className={cn("w-6 h-6 rounded flex items-center justify-center mr-2", stage.color)}>
+                        <StageIcon className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-xs">{stage.label}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
