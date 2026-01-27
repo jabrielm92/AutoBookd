@@ -97,6 +97,10 @@ RULES:
                 rules += "\n11. End with a question"
             if rule_toggles.get('first_name_only'):
                 rules += "\n12. Use first name only (not Mr./Ms.)"
+            
+            custom_prompt = email_guidelines.get('custom_prompt', '')
+            if custom_prompt and custom_prompt.strip():
+                rules += f"\n\nADDITIONAL INSTRUCTIONS FROM USER:\n{custom_prompt.strip()}"
         
         prompt = f"""Analyze this business and provide sales intelligence for cold outreach.
 
