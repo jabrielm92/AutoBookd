@@ -235,7 +235,8 @@ class SystemConfig(BaseModel):
     id: str = "system_config"
     tenant_id: Optional[str] = None
     is_running: bool = False
-    test_mode: bool = False
+    test_mode: bool = True  # Internal: True = DON'T send emails (draft only)
+    auto_send_emails: bool = False  # UI toggle: True = send, False = draft only
     active_product_id: Optional[str] = None
     active_discovery_set_id: Optional[str] = None
     daily_outreach_limit: int = 50
