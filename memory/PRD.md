@@ -47,6 +47,20 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] Webhook handling for subscription events
 - [x] Billing portal integration
 - [x] Subscription status tracking
+- [x] Frontend connected to backend checkout
+
+### Apollo.io Enrichment ✅ (Jan 27, 2025)
+- [x] ApolloEmailFinder class in lead_scraper.py
+- [x] Enrichment provider toggle in Settings (Hunter vs Apollo)
+- [x] Dynamic API key injection from config
+- [x] Company info enrichment (industry, employee count, revenue)
+- [x] LinkedIn URL extraction
+- [x] Pipeline automatically uses selected provider
+
+### Email Warm-up (Coming Soon Feature) ✅
+- [x] UI section with "Coming Soon" badge
+- [x] Feature description displayed
+- [x] Placeholder for future implementation
 
 ### Pricing Page ✅ (NEW)
 - [x] Feature list display
@@ -187,10 +201,27 @@ See `/app/DEPLOYMENT_GUIDE.md` for complete setup.
 
 ### Admin Account
 - Email: jabriel@arisolutionsinc.com
-- Password: AutoBookd2025!
+- Password: admin123
 - Role: admin
 
 ---
 
 ## Removed Features
 - LinkedIn import (removed placeholder)
+
+---
+
+## Remaining Tasks (Priority Order)
+
+### P0 - Critical
+- [ ] Fix MongoDB Atlas SSL connection for production deployment
+
+### P1 - Important
+- [ ] Implement email warm-up scheduling logic
+- [ ] Complete onboarding page UX
+
+### P2 - Nice to Have
+- [ ] ColdIQ integration (blocked - awaiting API docs)
+- [ ] Feedback loop for AI prompt tuning
+- [ ] A/B testing engine
+- [ ] Refactor server.py into modular route files
