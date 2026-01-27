@@ -246,7 +246,7 @@ class OutreachEngine:
             pain_area='response time',
             industry=lead.get('category', 'service'),
             sender_name=self.config.get('sender_name', 'Your Name'),
-            sender_company=self.config.get('sender_company', 'ARI Solutions')
+            sender_company=self.config.get('sender_company', '')
         )
         
         # If OpenAI available, enhance with AI
