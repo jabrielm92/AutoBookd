@@ -57,10 +57,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchConfig();
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setDarkMode(true);
-    }
+    fetchDiscoverySets();
   }, []);
 
   const fetchConfig = async () => {
@@ -71,6 +68,15 @@ export default function Settings() {
       toast.error('Failed to load settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDiscoverySets = async () => {
+    try {
+      const { data } = await getDiscoverySets();
+      setDiscoverySets(data || []);
+    } catch (error) {
+      console.error('Failed to load discovery sets');
     }
   };
 
@@ -86,15 +92,76 @@ export default function Settings() {
     }
   };
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+  const handleResetLimits = async () => {
+    setResettingLimits(true);
+    try {
+      await resetDailyLimits();
+      toast.success('Daily limits reset successfully');
+    } catch (error) {
+      toast.error('Failed to reset limits');
+    } finally {
+      setResettingLimits(false);
+    }
+  };
+
+  const openSetDialog = (set = null) => {
+    if (set) {
+      setEditingSet(set);
+      setSetForm({
+        name: set.name || '',
+        keywords: (set.keywords || []).join(', '),
+        locations: (set.locations || []).join(', '),
+        daily_limit: set.daily_limit || 100,
+        max_per_search: set.max_per_search || 20,
+        min_reviews: set.min_reviews || 0
+      });
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      setEditingSet(null);
+      setSetForm({
+        name: '',
+        keywords: '',
+        locations: '',
+        daily_limit: 100,
+        max_per_search: 20,
+        min_reviews: 0
+      });
+    }
+    setIsSetDialogOpen(true);
+  };
+
+  const handleSaveSet = async () => {
+    try {
+      const payload = {
+        name: setForm.name,
+        keywords: setForm.keywords.split(',').map(k => k.trim()).filter(Boolean),
+        locations: setForm.locations.split(',').map(l => l.trim()).filter(Boolean),
+        daily_limit: parseInt(setForm.daily_limit) || 100,
+        max_per_search: parseInt(setForm.max_per_search) || 20,
+        min_reviews: parseInt(setForm.min_reviews) || 0
+      };
+      
+      if (editingSet) {
+        await updateDiscoverySet(editingSet.id, payload);
+        toast.success('Discovery set updated');
+      } else {
+        await createDiscoverySet(payload);
+        toast.success('Discovery set created');
+      }
+      setIsSetDialogOpen(false);
+      fetchDiscoverySets();
+    } catch (error) {
+      toast.error('Failed to save discovery set');
+    }
+  };
+
+  const handleDeleteSet = async (id) => {
+    if (!window.confirm('Delete this discovery set?')) return;
+    try {
+      await deleteDiscoverySet(id);
+      toast.success('Discovery set deleted');
+      fetchDiscoverySets();
+    } catch (error) {
+      toast.error('Failed to delete discovery set');
     }
   };
 
