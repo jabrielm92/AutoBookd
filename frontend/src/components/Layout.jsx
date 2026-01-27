@@ -378,14 +378,6 @@ export default function Layout() {
           </div>
         </div>
       </div>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-        </div>
-      </nav>
 
       {/* Start Flow Modal */}
       <Dialog open={isStartModalOpen} onOpenChange={setIsStartModalOpen}>
