@@ -312,6 +312,66 @@ export default function Settings() {
 
         {/* API Keys Tab */}
         <TabsContent value="api" className="space-y-6">
+          {/* Enrichment Provider Selection */}
+          <Card className="border-red-900/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Email Enrichment Provider
+              </CardTitle>
+              <CardDescription>Choose your preferred provider for finding contact emails</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Active Provider</Label>
+                <Select
+                  value={config?.enrichment_provider || 'hunter'}
+                  onValueChange={(value) => setConfig({...config, enrichment_provider: value})}
+                >
+                  <SelectTrigger className="w-full" data-testid="enrichment-provider-select">
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hunter">Hunter.io</SelectItem>
+                    <SelectItem value="apollo">Apollo.io</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {config?.enrichment_provider === 'apollo' 
+                    ? 'Apollo.io provides richer company data and decision-maker contacts'
+                    : 'Hunter.io is optimized for finding generic business emails'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Email Warm-up Coming Soon */}
+          <Card className="border-amber-500/30 bg-amber-950/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Flame className="w-5 h-5 text-amber-500" />
+                Email Warm-up Schedule
+                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Coming Soon
+                </Badge>
+              </CardTitle>
+              <CardDescription>Gradually increase sending volume to build domain reputation</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                <p className="text-sm text-slate-400">
+                  Email warm-up will automatically manage your sending volume, starting with a few emails per day 
+                  and gradually increasing to your target limit. This protects your domain reputation and improves deliverability.
+                </p>
+                <div className="mt-3 flex items-center gap-2 text-xs text-amber-400">
+                  <Flame className="w-4 h-4" />
+                  <span>Feature launching soon - stay tuned!</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -390,13 +450,60 @@ export default function Settings() {
 
               <Separator />
 
-              {/* Apollo (Future) */}
+              {/* Hunter.io */}
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Database className="w-4 h-4" />
-                  Apollo.io API Key
-                  <Badge variant="outline" className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Future</Badge>
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    Hunter.io API Key
+                    {config?.hunter_api_key ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Configured
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Not Set
+                      </Badge>
+                    )}
+                  </Label>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type={showKeys.hunter ? 'text' : 'password'}
+                    value={config?.hunter_api_key || ''}
+                    onChange={(e) => setConfig({...config, hunter_api_key: e.target.value})}
+                    placeholder="Hunter.io API key"
+                  />
+                  <Button variant="outline" size="icon" onClick={() => toggleShowKey('hunter')}>
+                    {showKeys.hunter ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">For email enrichment (if Hunter is selected)</p>
+              </div>
+
+              <Separator />
+
+              {/* Apollo.io */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    Apollo.io API Key
+                    {config?.apollo_api_key ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Configured
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Not Set
+                      </Badge>
+                    )}
+                  </Label>
+                </div>
                 <div className="flex gap-2">
                   <Input
                     type={showKeys.apollo ? 'text' : 'password'}
@@ -408,7 +515,7 @@ export default function Settings() {
                     {showKeys.apollo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">For richer lead data (coming soon)</p>
+                <p className="text-xs text-muted-foreground">For richer lead data (if Apollo is selected)</p>
               </div>
             </CardContent>
           </Card>
