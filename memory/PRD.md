@@ -101,11 +101,20 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] Terms of Service
 - [x] Privacy Policy
 
-### User Experience ✅ (NEW)
+### User Experience ✅ (Updated Jan 27, 2025)
 - [x] User dropdown menu in navbar
 - [x] Logout functionality
 - [x] Admin badge for admin users
 - [x] Automatic redirect to login when unauthenticated
+
+### Mobile Responsive Design ✅ (Jan 27, 2025)
+- [x] Leads page: Card layout for mobile (no horizontal scroll)
+- [x] Leads filtering: Works correctly with backend filters
+- [x] Pipeline page: Vertical stages with tap-to-move modal for mobile
+- [x] Conversations page: Modal opens when conversation tapped on mobile
+- [x] Discovery page: 2-column responsive grid for pipeline funnel
+- [x] Settings page: 5-tab responsive layout with Subscription tab
+- [x] All pages: No horizontal scrolling in 390px viewport
 
 ### Real-Time Progress Modal ✅
 - [x] Stage progress cards (Scraped, Enriched, Researched, In Sequence)
