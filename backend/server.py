@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query, UploadFile, File, Depends, Request, Header
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 import json
 import re
@@ -19,9 +19,17 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'autobookd')]
 
-app = FastAPI(title="AutoBooked AI", version="1.0.0")
+# Import auth and stripe modules
+from auth import (
+    hash_password, verify_password, create_access_token, decode_token,
+    generate_verification_token, send_verification_email, send_contact_email,
+    create_user_dict, is_admin, security, ADMIN_EMAIL
+)
+from fastapi.security import HTTPAuthorizationCredentials
+
+app = FastAPI(title="AutoBookd AI", version="2.0.0")
 api_router = APIRouter(prefix="/api")
 
 # ============== ENUMS ==============
