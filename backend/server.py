@@ -466,9 +466,8 @@ async def signup(data: UserSignup, background_tasks: BackgroundTasks):
     user = create_user_dict(data.email, data.password, data.name)
     await db.users.insert_one(user)
     
-    # Get resend API key from system config or env var
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    resend_key = (config.get("resend_api_key") if config else None) or os.environ.get("RESEND_API_KEY")
+    # Get resend API key from env var (global setting for signup emails)
+    resend_key = os.environ.get("RESEND_API_KEY")
     
     # Send verification email
     background_tasks.add_task(
@@ -551,8 +550,7 @@ async def resend_verification(email: str, background_tasks: BackgroundTasks):
     new_token = generate_verification_token()
     await db.users.update_one({"id": user["id"]}, {"$set": {"verification_token": new_token}})
     
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    resend_key = config.get("resend_api_key") if config else None
+    resend_key = os.environ.get("RESEND_API_KEY")
     
     background_tasks.add_task(send_verification_email, email, new_token, resend_key)
     
@@ -561,8 +559,7 @@ async def resend_verification(email: str, background_tasks: BackgroundTasks):
 # ----- Contact Form -----
 @api_router.post("/contact")
 async def submit_contact(data: ContactForm, background_tasks: BackgroundTasks):
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    resend_key = config.get("resend_api_key") if config else None
+    resend_key = os.environ.get("RESEND_API_KEY")
     
     background_tasks.add_task(send_contact_email, data.name, data.email, data.message, resend_key)
     
@@ -589,7 +586,9 @@ async def create_checkout(user: dict = Depends(get_current_user)):
     else:
         customer_id = user["stripe_customer_id"]
     
-    base_url = os.environ.get("TRACKING_BASE_URL", "http://localhost:3000")
+    base_url = os.environ.get("FRONTEND_URL")
+    if not base_url:
+        raise HTTPException(status_code=500, detail="FRONTEND_URL environment variable not configured")
     
     checkout_url = await stripe_service.create_checkout_session(
         customer_id=customer_id,
@@ -937,12 +936,7 @@ async def log_pipeline_activity(data: Dict[str, Any]):
     }
     await db.pipeline_activity.insert_one(activity)
     
-    # Keep only last 100 activities
-    count = await db.pipeline_activity.count_documents({})
-    if count > 100:
-        oldest = await db.pipeline_activity.find({}, {"_id": 1}).sort("timestamp", 1).limit(count - 100).to_list(count - 100)
-        if oldest:
-            await db.pipeline_activity.delete_many({"_id": {"$in": [o["_id"] for o in oldest]}})
+    # Keep only last 100 activities (per-tenant cleanup happens in pipeline controller)
     
     return {"status": "logged"}
 
