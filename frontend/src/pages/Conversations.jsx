@@ -7,7 +7,8 @@ import {
   Clock,
   Mail,
   Phone,
-  Search
+  Search,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getConversations, getLeads, createConversation } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -27,6 +29,7 @@ export default function Conversations() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -78,6 +81,14 @@ export default function Conversations() {
     }
   };
 
+  const handleSelectConversation = (conv) => {
+    setSelectedConv(conv);
+    // On mobile, open modal
+    if (window.innerWidth < 1024) {
+      setIsMobileDetailOpen(true);
+    }
+  };
+
   const filteredConversations = conversations.filter(conv => {
     const lead = getLeadForConv(conv.lead_id);
     if (!lead) return false;
@@ -88,13 +99,108 @@ export default function Conversations() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Conversations</h1>
-        <div className="grid grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
           <div className="skeleton rounded-xl" />
-          <div className="col-span-2 skeleton rounded-xl" />
+          <div className="col-span-2 skeleton rounded-xl hidden lg:block" />
         </div>
       </div>
     );
   }
+
+  const ConversationDetail = ({ conv, inModal = false }) => {
+    const lead = getLeadForConv(conv.lead_id);
+    return (
+      <div className={cn("flex flex-col", inModal ? "h-[70vh]" : "h-full")}>
+        <div className={cn("border-b p-4", inModal ? "border-slate-700" : "border-border")}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-lg text-white">{lead?.business_name}</h3>
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+                {lead?.email && (
+                  <span className="flex items-center gap-1">
+                    <Mail className="w-3 h-3" />
+                    <span className="truncate max-w-[200px]">{lead.email}</span>
+                  </span>
+                )}
+                {lead?.phone && (
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-3 h-3" />
+                    {lead.phone}
+                  </span>
+                )}
+              </div>
+            </div>
+            <Badge>{lead?.category}</Badge>
+          </div>
+        </div>
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {conv.messages.map((message, idx) => (
+              <div
+                key={message.id || idx}
+                className={cn(
+                  "flex gap-3",
+                  message.direction === 'outbound' ? "flex-row-reverse" : ""
+                )}
+              >
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                  message.direction === 'outbound' 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-muted"
+                )}>
+                  {message.direction === 'outbound' ? (
+                    <Bot className="w-4 h-4" />
+                  ) : (
+                    <User className="w-4 h-4" />
+                  )}
+                </div>
+                <div className={cn(
+                  "max-w-[80%] rounded-2xl px-4 py-2",
+                  message.direction === 'outbound'
+                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    : "bg-muted rounded-bl-md"
+                )}>
+                  <p className="text-sm break-words">{message.content}</p>
+                  <p className={cn(
+                    "text-xs mt-1",
+                    message.direction === 'outbound' 
+                      ? "text-primary-foreground/70" 
+                      : "text-muted-foreground"
+                  )}>
+                    {format(new Date(message.timestamp), 'h:mm a')}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        <div className={cn("p-4 border-t", inModal ? "border-slate-700" : "border-border")}>
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className={cn("min-h-[60px] resize-none", inModal && "bg-slate-800 border-slate-700")}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim()}
+              className="self-end"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6" data-testid="conversations-page">
@@ -126,7 +232,7 @@ export default function Conversations() {
                   return (
                     <div
                       key={conv.id}
-                      onClick={() => setSelectedConv(conv)}
+                      onClick={() => handleSelectConversation(conv)}
                       className={cn(
                         "p-3 rounded-lg cursor-pointer transition-colors",
                         selectedConv?.id === conv.id 
@@ -168,105 +274,10 @@ export default function Conversations() {
           </CardContent>
         </Card>
 
-        {/* Conversation Detail */}
-        <Card className="lg:col-span-2 flex flex-col">
+        {/* Desktop: Conversation Detail */}
+        <Card className="lg:col-span-2 hidden lg:flex lg:flex-col">
           {selectedConv ? (
-            <>
-              <CardHeader className="border-b">
-                {(() => {
-                  const lead = getLeadForConv(selectedConv.lead_id);
-                  return (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{lead?.business_name}</CardTitle>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                          {lead?.email && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {lead.email}
-                            </span>
-                          )}
-                          {lead?.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {lead.phone}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Badge>{lead?.category}</Badge>
-                    </div>
-                  );
-                })()}
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col p-0">
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {selectedConv.messages.map((message, idx) => (
-                      <div
-                        key={message.id || idx}
-                        className={cn(
-                          "flex gap-3",
-                          message.direction === 'outbound' ? "flex-row-reverse" : ""
-                        )}
-                      >
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                          message.direction === 'outbound' 
-                            ? "bg-primary text-primary-foreground" 
-                            : "bg-muted"
-                        )}>
-                          {message.direction === 'outbound' ? (
-                            <Bot className="w-4 h-4" />
-                          ) : (
-                            <User className="w-4 h-4" />
-                          )}
-                        </div>
-                        <div className={cn(
-                          "max-w-[70%] rounded-2xl px-4 py-2",
-                          message.direction === 'outbound'
-                            ? "bg-primary text-primary-foreground rounded-br-md"
-                            : "bg-muted rounded-bl-md"
-                        )}>
-                          <p className="text-sm">{message.content}</p>
-                          <p className={cn(
-                            "text-xs mt-1",
-                            message.direction === 'outbound' 
-                              ? "text-primary-foreground/70" 
-                              : "text-muted-foreground"
-                          )}>
-                            {format(new Date(message.timestamp), 'h:mm a')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <Textarea
-                      placeholder="Type a message..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      className="min-h-[80px] resize-none"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <Button 
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
-                      className="self-end"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </>
+            <ConversationDetail conv={selectedConv} />
           ) : (
             <CardContent className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
@@ -278,6 +289,23 @@ export default function Conversations() {
           )}
         </Card>
       </div>
+
+      {/* Mobile: Conversation Detail Modal */}
+      <Dialog open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-md p-0 max-h-[90vh]">
+          <DialogHeader className="p-4 border-b border-slate-700">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-white">Conversation</DialogTitle>
+              <Button variant="ghost" size="icon" onClick={() => setIsMobileDetailOpen(false)} className="text-slate-400">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          {selectedConv && (
+            <ConversationDetail conv={selectedConv} inModal={true} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
