@@ -401,16 +401,16 @@ export default function Layout() {
               )}
             </div>
 
-            {/* Test Mode Toggle */}
+            {/* Auto-Send Emails Toggle */}
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
               <div className="space-y-0.5">
-                <Label className="font-medium">Test Mode</Label>
-                <p className="text-xs text-muted-foreground">Simulate without sending emails</p>
+                <Label className="font-medium">Auto-Send Emails</Label>
+                <p className="text-xs text-muted-foreground">When OFF, emails are saved as drafts only</p>
               </div>
               <Switch
-                checked={startTestMode}
-                onCheckedChange={setStartTestMode}
-                data-testid="start-test-mode-toggle"
+                checked={startAutoSend}
+                onCheckedChange={setStartAutoSend}
+                data-testid="start-auto-send-toggle"
               />
             </div>
           </div>
@@ -439,7 +439,7 @@ export default function Layout() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <Outlet context={{ isRunning, testMode, fetchConfig, navigate }} />
+        <Outlet context={{ isRunning, autoSendEmails, fetchConfig, navigate }} />
       </main>
 
       {/* Footer */}
