@@ -87,6 +87,50 @@ export default function Conversations() {
     }
   };
 
+  const handleEditEmail = (message, leadId) => {
+    // Parse subject and body from message content
+    const content = message.content || '';
+    let subject = '';
+    let body = content;
+    
+    if (content.startsWith('Subject:')) {
+      const lines = content.split('\n');
+      subject = lines[0].replace('Subject:', '').trim();
+      body = lines.slice(2).join('\n').trim();
+    }
+    
+    setEditingEmail({ subject, body, leadId });
+    setEditEmailOpen(true);
+  };
+
+  const handleSendEditedEmail = async () => {
+    if (!editingEmail.subject || !editingEmail.body) {
+      toast.error('Subject and body are required');
+      return;
+    }
+    
+    setSending(true);
+    try {
+      await api.post(`/conversations/${editingEmail.leadId}/send`, {
+        subject: editingEmail.subject,
+        body: editingEmail.body
+      });
+      
+      toast.success('Email sent successfully!');
+      setEditEmailOpen(false);
+      
+      // Refresh conversations
+      const { data } = await getConversations({ limit: 100 });
+      setConversations(data);
+      const updated = data.find(c => c.lead_id === editingEmail.leadId);
+      if (updated) setSelectedConv(updated);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send email');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const handleSelectConversation = (conv) => {
     setSelectedConv(conv);
     // On mobile, open modal
