@@ -1811,7 +1811,14 @@ async def delete_niche(niche_id: str, user: dict = Depends(get_current_user)):
 
 # ----- Bookings -----
 @api_router.post("/bookings", response_model=Booking)
-async def create_booking(booking_data: BookingCreate):
+async def create_booking(booking_data: BookingCreate, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    
+    # Verify lead belongs to tenant
+    lead = await db.leads.find_one({"id": booking_data.lead_id, "tenant_id": tenant_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
     # Parse meeting_date string to datetime
     meeting_date = datetime.fromisoformat(booking_data.meeting_date.replace('Z', '+00:00'))
     
@@ -1827,20 +1834,20 @@ async def create_booking(booking_data: BookingCreate):
     doc = booking.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['meeting_date'] = doc['meeting_date'].isoformat()
+    doc['tenant_id'] = tenant_id
     
     await db.bookings.insert_one(doc)
     
     # Update lead status
     await db.leads.update_one(
-        {"id": booking_data.lead_id},
+        {"id": booking_data.lead_id, "tenant_id": tenant_id},
         {"$set": {"status": LeadStatus.BOOKED.value, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     
     # Update niche stats
-    lead = await db.leads.find_one({"id": booking_data.lead_id}, {"_id": 0})
-    if lead and lead.get('niche_id'):
+    if lead.get('niche_id'):
         await db.niches.update_one(
-            {"id": lead['niche_id']},
+            {"id": lead['niche_id'], "tenant_id": tenant_id},
             {"$inc": {"bookings": 1}}
         )
     
@@ -2088,23 +2095,29 @@ async def track_email_click(tracking_id: str, url: str = ""):
         except Exception:
             pass
     
-    # Fallback - redirect to calendly or main site
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    fallback_url = config.get("calendly_link") if config else "https://calendly.com"
+    # Fallback - redirect to calendly or main site (use lead's tenant config if available)
+    fallback_url = "https://calendly.com"
+    if lead_id:
+        lead = await db.leads.find_one({"id": lead_id}, {"_id": 0, "tenant_id": 1})
+        if lead and lead.get("tenant_id"):
+            config = await db.system_config.find_one({"tenant_id": lead["tenant_id"]}, {"_id": 0})
+            if config and config.get("calendly_link"):
+                fallback_url = config["calendly_link"]
     return RedirectResponse(url=fallback_url, status_code=302)
 
 
 @api_router.get("/tracking/stats")
-async def get_tracking_stats():
-    """Get email engagement statistics"""
+async def get_tracking_stats(user: dict = Depends(get_current_user)):
+    """Get email engagement statistics for current tenant"""
     from email_engine import DeliverabilityTracker
     
+    tenant_id = user["id"]
     tracker = DeliverabilityTracker(db)
-    stats = await tracker.get_deliverability_stats(days=30)
+    stats = await tracker.get_deliverability_stats(days=30, tenant_id=tenant_id)
     
-    # Get top engaged leads
+    # Get top engaged leads (tenant-filtered)
     engaged_leads = await db.leads.find(
-        {"email_opens": {"$gt": 0}},
+        {"email_opens": {"$gt": 0}, "tenant_id": tenant_id},
         {"_id": 0, "id": 1, "business_name": 1, "email": 1, "email_opens": 1, "email_clicks": 1, "last_email_opened_at": 1}
     ).sort("email_opens", -1).limit(10).to_list(10)
     
