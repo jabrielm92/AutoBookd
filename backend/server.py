@@ -817,9 +817,10 @@ async def update_config(update: SystemConfigUpdate, user: dict = Depends(get_cur
 @api_router.post("/system/start")
 async def start_system(
     background_tasks: BackgroundTasks, 
-    test_mode: bool = False,
+    auto_send_emails: bool = False,
     product_id: Optional[str] = None,
-    discovery_set_id: Optional[str] = None
+    discovery_set_id: Optional[str] = None,
+    user: dict = Depends(get_current_user)
 ):
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
@@ -827,19 +828,21 @@ async def start_system(
     if pipeline.is_running:
         return {"status": "already_running", "message": "Pipeline is already running"}
     
+    tenant_id = user["id"]
+    
     # Validate product and discovery set if provided
     if product_id:
-        product = await db.products.find_one({"id": product_id}, {"_id": 0})
+        product = await db.products.find_one({"id": product_id, "tenant_id": tenant_id}, {"_id": 0})
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
     
     if discovery_set_id:
-        discovery_set = await db.discovery_sets.find_one({"id": discovery_set_id}, {"_id": 0})
+        discovery_set = await db.discovery_sets.find_one({"id": discovery_set_id, "tenant_id": tenant_id}, {"_id": 0})
         if not discovery_set:
             raise HTTPException(status_code=404, detail="Discovery set not found")
         # Also update scrape config with discovery set settings
         await db.scrape_config.update_one(
-            {"id": "scrape_config"},
+            {"tenant_id": tenant_id},
             {"$set": {
                 "keywords": discovery_set.get("keywords", []),
                 "locations": discovery_set.get("locations", []),
@@ -850,11 +853,15 @@ async def start_system(
             upsert=True
         )
     
+    # Convert auto_send_emails to test_mode (inverted logic)
+    test_mode = not auto_send_emails
+    
     # Update config with selections
     await db.system_config.update_one(
-        {"id": "system_config"},
+        {"tenant_id": tenant_id},
         {"$set": {
             "test_mode": test_mode,
+            "auto_send_emails": auto_send_emails,
             "active_product_id": product_id,
             "active_discovery_set_id": discovery_set_id
         }},
