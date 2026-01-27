@@ -267,6 +267,9 @@ class SystemConfigUpdate(BaseModel):
     active_discovery_set_id: Optional[str] = None
     daily_outreach_limit: Optional[int] = None
     max_follow_ups: Optional[int] = None
+    follow_up_days: Optional[int] = None
+    auto_reply_enabled: Optional[bool] = None
+    reply_domain: Optional[str] = None
     outreach_score_threshold: Optional[int] = None
     priority_score_threshold: Optional[int] = None
     serpapi_key: Optional[str] = None
