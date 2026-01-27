@@ -87,7 +87,7 @@ async def send_verification_email(email: str, token: str, resend_api_key: str):
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {resend_api_key}"},
             json={
-                "from": "AutoBookd <noreply@autobookd.arisolutionsinc.com>",
+                "from": "AutoBookd <autobookd@arisolutionsinc.com>",
                 "to": [email],
                 "subject": "Verify your AutoBookd account",
                 "html": f"""
@@ -131,7 +131,7 @@ async def send_contact_email(name: str, email: str, message: str, resend_api_key
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {resend_api_key}"},
             json={
-                "from": "AutoBookd Contact <noreply@autobookd.arisolutionsinc.com>",
+                "from": "AutoBookd <autobookd@arisolutionsinc.com>",
                 "to": ["autobookd@arisolutionsinc.com"],
                 "subject": f"New Contact Form Submission from {name}",
                 "html": f"""
