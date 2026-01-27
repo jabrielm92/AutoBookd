@@ -398,53 +398,93 @@ But if you're curious about what's possible, I'm happy to do a quick no-pressure
         lead: Dict[str, Any],
         research: Dict[str, Any],
         sender_name: str,
-        sender_company: str
+        sender_company: str,
+        calendar_link: str = None,
+        product: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """
-        Generate fully AI-personalized sequence (uses more tokens)
-        Only use for high-value leads
+        Generate fully AI-personalized sequence with industry-specific messaging
         """
         if not self.api_key:
             return self.generate_sequence(lead, research, sender_name, sender_company)
         
-        prompt = f"""Generate a 4-email cold outreach sequence.
+        product_context = ""
+        if product:
+            product_context = f"""
+YOUR PRODUCT/SERVICE TO SELL:
+- Name: {product.get('name', sender_company)}
+- Description: {product.get('description', '')}
+- Key Benefits: {', '.join(product.get('features', []))}
+"""
+        
+        calendar_context = ""
+        if calendar_link:
+            calendar_context = f"\nInclude this booking link in Email 1: {calendar_link}"
+        
+        prompt = f"""You are an expert cold email copywriter. Generate a highly personalized 4-email sequence.
 
-LEAD INFO:
-- Business: {lead.get('business_name')}
+TARGET BUSINESS:
+- Name: {lead.get('business_name')}
 - Industry: {lead.get('category')}
 - Location: {lead.get('city')}, {lead.get('state')}
+- Website: {lead.get('website', 'N/A')}
+- Rating: {lead.get('rating', 'N/A')} ({lead.get('review_count', 0)} reviews)
 
-RESEARCH:
-- Pain point: {research.get('pain_point')}
-- Opportunity: {research.get('opportunity')}
-- Services: {research.get('services')}
+RESEARCH INSIGHTS:
+- Specific Pain Point: {research.get('pain_point')}
+- Growth Opportunity: {research.get('opportunity')}
+- Their Services: {research.get('services')}
+- Target Customer: {research.get('target_customer', 'local customers')}
+- Personalized Opener: {research.get('opener')}
+{product_context}
 
 SENDER:
 - Name: {sender_name}
 - Company: {sender_company}
+{calendar_context}
 
-SEQUENCE STRUCTURE:
-1. Email 1 (Day 0): Personal opener - reference specific research, soft CTA
-2. Email 2 (Day 3): Pattern interrupt - short, question-based, no links
-3. Email 3 (Day 6): Proof - brief case study or social proof
-4. Email 4 (Day 10): Breakup - "Should I close the loop?"
+SEQUENCE REQUIREMENTS:
 
-RULES:
-- Keep each email under 100 words
-- Sound human, not salesy
-- Don't mention "AI" in subject lines
-- Each email should stand alone
+EMAIL 1 (Day 0 - Personal Opener):
+- Start with a specific observation about THEIR business (not generic)
+- Reference something unique: their reviews, services, or local market
+- Connect their pain point to your solution naturally
+- Soft CTA: "Would it make sense to chat?"
+- Max 80 words
 
-OUTPUT JSON array of 4 emails:
+EMAIL 2 (Day 3 - Pattern Interrupt):
+- Very short (under 40 words)
+- Ask ONE specific question about their current process
+- No links, no pitch
+- Casual tone
+
+EMAIL 3 (Day 6 - Value & Proof):
+- Lead with a specific result or case study
+- Make it relevant to their industry ({lead.get('category')})
+- Bridge to how this applies to them
+- Max 70 words
+
+EMAIL 4 (Day 10 - Breakup):
+- Acknowledge the busy reality
+- Offer a clear "close the loop" out
+- Leave door open without being pushy
+- Max 50 words
+
+CRITICAL RULES:
+- NO typos or grammatical errors
+- NO generic phrases like "I noticed your website" or "I came across your business"
+- Each email MUST feel unique to THIS specific business
+- Sound like a helpful human, not a salesperson
+- Vary sentence structure and length
+- Use their actual business name naturally
+- Match the tone to a {lead.get('category')} business owner
+
+OUTPUT valid JSON array:
 [
-    {{
-        "sequence_number": 1,
-        "delay_days": 0,
-        "subject": "...",
-        "body": "...",
-        "type": "opener"
-    }},
-    ...
+    {{"sequence_number": 1, "delay_days": 0, "subject": "...", "body": "...", "type": "opener"}},
+    {{"sequence_number": 2, "delay_days": 3, "subject": "Re: [Email 1 subject]", "body": "...", "type": "follow_up"}},
+    {{"sequence_number": 3, "delay_days": 6, "subject": "Re: [Email 1 subject]", "body": "...", "type": "proof"}},
+    {{"sequence_number": 4, "delay_days": 10, "subject": "Closing the loop", "body": "...", "type": "breakup"}}
 ]"""
 
         try:
@@ -455,13 +495,13 @@ OUTPUT JSON array of 4 emails:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "gpt-4o-mini",
+                    "model": "gpt-4o",  # Use best model for quality emails
                     "messages": [
-                        {"role": "system", "content": "You write cold email sequences. Return only valid JSON."},
+                        {"role": "system", "content": "You are an elite cold email copywriter who writes highly personalized, grammatically perfect emails that feel human and get responses. You never use generic templates. Each email is crafted specifically for the recipient's business. Return only valid JSON."},
                         {"role": "user", "content": prompt}
                     ],
-                    "temperature": 0.4,
-                    "max_tokens": 1500
+                    "temperature": 0.7,  # Higher creativity for varied emails
+                    "max_tokens": 2000
                 }
             )
             
@@ -476,13 +516,15 @@ OUTPUT JSON array of 4 emails:
                     if content.startswith('json'):
                         content = content[4:]
                 
-                return json.loads(content)
+                sequence = json.loads(content)
+                logger.info(f"AI sequence generated for {lead.get('business_name')}")
+                return sequence
                 
         except Exception as e:
             logger.error(f"AI sequence generation error: {e}")
         
         # Fallback to template
-        return self.generate_sequence(lead, research, sender_name, sender_company)
+        return self.generate_sequence(lead, research, sender_name, sender_company, calendar_link, product)
     
     async def close(self):
         await self.http_client.aclose()
