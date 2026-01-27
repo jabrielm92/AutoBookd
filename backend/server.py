@@ -237,7 +237,9 @@ class SystemConfig(BaseModel):
     sender_company: Optional[str] = "ARI Solutions"
     calendly_api_key: Optional[str] = None
     calendly_link: Optional[str] = None
+    hunter_api_key: Optional[str] = None
     apollo_api_key: Optional[str] = None
+    enrichment_provider: str = "hunter"  # "hunter" or "apollo"
     linkedin_cookie: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
     email_guidelines: EmailGuidelines = Field(default_factory=EmailGuidelines)
@@ -259,7 +261,9 @@ class SystemConfigUpdate(BaseModel):
     sender_company: Optional[str] = None
     calendly_api_key: Optional[str] = None
     calendly_link: Optional[str] = None
+    hunter_api_key: Optional[str] = None
     apollo_api_key: Optional[str] = None
+    enrichment_provider: Optional[str] = None
     linkedin_cookie: Optional[str] = None
     google_calendar_credentials: Optional[str] = None
     email_guidelines: Optional[Dict[str, Any]] = None
