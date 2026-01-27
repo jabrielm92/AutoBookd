@@ -217,8 +217,10 @@ class PipelineController:
                                 logger.debug(f"Rejected {lead.get('business_name')}: {reason}")
                                 continue
                             
-                            # Deduplicate
+                            # Deduplicate within tenant
+                            tenant_id = system_config.get("tenant_id")
                             existing = await self.db.leads.find_one({
+                                "tenant_id": tenant_id,
                                 "$or": [
                                     {"domain": lead.get("domain")},
                                     {"place_id": lead.get("place_id")}
@@ -228,8 +230,9 @@ class PipelineController:
                             if existing:
                                 continue
                             
-                            # Save lead
+                            # Save lead with tenant_id
                             lead["id"] = str(uuid.uuid4())
+                            lead["tenant_id"] = tenant_id
                             lead["status"] = "scraped"
                             lead["pipeline_stage"] = "needs_enrichment"
                             lead["created_at"] = datetime.now(timezone.utc).isoformat()
