@@ -497,69 +497,6 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Discovery Sets */}
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <MapPin className="w-5 h-5" />
-                    Discovery Sets
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Define keywords and locations to scrape leads from
-                  </CardDescription>
-                </div>
-                <Button onClick={() => openSetDialog()} size="sm" className="bg-red-600 hover:bg-red-700">
-                  <Plus className="w-4 h-4 mr-1" />
-                  New Set
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {discoverySets.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <MapPin className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No discovery sets yet</p>
-                  <p className="text-sm">Create one to start finding leads</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {discoverySets.map((set) => (
-                    <div key={set.id} className="flex items-center justify-between p-4 rounded-lg bg-slate-800 border border-slate-700">
-                      <div className="flex-1">
-                        <p className="font-medium text-white">{set.name}</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {(set.keywords || []).slice(0, 3).map((kw, i) => (
-                            <Badge key={i} variant="outline" className="text-xs bg-slate-700 text-slate-300 border-slate-600">
-                              {kw}
-                            </Badge>
-                          ))}
-                          {(set.keywords || []).length > 3 && (
-                            <Badge variant="outline" className="text-xs bg-slate-700 text-slate-400 border-slate-600">
-                              +{set.keywords.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {(set.locations || []).join(', ').substring(0, 50)}{(set.locations || []).join(', ').length > 50 ? '...' : ''} • Limit: {set.daily_limit}/day
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openSetDialog(set)} className="text-slate-400 hover:text-white">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteSet(set.id)} className="text-slate-400 hover:text-red-400">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* System Tab */}
