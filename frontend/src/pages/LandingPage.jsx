@@ -139,14 +139,14 @@ export default function LandingPage() {
             AI-Powered Lead Generation
           </div>
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Turn Cold Leads Into
+            Find Quality Leads
             <span className="block bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-              Booked Meetings
+              Autonomously
             </span>
           </h1>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto mb-10">
-            AutoBookd discovers leads, researches them with AI, sends hyper-personalized emails, 
-            and books meetings on your calendar - all while you sleep.
+            AutoBookd discovers and qualifies leads with AI, crafts personalized outreach, 
+            and fills your pipeline - in just a few clicks.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 

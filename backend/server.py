@@ -16,9 +16,19 @@ import re
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection with SSL fix for Atlas
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+# Add TLS settings for MongoDB Atlas compatibility
+if 'mongodb+srv' in mongo_url or 'mongodb.net' in mongo_url:
+    client = AsyncIOMotorClient(
+        mongo_url,
+        tls=True,
+        tlsAllowInvalidCertificates=False,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=10000
+    )
+else:
+    client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'autobookd')]
 
 # Import auth and stripe modules
