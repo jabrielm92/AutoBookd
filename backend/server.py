@@ -927,19 +927,19 @@ async def get_pipeline_activity(limit: int = 20, user: dict = Depends(get_curren
     }
 
 @api_router.post("/pipeline/activity")
-async def log_pipeline_activity(data: Dict[str, Any]):
+async def log_pipeline_activity(data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Log a pipeline activity event"""
+    tenant_id = user["id"]
     activity = {
         "id": str(uuid.uuid4()),
         "type": data.get("type", "info"),
         "stage": data.get("stage", "unknown"),
         "message": data.get("message", ""),
         "lead_name": data.get("lead_name"),
+        "tenant_id": tenant_id,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
     await db.pipeline_activity.insert_one(activity)
-    
-    # Keep only last 100 activities (per-tenant cleanup happens in pipeline controller)
     
     return {"status": "logged"}
 
