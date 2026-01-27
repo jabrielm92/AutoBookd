@@ -101,6 +101,16 @@ export default function Dashboard() {
           <p className="text-slate-500">Monitor your autonomous lead engine</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSetupGuide(true)}
+            className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
+            data-testid="setup-guide-btn"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Setup Guide
+          </Button>
           {testMode && (
             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
               Test Mode Active
