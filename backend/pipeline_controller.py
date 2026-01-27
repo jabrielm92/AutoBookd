@@ -173,9 +173,10 @@ class PipelineController:
                 if serpapi_key:
                     self.maps_scraper.set_api_key(serpapi_key)
                 
-                # Get daily scrape count
+                # Get daily scrape count for this tenant
                 today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-                daily_stats = await self.db.daily_scrape_stats.find_one({"date": today}) or {}
+                tenant_id = system_config.get("tenant_id")
+                daily_stats = await self.db.daily_scrape_stats.find_one({"date": today, "tenant_id": tenant_id}) or {}
                 scraped_today = daily_stats.get("scraped", 0)
                 
                 if scraped_today >= scrape_config.get("daily_limit", 100):
