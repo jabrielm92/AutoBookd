@@ -240,6 +240,7 @@ class SystemConfig(BaseModel):
     max_follow_ups: int = 2
     outreach_score_threshold: int = 70
     priority_score_threshold: int = 80
+    serpapi_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     resend_api_key: Optional[str] = None
     from_email: Optional[str] = None
