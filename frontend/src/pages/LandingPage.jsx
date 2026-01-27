@@ -144,7 +144,7 @@ export default function LandingPage() {
               Autonomously
             </span>
           </h1>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto mb-10">
+          <p className="text-xl text-slate-200 max-w-3xl mx-auto mb-10">
             AutoBookd discovers and qualifies leads with AI, crafts personalized outreach, 
             and fills your pipeline - in just a few clicks.
           </p>
