@@ -223,33 +223,33 @@ export default function Layout() {
             </div>
 
             {/* Right Section */}
-            <div className="flex items-center gap-3">
-              {/* Theme Toggle */}
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="hidden sm:flex">
+            <div className="flex items-center gap-1 sm:gap-3">
+              {/* Theme Toggle - Mobile hidden */}
+              <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="hidden md:flex h-8 w-8">
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
 
-              {/* Admin Button */}
+              {/* Admin Button - Compact */}
               {user?.role === 'admin' && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => navigate('/admin')}
-                  className="hidden sm:flex gap-1.5 text-amber-600 hover:text-amber-500"
+                  className="hidden sm:flex h-8 w-8 text-amber-600 hover:text-amber-500"
+                  title="Admin"
                 >
                   <Shield className="w-4 h-4" />
-                  Admin
                 </Button>
               )}
 
-              {/* User Menu */}
+              {/* User Menu - Compact */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white text-xs font-medium">
+                  <Button variant="ghost" size="sm" className="gap-1 h-8 px-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white text-xs font-medium">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
-                    <span className="hidden md:inline text-sm">{user?.name || 'User'}</span>
+                    <span className="hidden lg:inline text-sm max-w-[80px] truncate">{user?.name || 'User'}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -276,16 +276,15 @@ export default function Layout() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* System Status */}
-              <div className="hidden sm:flex items-center gap-2">
+              {/* System Status - More compact */}
+              <div className="hidden md:flex items-center gap-1">
                 {isRunning && testMode && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium">
                     <TestTube className="w-3 h-3" />
-                    TEST
                   </div>
                 )}
                 <div className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
+                  "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
                   isRunning 
                     ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" 
                     : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
@@ -294,19 +293,19 @@ export default function Layout() {
                     "w-1.5 h-1.5 rounded-full",
                     isRunning ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
                   )} />
-                  {isRunning ? "Active" : "Idle"}
+                  <span className="hidden lg:inline">{isRunning ? "Active" : "Idle"}</span>
                 </div>
               </div>
 
-              {/* System Toggle */}
-              <div className="flex items-center gap-2">
+              {/* System Toggle - Compact */}
+              <div className="flex items-center gap-1">
                 {isRunning ? (
                   <Button
                     onClick={handleStop}
                     disabled={loading}
                     size="sm"
                     data-testid="system-stop-btn"
-                    className="gap-2 font-medium bg-red-500 hover:bg-red-600 text-white"
+                    className="gap-1 h-8 px-2 sm:px-3 font-medium bg-red-500 hover:bg-red-600 text-white"
                   >
                     <Square className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Stop</span>
@@ -317,7 +316,7 @@ export default function Layout() {
                     disabled={loading}
                     size="sm"
                     data-testid="system-start-btn"
-                    className="gap-2 font-medium bg-emerald-500 hover:bg-emerald-600 text-white"
+                    className="gap-1 h-8 px-2 sm:px-3 font-medium bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
                     <Play className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Start</span>
@@ -328,11 +327,10 @@ export default function Layout() {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsProgressModalOpen(true)}
-                    className="gap-1.5 text-xs"
+                    className="gap-1 h-8 px-2 text-xs"
                     data-testid="view-activity-btn"
                   >
                     <Activity className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Activity</span>
                   </Button>
                 )}
               </div>
