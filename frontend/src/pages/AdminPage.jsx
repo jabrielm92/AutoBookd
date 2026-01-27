@@ -41,33 +41,32 @@ export default function AdminPage() {
   const [deleteUserId, setDeleteUserId] = useState(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [analyticsRes, usersRes, subsRes, contactsRes] = await Promise.all([
-        api.get('/admin/analytics'),
-        api.get('/admin/users'),
-        api.get('/admin/subscriptions').catch(() => ({ data: [] })),
-        api.get('/admin/contact-submissions').catch(() => ({ data: [] }))
-      ]);
-      setAnalytics(analyticsRes.data);
-      setUsers(usersRes.data);
-      setSubscriptions(subsRes.data);
-      setContacts(contactsRes.data);
-    } catch (error) {
-      if (error.response?.status === 403) {
-        toast.error('Admin access required');
-        navigate('/dashboard');
-      } else {
-        toast.error('Failed to load admin data');
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [analyticsRes, usersRes, subsRes, contactsRes] = await Promise.all([
+          api.get('/admin/analytics'),
+          api.get('/admin/users'),
+          api.get('/admin/subscriptions').catch(() => ({ data: [] })),
+          api.get('/admin/contact-submissions').catch(() => ({ data: [] }))
+        ]);
+        setAnalytics(analyticsRes.data);
+        setUsers(usersRes.data);
+        setSubscriptions(subsRes.data);
+        setContacts(contactsRes.data);
+      } catch (error) {
+        if (error.response?.status === 403) {
+          toast.error('Admin access required');
+          navigate('/dashboard');
+        } else {
+          toast.error('Failed to load admin data');
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchData();
+  }, [navigate]);
 
   const handleDeleteUser = async () => {
     if (!deleteUserId) return;

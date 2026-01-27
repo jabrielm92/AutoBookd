@@ -12,20 +12,19 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (token) {
+      const verifyEmail = async () => {
+        try {
+          await api.get(`/auth/verify-email?token=${token}`);
+          setStatus('success');
+        } catch (error) {
+          setStatus('error');
+        }
+      };
       verifyEmail();
     } else {
       setStatus('error');
     }
   }, [token]);
-
-  const verifyEmail = async () => {
-    try {
-      await api.get(`/auth/verify-email?token=${token}`);
-      setStatus('success');
-    } catch (error) {
-      setStatus('error');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-red-950/20 to-slate-950 flex items-center justify-center px-4">
