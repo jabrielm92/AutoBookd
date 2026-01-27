@@ -62,7 +62,7 @@ export default function Discovery() {
   const [manualLocation, setManualLocation] = useState('');
   
   // New product form
-  const [newProduct, setNewProduct] = useState({ name: '', description: '', features: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', description: '', features: '', email_guidelines: '' });
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   
   // New discovery set form
