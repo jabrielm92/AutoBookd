@@ -303,6 +303,12 @@ export default function Leads() {
             </Button>
           )}
 
+          {/* Export CSV */}
+          <Button variant="outline" onClick={handleExportCSV} data-testid="csv-export-btn">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+
           {/* CSV Import */}
           <Dialog open={isCSVDialogOpen} onOpenChange={setIsCSVDialogOpen}>
             <DialogTrigger asChild>
