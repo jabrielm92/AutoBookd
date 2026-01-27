@@ -307,8 +307,8 @@ export default function Leads() {
           <Dialog open={isCSVDialogOpen} onOpenChange={setIsCSVDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="csv-import-btn">
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Import CSV
+                <Upload className="w-4 h-4 mr-2" />
+                Import
               </Button>
             </DialogTrigger>
             <DialogContent>
