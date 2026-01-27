@@ -1,98 +1,93 @@
 <analysis>**original_problem_statement:**
 The user wants to transform the existing Intelligent Lead Automation System into a multi-tenant SaaS platform named AutoBookd.
 
-**PRODUCT REQUIREMENTS:**
-1.  **Epic Landing Page:** Create a new landing page with sections for features, benefits, FAQ, and a contact form (using Resend to email ). The branding should be Made by ARI Solutions Inc. linking to .
-2.  **SaaS Authentication:** Implement a full authentication system including sign-up, login, and email verification with Resend.
-3.  **Subscription & Billing:**
-    *   Integrate Stripe for payments.
-    *   Create a pricing page with a 3-day free trial that converts to a single  subscription plan.
-4.  **Onboarding:** Create a detailed onboarding flow that guides new users on how to set up required accounts and obtain API keys for SerpAPI, Hunter.io, Apollo.io, Calendly, and OpenAI.
-5.  **Multi-tenancy:** The entire application backend and frontend must be converted to support multiple tenants, ensuring data isolation.
-6.  **Admin Dashboard:**
-    *   Create a full admin page accessible only to the admin user ().
-    *   The dashboard should track analytics, subscriptions, tenant info, etc.
-    *   Provide full CRUD capabilities for the admin to manage tenants.
-7.  **Feature Enhancements:**
-    *   Integrate Apollo.io as an alternative enrichment provider.
-    *   Implement an email warm-up scheduling feature.
-    *   Implement inbound reply handling and automated follow-ups.
-    *   Allow user customization of AI email generation prompts.
-8.  **Deployment:** Configure the application for production deployment on Vercel (frontend), Railway (backend), and MongoDB Atlas.
-9.  **Cleanup:** Remove the placeholder LinkedIn import functionality.
+**PRODUCT REQUIREMENTS (summarized from history):**
+1.  **Landing Page & Marketing:** Create an epic, feature-rich landing page. Provide marketing materials for a Skool community.
+2.  **SaaS Functionality:** Implement multi-tenant authentication, a 24-hour free trial, and a  Stripe subscription. Users should be able to see their subscription status and manage it.
+3.  **Onboarding:** Create a comprehensive setup guide for all required API keys (SerpAPI, Hunter, Apollo, etc.) and integrate it into the onboarding flow and dashboard.
+4.  **Core Features:**
+    *   **Lead Discovery:** Find leads by location.
+    *   **Data Enrichment:** Get emails and phone numbers (Hunter/Apollo).
+    *   **AI Pipeline:** Research leads, score them, and generate multi-step GPT-4o email sequences with custom user prompts.
+    *   **Automation Control:** Allow users to toggle auto-sending of emails. If disabled, users must be able to edit and send generated drafts manually.
+    *   **Reply Handling:** Process inbound replies.
+    *   **Data Management:** Users must be able to export leads to CSV. Admins need a dashboard for analytics.
+5.  **Multi-tenancy:** This is the most critical requirement. Each tenant's data (leads, settings, API keys, products, etc.) must be completely isolated. New users must see a blank slate.
+6.  **UI/UX:** The entire application must be mobile-responsive, with no horizontal scrolling. The UI should be clean and intuitive.
+7.  **Deployment:** The application must be fully prepared for production deployment on Vercel (frontend) and Railway (backend) with MongoDB Atlas. All Emergent-specific or localhost code must be removed.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a multi-tenant SaaS platform deployed on Vercel and Railway, connected to a production MongoDB Atlas database. The initial transformation is largely complete, including a landing page, authentication, Stripe integration basics, and multi-tenancy.
+The application is a feature-rich, multi-tenant SaaS platform. The agent has completed a massive overhaul to fix critical multi-tenancy bugs, ensuring data is isolated by a  across most of the backend. A data migration was performed to assign legacy data to the admin user.
 
-Recent work focused on resolving numerous deployment-related bugs for both Vercel (frontend) and Railway (backend). Key feature enhancements were also implemented, including a dynamic enrichment provider (Hunter/Apollo) toggle, significantly improved AI email generation (using GPT-4o and custom prompts), and the backend logic for handling inbound email replies and automated follow-ups. A dark theme has been enforced across the application for a consistent look and feel. A comprehensive setup guide component has been created but not yet integrated into the UI.
+Key recent accomplishments include:
+- A complete mobile-responsive redesign of the Leads, Pipeline, Conversations, and Discovery pages.
+- Implementation of an Auto-Send Emails toggle, replacing the old Test Mode.
+- A new feature allowing users to edit and manually send draft emails from the Conversations page.
+- A revamped, detailed landing page and new marketing materials.
+- An Export to CSV feature for leads.
+- A fix for the core pipeline, making it tenant-aware so it can run again.
+
+However, the user has stressed that remnants of old, non-tenant-aware code and deployment-specific issues may still exist. The agent was in the middle of a final, comprehensive audit to find and eliminate these last issues.
 
 **Last working item**:
-- **Last item agent was working:** The agent was tasked with creating a comprehensive setup guide, integrating it into the onboarding flow, and making it accessible from the dashboard. The user also requested step-by-step instructions for configuring Resend and GoDaddy for inbound replies. The agent created the guide component () and a detailed marketing/cost analysis document (). The final step was to integrate the guide into the UI.
+- **Last item agent was working:** Conducting a full codebase audit to find and fix any remaining code that is not tenant-aware or is unsuitable for production deployment (e.g., hardcoded localhost URLs, old database query patterns).
 - **Status:** IN PROGRESS
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** frontend testing agent
+- **Agent Testing Done:** N (The audit itself is the work in progress)
+- **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1:** The production deployment has been unstable and required multiple rounds of debugging. (P0)
+- **Issue 1:** Final Code Audit for Production Readiness (P0)
 
   **Issues Detail:**
-  - **Issue 1:** Production Deployment Instability
-     - **Attempted fixes:** Numerous fixes were applied to address deployment failures on both Vercel and Railway. These included correcting dependency versions (, ), removing unused packages (), creating platform-specific configuration files (, , ), fixing ESLint warnings, and resolving CORS issues. The app is now running, but the user has experienced slow load times and data discrepancies.
+  - **Issue 1:** Final Code Audit for Production Readiness
+     - **Attempted fixes:** The agent has already fixed dozens of endpoints and database queries. The current task is to fix the remaining issues found during a  audit.
      - **Next debug checklist:**
-        1.  The user's latest complaint was about slow page loads. Monitor network requests on the deployed site to identify bottlenecks.
-        2.  Verify all environment variables on Vercel and Railway are correct, especially .
-        3.  Confirm the database connection to MongoDB Atlas is stable and performant under load.
-     - **Why fix this issue and what will be achieved with the fix?** The application must be stable and performant for users. This is critical for customer retention and the overall success of the SaaS platform.
-     - **Status:** USER VERIFICATION PENDING
+        1.  Fix  and  which still use the old  pattern. They must query using .
+        2.  Secure any unauthenticated endpoints, such as the Resend webhook, if necessary.
+        3.  Replace hardcoded URLs like  with environment variables (e.g., for  in ).
+        4.  Add the  filter to any remaining database queries that lack it, such as  in .
+     - **Why fix this issue and what will be achieved with the fix?** To permanently resolve all multi-tenancy data-leaking bugs, ensure the application is stable, and make it fully ready for production deployment on Vercel and Railway, fulfilling the user's core requirement.
+     - **Status:** IN PROGRESS
      - **Is recurring issue?** Y
      - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on other issue:** None
+     - **Blocked on other issue:** none
 
 **In progress Task List**:
-- **Task 1:** Integrate the Setup Guide into the UI (P0)
-     - **Where to resume:** The guide component exists at .
-        1.  Modify  to render the  component, replacing the current placeholder content.
-        2.  Modify  to add a button (e.g., How to Set Up AutoBookd) that opens the  in a modal.
-     - **What will be achieved with this?** Users will have a clear, accessible guide for configuring the application, including the new auto-reply feature, improving user onboarding and reducing support requests.
+- **Task 1:** Complete the final code audit and fix all identified issues (P0)
+     - **Where to resume:** The agent has identified the problematic files and code snippets via . The next step is to use  or  to apply the fixes outlined in the Next debug checklist above.
+     - **What will be achieved with this?** A clean, production-ready, and truly multi-tenant codebase.
      - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** frontend
+     - **Should Test frontend/backend/both after fix?** both
      - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Task 1 (P1):** Build Out Admin Dashboard. The  needs to be fully implemented to display tenant information, subscription status, and data usage analytics fetched from the backend.
--   **Task 2 (P1):** Finalize Stripe Subscription Flow. While backend endpoints exist, the full checkout-to-active-subscription lifecycle needs to be tested end-to-end, including webhook handling for subscription updates and failures.
--   **Task 3 (P2):** Implement Email Warm-up feature. The UI has a Coming Soon badge; this needs to be built out with scheduling logic in  and a configuration UI in settings.
+-   **Task 1 (P1):** Build Out Admin Dashboard. The page at  needs to be fully implemented to display tenant information, subscription status, and usage analytics.
+-   **Task 2 (P1):** Edit/Delete Saved Sets and Products. The user requested the ability to edit or delete discovery sets and products.
 
 **Future Tasks:**
+-   **Email Warm-up Feature:** Implement the Coming Soon email warm-up scheduler.
 -   **ColdIQ Integration:** Blocked until the user provides API documentation.
--   **Feedback Loop:** Implement a system to auto-tune AI prompts based on email performance (open/reply rates).
--   **A/B Testing:** Build an autonomous engine for message optimization.
+-   **Feedback Loop & A/B Testing:** Implement systems to auto-tune AI prompts and messages based on performance.
 
 **Completed work in this session**
--   **Deployment & Debugging:**
-    -   Resolved multiple Vercel build failures related to dependencies (, ) and ESLint errors.
-    -   Fixed Railway deployment failures by removing unused packages, adding  and , and correcting the runtime port.
-    -   Solved Resend  error by correcting the API key and using a verified from email address.
-    -   Fixed  error by adding a reset endpoint and UI button.
--   **AI & Pipeline Enhancements:**
-    -   Upgraded AI email generation to use GPT-4o with greatly improved, structured prompts to ensure variance and quality.
-    -   Fixed the pipeline to call the correct  method instead of a legacy template-based one.
-    -   Added the SerpAPI key to the settings UI and integrated it into the pipeline.
--   **Feature Implementation:**
-    -   **Inbound Replies:** Implemented backend models and an endpoint for handling inbound email replies, with a toggle in settings to enable/disable AI auto-replies.
-    -   **Custom Prompts:** Added a field for users to provide custom email guidelines on a per-product basis, which are injected into the AI prompt.
-    -   **Follow-up Control:** Added a configurable follow-up delay in settings.
--   **UI/UX Improvements:**
-    -   Enforced a global dark theme and removed the light/dark mode toggle.
-    -   Optimized the main navigation layout to be more compact and mobile-friendly.
-    -   Fixed UI elements on Dashboard and Modals that had hardcoded white backgrounds.
--   **Content Creation:**
-    -   Generated a  for marketing and a  for user data import.
-    -   Created a new  component to consolidate setup instructions.
+- **Critical Multi-Tenancy Fix:** Overhauled the backend to enforce tenant isolation, fixing a bug where new users saw admin data. Applied  filters to most endpoints and DB queries.
+- **Data Migration:** Ran a script to assign  to all legacy data (products, conversations, bookings) for the admin account.
+- **Pipeline Repair:** Fixed the core processing pipeline which had stopped working due to lack of tenant context.
+- **Mobile UI Overhaul:** Re-architected the Leads, Pipeline, Conversations, and Discovery pages to be fully responsive, replacing tables and drag-and-drop with mobile-friendly cards and modals.
+- **Auto-Send Toggle:** Replaced the confusing Test Mode with a clear Auto-Send Emails toggle throughout the UI and backend logic.
+- **Manual Email Sending:** Added a feature to the Conversations page to let users edit and manually send AI-generated emails when auto-send is off.
+- **Feature Additions:** Implemented an Export to CSV function on the Leads page.
+- **Landing Page & Marketing:** Completely redesigned the landing page with detailed feature descriptions and created a marketing document ().
+- **Onboarding & UI Fixes:** Integrated the  component, updated free-tier text, changed trial to 24 hours, and removed the demo button from the landing page.
+
+**Known issue recurrence from previous fork**
+- **Issue recurrence in previous fork:** Production deployment instability and data discrepancies between tenants.
+- **Recurrence count:** 3+
+- **Status:** IN PROGRESS (The current Final Code Audit task is the definitive fix for this recurring root cause).
 
 **Code Architecture**
 
@@ -100,88 +95,79 @@ Recent work focused on resolving numerous deployment-related bugs for both Verce
 **Key Technical Concepts**
 -   **Frontend:** React, TailwindCSS, Shadcn/UI
 -   **Backend:** FastAPI, Pydantic
--   **Database:** MongoDB Atlas (Production)
+-   **Database:** MongoDB Atlas
 -   **Deployment:** Vercel (Frontend), Railway (Backend)
--   **Email:** Resend (for both outbound and inbound webhook processing)
--   **AI:** OpenAI GPT-4o for email generation and reply classification.
+-   **Core Architecture:** **Multi-Tenancy** enforced by  filtering on all data operations.
 
 **key DB schema**
 -   **users:** 
--   **products:**  (NEW FIELD)
--   **system_config:**  (NEW FIELDS)
--   **daily_scrape_stats:**  (This is the collection that needed manual resets)
-
-**changes in tech stack**
--   **AI Model:** Upgraded from default to GPT-4o for email generation.
+-   **system_config:**  (Now per-tenant)
+-   All other major collections (, , , , , ) now include a  field.
 
 **All files of reference**
--    (New models and endpoints)
--    (New prompts and email generation logic)
--    (Passing new config values)
--    (New Discovery tab, reset button, auto-reply config)
--    (Updated product creation form)
--    (Refactored navigation and theme)
--    (New component to be integrated)
--    (Target for  integration)
--    (Updated with troubleshooting notes)
+-    (Contains most endpoints, needs a final check)
+-    (Recently made tenant-aware)
+-    (Needs tenant-aware fix)
+-    (Needs tenant-aware fix)
+-    (All pages were recently updated for mobile and features)
+-    (Handles pipeline status and start/stop controls)
 
 **Areas that need refactoring**:
--    is extremely large and contains business logic that should be in separate service files. API routes should be broken out into routers (e.g., , ).
--    is becoming very large and could be broken down into smaller components for each tab.
+- The current Final Code Audit is effectively a refactoring task to ensure production readiness by removing all legacy, non-tenant-aware code patterns.
 
 **key api endpoints**
--   : **NEW** - Resets the daily scrape counter for the current tenant.
--   : **NEW** - Updates an existing discovery set.
--   : **NEW** (logic added) - Handles inbound email replies from Resend.
--   : Updated to handle new system config fields (, , etc.).
+-   : Starts the lead generation pipeline for the current tenant.
+-   : Fetches the configuration for the current tenant.
+-   : Updates the configuration for the current tenant.
+-   : **NEW** - Exports filtered leads to a CSV file.
+-   : **NEW** - Manually sends a draft email.
+-   All data-related endpoints (e.g., , ) are now filtered by .
 
 **Critical Info for New Agent**
--   The application is now live, and the user is testing in a production environment. Stability and performance are top priorities. The user is sensitive to credit usage.
--   The production database (MongoDB Atlas) was initially empty. Previous test data from the Emergent environment does not exist there.
--   Deployment has been the biggest challenge. Be extra cautious with changes that might affect Vercel or Railway builds.
--   The next immediate task is to integrate the  component into the  and .
+-   **Top Priority:** The user is out of patience with multi-tenancy bugs. Your absolute first task is to complete the code audit and fix every last instance of non-tenant-aware code. Do not start any new features until this is done and verified.
+-   **Efficiency is Key:** The user has very few credits left. Be extremely efficient. Use  to find all issues first, then fix them in one go. Avoid trial-and-error.
+-   **Deployment Focus:** The goal is a production-ready application for Vercel and Railway. Remove all hardcoded  values and other development artifacts.
+-   **Tenant Context:** The application's architecture now depends entirely on the  from the authenticated user. The pipeline background task is also passed this  and must use it for all its database operations.
 
 **documents and test reports created in this job**
--    (Updated)
--    (Updated)
--    (New)
--    (New)
--    (New)
+-   
+-   
+-    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requested to add a setup guide for auto-reply to the onboarding flow and make the full onboarding flow accessible from the dashboard. Also asked for instructions on setting up Resend/GoDaddy for inbound replies. (IN PROGRESS)
-2.  **User:** Reported the pipeline returned no results after deployment. (RESOLVED - Daily scrape limit was hit).
-3.  **User:** Requested to remove the light/dark mode toggle and create a cost/ROI estimate for marketing purposes. (DONE)
-4.  **User:** Noticed bad AI-generated emails in their inbox from before the latest fixes. (EXPLAINED - Caused by old code, new code is not yet deployed).
-5.  **User:** Reported that Dashboard and Discovery pages have white backgrounds, breaking the dark theme. (RESOLVED)
-6.  **User:** Reported that the AI is still sending bad emails with the same subject line and asked how replies/bookings are handled. (RESOLVED - Pipeline was using old template method, fixed to use new AI method. Explained booking/reply mechanism).
-7.  **User:** Asked to add a field for the SerpAPI key. (DONE)
-8.  **User:** Complained about mobile view (nav items scrolling off-screen) and bad AI emails (typos, run-on sentences, same template). (DONE - Refactored nav and improved AI prompts).
-9.  **User:** Asked for a CSV of sample leads to import into the new empty database. (DONE)
-10. **User:** Reported slow page loads, missing data from testing, and a blank leads page after deployment. (RESOLVED - Explained empty DB, fixed blank page rendering).
+1.  **User:** New tenants still see the admin's company name. This is the third time. (IN PROGRESS - Root cause found and being fixed)
+2.  **User:** Admin dashboard cards show no data, looks like a new user account. (EXPLAINED - Caused by data migration, should be fixed post-deploy)
+3.  **User:** Requested an Auto-Send toggle instead of Test Mode and the ability to edit/send emails if auto-send is off. (DONE)
+4.  **User:** Approved the plan to migrate data and implement the Auto-Send toggle. (DONE)
+5.  **User:** Confirmed that all features advertised on the new landing page must be functional. (DONE - Added missing CSV export)
+6.  **User:** Requested a complete landing page revamp to highlight the app's power and marketing material for Skool. (DONE)
+7.  **User:** Noticed Test Mode is still showing in the UI after it was supposed to be replaced. (DONE)
+8.  **User:** The pipeline is no longer starting. MAJOR ISSUE! (DONE - Fixed tenant context issue in pipeline)
+9.  **User:** Requested the ability to edit or delete saved sets and products. (PENDING)
+10. **User:** Stressed that the entire app needs to be reviewed to ensure it's fully multi-tenant and ready for production deployment, removing all Emergent-specific code. (IN PROGRESS - This is the current P0 task)
 
 **Project Health Check:**
--   **Broken:** None.
--   **Mocked:** Email warm-up feature is marked as Coming Soon in the UI.
+-   **Broken:** Some data access points might still be non-tenant-aware, which is what the current audit is fixing.
+-   **Mocked:** Email Warm-up feature is still a placeholder.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o** — requires User API Key (for email generation)
--   **SerpAPI** — requires User API Key (for lead scraping)
--   **Hunter.io** — requires User API Key (for email enrichment)
--   **Apollo.io** — requires User API Key (for email enrichment)
--   **Resend** — requires User API Key (for outbound emails and inbound webhooks)
--   **Stripe** — requires User API Key (for payments)
--   **Calendly** — Webhook integrated.
+-   **OpenAI GPT-4o:** requires User API Key
+-   **SerpAPI:** requires User API Key
+-   **Hunter.io:** requires User API Key
+-   **Apollo.io:** requires User API Key
+-   **Resend:** requires User API Key
+-   **Stripe:** requires User API Key
+-   **Calendly:** Webhook integration
 
 **Testing status**
--   **Testing agent used after significant changes:** NO
+-   **Testing agent used after significant changes:** YES (for initial mobile UI changes)
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** None
--   **Known regressions:** None, but the user has reported multiple issues post-deployment which were subsequently fixed.
+-   **Test files created:** []
+-   **Known regressions:** The pipeline stopped working due to tenant-awareness changes, but this has since been fixed.
 
 **Credentials to test flow:**
 -   **Admin User:**  (password: )
--   **API Keys (Stripe, Resend, etc.):** The user has configured these as environment variables in their production Railway deployment.
+-   A new test user was created via API for tenant isolation testing: 
 
 **What agent forgot to execute**
-- The agent created the  component as requested but did not complete the full task of integrating it into the  and adding a trigger for it on the . This is the immediate next step.</analysis>
+The agent's initial implementation of multi-tenancy was incomplete, missing many endpoints and the background pipeline controller. This has been the primary source of bugs in the last several interactions. The current task is a direct response to this, aiming to comprehensively fix all remaining omissions.</analysis>
