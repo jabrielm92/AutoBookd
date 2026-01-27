@@ -251,11 +251,12 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-800">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="discovery">Discovery</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="api">API Keys</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 bg-slate-800">
+          <TabsTrigger value="general" className="text-xs md:text-sm">General</TabsTrigger>
+          <TabsTrigger value="subscription" className="text-xs md:text-sm">Subscription</TabsTrigger>
+          <TabsTrigger value="discovery" className="text-xs md:text-sm">Discovery</TabsTrigger>
+          <TabsTrigger value="system" className="text-xs md:text-sm">System</TabsTrigger>
+          <TabsTrigger value="api" className="text-xs md:text-sm">API Keys</TabsTrigger>
         </TabsList>
 
         {/* General Tab */}
