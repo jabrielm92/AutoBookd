@@ -107,28 +107,31 @@ export default function Leads() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const params = { limit: 200 };
-        if (statusFilter && statusFilter !== 'all') {
-          const pipelineStages = ['needs_enrichment', 'needs_research', 'ready_for_outreach', 'in_sequence', 'low_score', 'no_email', 'no_domain'];
-          if (pipelineStages.includes(statusFilter)) {
-            params.pipeline_stage = statusFilter;
-          } else {
-            params.status = statusFilter;
-          }
+  const fetchLeads = async () => {
+    try {
+      const params = { limit: 200 };
+      if (statusFilter && statusFilter !== 'all') {
+        const pipelineStages = ['needs_enrichment', 'needs_research', 'ready_for_outreach', 'in_sequence', 'low_score', 'no_email', 'no_domain'];
+        if (pipelineStages.includes(statusFilter)) {
+          params.pipeline_stage = statusFilter;
+        } else {
+          params.status = statusFilter;
         }
-        const { data } = await getLeads(params);
-        setLeads(data);
-        setSelectedIds(new Set());
-      } catch (error) {
-        toast.error('Failed to fetch leads');
-      } finally {
-        setLoading(false);
       }
-    };
+      const { data } = await getLeads(params);
+      setLeads(data || []);
+      setSelectedIds(new Set());
+    } catch (error) {
+      toast.error('Failed to fetch leads');
+      setLeads([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLeads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const handleAddLead = async () => {
