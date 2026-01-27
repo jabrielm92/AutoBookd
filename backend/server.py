@@ -951,9 +951,15 @@ async def get_system_status():
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     
-    config = await db.system_config.find_one({"id": "system_config"}, {"_id": 0})
-    pipeline_analytics = await db.pipeline_analytics.find_one({"id": "pipeline_analytics"}, {"_id": 0})
-    deliverability = await db.deliverability_stats.find_one({"id": "deliverability_stats"}, {"_id": 0})
+    # Get running config (tenant-aware)
+    config = await db.system_config.find_one({"is_running": True}, {"_id": 0})
+    if not config:
+        config = await db.system_config.find_one({}, {"_id": 0})
+    
+    tenant_id = config.get("tenant_id") if config else None
+    
+    pipeline_analytics = await db.pipeline_analytics.find_one({"tenant_id": tenant_id}, {"_id": 0}) if tenant_id else None
+    deliverability = await db.deliverability_stats.find_one({"tenant_id": tenant_id}, {"_id": 0}) if tenant_id else None
     
     return {
         "is_running": pipeline.is_running,
