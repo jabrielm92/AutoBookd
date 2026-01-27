@@ -1648,6 +1648,77 @@ async def get_conversation(lead_id: str, user: dict = Depends(get_current_user))
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conv
 
+@api_router.post("/conversations/{lead_id}/send")
+async def send_draft_email(lead_id: str, data: Dict[str, Any], user: dict = Depends(get_current_user)):
+    """Send or edit and send a draft email from conversation"""
+    tenant_id = user["id"]
+    
+    # Get lead
+    lead = await db.leads.find_one({"id": lead_id, "tenant_id": tenant_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Get config for email settings
+    config = await db.system_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
+    if not config:
+        raise HTTPException(status_code=400, detail="Please configure email settings first")
+    
+    resend_key = config.get("resend_api_key")
+    from_email = config.get("from_email")
+    sender_name = config.get("sender_name", "Team")
+    
+    if not resend_key or not from_email:
+        raise HTTPException(status_code=400, detail="Resend API key and From Email required in settings")
+    
+    subject = data.get("subject")
+    body = data.get("body")
+    
+    if not subject or not body:
+        raise HTTPException(status_code=400, detail="Subject and body required")
+    
+    to_email = lead.get("email")
+    if not to_email:
+        raise HTTPException(status_code=400, detail="Lead has no email address")
+    
+    # Send via Resend
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}"},
+                json={
+                    "from": f"{sender_name} <{from_email}>",
+                    "to": [to_email],
+                    "subject": subject,
+                    "text": body
+                }
+            )
+            
+            if response.status_code not in [200, 201]:
+                raise HTTPException(status_code=500, detail=f"Email send failed: {response.text}")
+        
+        # Log to conversation
+        message = {
+            "id": f"msg_{uuid.uuid4().hex[:8]}",
+            "direction": "outbound",
+            "channel": "email",
+            "content": f"Subject: {subject}\n\n{body}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "sent"
+        }
+        
+        await db.conversations.update_one(
+            {"lead_id": lead_id, "tenant_id": tenant_id},
+            {"$push": {"messages": message}},
+            upsert=True
+        )
+        
+        return {"status": "sent", "message": "Email sent successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
 # ----- Niches -----
 @api_router.post("/niches", response_model=Niche)
 async def create_niche(niche_data: NicheCreate, user: dict = Depends(get_current_user)):
