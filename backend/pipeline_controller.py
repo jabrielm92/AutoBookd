@@ -149,6 +149,12 @@ class PipelineController:
             try:
                 scrape_config = await self._get_scrape_config()
                 
+                # Get SerpAPI key from system config
+                system_config = await self.db.system_config.find_one({"id": "system_config"})
+                serpapi_key = system_config.get("serpapi_key") if system_config else None
+                if serpapi_key:
+                    self.maps_scraper.set_api_key(serpapi_key)
+                
                 # Get daily scrape count
                 today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
                 daily_stats = await self.db.daily_scrape_stats.find_one({"date": today}) or {}
