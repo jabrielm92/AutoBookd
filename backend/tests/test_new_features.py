@@ -152,9 +152,9 @@ class TestConversationsEndpoint:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         
         data = response.json()
-        assert "data" in data, "Response should have 'data' field"
-        assert isinstance(data["data"], list), "data should be a list"
-        print(f"PASS: GET /api/conversations returns {len(data['data'])} conversations")
+        # Backend returns list directly (not wrapped in 'data' field)
+        assert isinstance(data, list), f"Response should be a list, got {type(data)}"
+        print(f"PASS: GET /api/conversations returns {len(data)} conversations")
 
 
 class TestSetupGuideIntegrations:
