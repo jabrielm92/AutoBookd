@@ -148,68 +148,115 @@ const setupSteps = [
 
 const autoReplyGuide = {
   title: 'Auto-Reply Setup Guide',
-  subtitle: 'Configure inbound email handling with Resend & GoDaddy',
+  subtitle: 'Configure inbound email handling to automatically respond to leads',
   sections: [
     {
+      title: 'Overview',
+      content: `Auto-Reply lets AutoBookd automatically:
+• Receive and read incoming email replies
+• Classify intent (interested, question, not interested)
+• Send intelligent follow-up responses
+• Update lead status automatically
+• Send your calendar link on the 2nd positive reply
+
+This requires setting up a subdomain for receiving replies.`
+    },
+    {
       title: 'Step 1: Choose Your Reply Subdomain',
-      content: `Decide on a subdomain for receiving replies. Examples:
+      content: `Create a subdomain dedicated to receiving replies. Examples:
 • replies.yourdomain.com
-• inbox.yourdomain.com
+• inbox.yourdomain.com  
 • mail.yourdomain.com
 
-This keeps replies separate from your main domain email.`
+Using a subdomain keeps automated replies separate from your main business email.`
     },
     {
-      title: 'Step 2: Add Domain to Resend',
-      content: `1. Log into resend.com
-2. Go to Domains → Add Domain
-3. Enter your subdomain (e.g., replies.yourdomain.com)
-4. Resend will show you DNS records to add`
-    },
-    {
-      title: 'Step 3: Configure DNS in GoDaddy',
-      content: `1. Log into GoDaddy → My Products → DNS
-2. Add these records for your subdomain:
+      title: 'Step 2: Add MX Record in Your DNS Provider',
+      content: `Log into your DNS provider (GoDaddy, Cloudflare, Namecheap, etc.) and add an MX record:
 
-MX Record:
-• Host: replies (or your subdomain)
-• Points to: feedback-smtp.us-east-1.amazonses.com
-• Priority: 10
-• TTL: 1 hour
+┌─────────────────────────────────────────────────────┐
+│  Type:     MX                                       │
+│  Name:     replies  (or your chosen subdomain)      │
+│  Value:    inbound-smtp.resend.com                  │
+│  Priority: 10                                       │
+│  TTL:      1 Hour (or 3600)                         │
+└─────────────────────────────────────────────────────┘
 
-TXT Record (SPF):
-• Host: replies
-• Value: v=spf1 include:amazonses.com ~all
-• TTL: 1 hour
+Common DNS Providers:
+• GoDaddy: My Products → DNS → Add Record
+• Cloudflare: DNS → Records → Add Record
+• Namecheap: Domain List → Manage → Advanced DNS
+• Google Domains: DNS → Custom Records
 
 Wait 15-30 minutes for DNS propagation.`
     },
     {
-      title: 'Step 4: Verify Domain in Resend',
-      content: `1. Go back to Resend → Domains
-2. Click "Verify" next to your subdomain
-3. Resend will check your DNS records
-4. Status should change to "Verified"`
+      title: 'Step 3: Add Subdomain to Resend',
+      content: `1. Log into resend.com
+2. Go to Domains → Add Domain
+3. Enter your full subdomain (e.g., replies.yourdomain.com)
+4. Click "Add"
+5. Toggle ON "Enable Receiving" for this domain
+6. Resend will verify your MX record automatically`
     },
     {
-      title: 'Step 5: Set Up Inbound Webhook',
+      title: 'Step 4: Create Inbound Webhook in Resend',
       content: `1. In Resend, go to Webhooks → Add Webhook
-2. Enter your webhook URL:
-   https://your-backend-url/api/webhooks/resend/inbound
-3. Select event: "email.received"
-4. Save the webhook`
+2. Configure the webhook:
+
+┌─────────────────────────────────────────────────────┐
+│  Endpoint URL:                                      │
+│  https://YOUR-BACKEND-URL/api/webhooks/email/reply  │
+│                                                     │
+│  Events to subscribe:                               │
+│  ☑ email.received                                   │
+└─────────────────────────────────────────────────────┘
+
+Replace YOUR-BACKEND-URL with your actual Railway backend URL.
+Example: https://autobookd-production.up.railway.app
+
+3. Click "Add Webhook"`
     },
     {
-      title: 'Step 6: Configure AutoBookd',
-      content: `1. Go to Settings → System tab
-2. Enable "AI Auto-Reply" toggle
-3. Enter your reply domain (e.g., replies.yourdomain.com)
-4. Save settings
+      title: 'Step 5: Configure AutoBookd Settings',
+      content: `1. Go to Settings in AutoBookd
+2. Scroll to the "System Settings" section
+3. Configure:
+   • Reply Domain: replies.yourdomain.com
+   • AI Auto-Reply: Toggle ON
+4. Make sure you also have configured:
+   • From Email (your sending email)
+   • Calendly Link (for booking meetings)
+5. Save settings`
+    },
+    {
+      title: 'How It Works',
+      content: `Once configured, the flow is:
 
-Now when leads reply, AI will:
-• Classify the intent (interested, question, not interested)
-• Generate an appropriate response
-• Update the lead status automatically`
+1. You send outreach → Lead receives email
+2. Lead replies → Goes to replies.yourdomain.com
+3. Resend receives it → Sends webhook to AutoBookd
+4. AutoBookd AI classifies the reply:
+   • Positive → Lead marked "Qualified"
+   • Negative → Lead marked "Disqualified", sequence stopped
+   • Neutral → Lead marked "Engaged"
+5. If Auto-Reply is ON:
+   • 1st positive reply: AI thanks them, asks for availability
+   • 2nd positive reply: AI sends your calendar booking link
+6. All messages saved to Conversations`
+    },
+    {
+      title: 'Troubleshooting',
+      content: `Not receiving replies?
+• Check MX record is correct (use mxtoolbox.com)
+• Verify domain is "Receiving Enabled" in Resend
+• Check webhook URL is correct and accessible
+• Look at Resend webhook logs for errors
+
+Replies not being processed?
+• Check your OpenAI API key is valid
+• Ensure Auto-Reply is enabled in Settings
+• Check Railway logs for errors`
     }
   ]
 };
