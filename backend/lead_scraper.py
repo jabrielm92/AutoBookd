@@ -337,10 +337,24 @@ class ApolloEmailFinder:
             
             elif people_response.status_code == 401:
                 logger.error("Apollo API: Invalid API key")
+            elif people_response.status_code == 403:
+                logger.warning("Apollo API: People Search API access denied (403). Your plan may not include People API access. Falling back to generic email.")
+                # Fallback: Generate a generic contact email
+                if org_data:
+                    return {
+                        "email": f"info@{domain}",
+                        "confidence": 25,
+                        "type": "guessed",
+                        "company_info": {
+                            "name": org_data.get("name"),
+                            "industry": org_data.get("industry"),
+                            "employee_count": org_data.get("estimated_num_employees")
+                        }
+                    }
             elif people_response.status_code == 429:
                 logger.warning("Apollo API: Rate limit reached")
             else:
-                logger.debug(f"Apollo API: No results for {domain}")
+                logger.debug(f"Apollo API: No results for {domain} (status: {people_response.status_code})")
                 
         except Exception as e:
             logger.error(f"Apollo email finder error: {e}")
