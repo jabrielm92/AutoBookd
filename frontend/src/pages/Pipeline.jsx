@@ -9,40 +9,37 @@ import {
   CalendarCheck,
   XCircle,
   Clock,
-  ArrowRight
+  ChevronDown,
+  ChevronUp,
+  RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getLeads, updateLead } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const pipelineStages = [
-  { id: 'uncontacted', label: 'Uncontacted', icon: Users, color: 'bg-gray-500' },
-  { id: 'outreach_sent', label: 'Outreach Sent', icon: Mail, color: 'bg-blue-500' },
-  { id: 'engaged', label: 'Engaged', icon: MessageSquare, color: 'bg-amber-500' },
-  { id: 'discovery', label: 'Discovery', icon: SearchIcon, color: 'bg-purple-500' },
-  { id: 'qualified', label: 'Qualified', icon: CheckCircle, color: 'bg-cyan-500' },
-  { id: 'calendar_offered', label: 'Calendar Offered', icon: Calendar, color: 'bg-indigo-500' },
-  { id: 'booked', label: 'Booked', icon: CalendarCheck, color: 'bg-emerald-500' },
+  { id: 'uncontacted', label: 'Uncontacted', icon: Users, color: 'bg-gray-500', textColor: 'text-gray-600 dark:text-gray-400' },
+  { id: 'outreach_sent', label: 'Outreach Sent', icon: Mail, color: 'bg-blue-500', textColor: 'text-blue-600 dark:text-blue-400' },
+  { id: 'engaged', label: 'Engaged', icon: MessageSquare, color: 'bg-amber-500', textColor: 'text-amber-600 dark:text-amber-400' },
+  { id: 'discovery', label: 'Discovery', icon: SearchIcon, color: 'bg-purple-500', textColor: 'text-purple-600 dark:text-purple-400' },
+  { id: 'qualified', label: 'Qualified', icon: CheckCircle, color: 'bg-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400' },
+  { id: 'calendar_offered', label: 'Calendar Offered', icon: Calendar, color: 'bg-indigo-500', textColor: 'text-indigo-600 dark:text-indigo-400' },
+  { id: 'booked', label: 'Booked', icon: CalendarCheck, color: 'bg-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400' },
+  { id: 'stalled', label: 'Stalled', icon: Clock, color: 'bg-orange-500', textColor: 'text-orange-600 dark:text-orange-400' },
+  { id: 'disqualified', label: 'Disqualified', icon: XCircle, color: 'bg-red-500', textColor: 'text-red-600 dark:text-red-400' },
 ];
-
-const secondaryStages = [
-  { id: 'stalled', label: 'Stalled', icon: Clock, color: 'bg-orange-500' },
-  { id: 'disqualified', label: 'Disqualified', icon: XCircle, color: 'bg-red-500' },
-];
-
-const allStages = [...pipelineStages, ...secondaryStages];
 
 export default function Pipeline() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [draggedLead, setDraggedLead] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [expandedStages, setExpandedStages] = useState(new Set(['uncontacted', 'outreach_sent', 'engaged', 'booked']));
 
   useEffect(() => {
     fetchLeads();
@@ -50,8 +47,9 @@ export default function Pipeline() {
 
   const fetchLeads = async () => {
     try {
+      setLoading(true);
       const { data } = await getLeads({ limit: 500 });
-      setLeads(data);
+      setLeads(data || []);
     } catch (error) {
       toast.error('Failed to fetch leads');
     } finally {
@@ -63,37 +61,22 @@ export default function Pipeline() {
     return leads.filter(lead => lead.status === status);
   };
 
-  const handleDragStart = (e, lead) => {
-    setDraggedLead(lead);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = async (e, newStatus) => {
-    e.preventDefault();
-    if (!draggedLead || draggedLead.status === newStatus) {
-      setDraggedLead(null);
-      return;
+  const toggleStage = (stageId) => {
+    const newExpanded = new Set(expandedStages);
+    if (newExpanded.has(stageId)) {
+      newExpanded.delete(stageId);
+    } else {
+      newExpanded.add(stageId);
     }
-
-    try {
-      await updateLead(draggedLead.id, { status: newStatus });
-      setLeads(leads.map(l => 
-        l.id === draggedLead.id ? { ...l, status: newStatus } : l
-      ));
-      toast.success(`Moved to ${newStatus.replace('_', ' ')}`);
-    } catch (error) {
-      toast.error('Failed to update lead');
-    } finally {
-      setDraggedLead(null);
-    }
+    setExpandedStages(newExpanded);
   };
 
-  const handleMobileMove = async (newStatus) => {
+  const handleMoveClick = (lead) => {
+    setSelectedLead(lead);
+    setIsMoveModalOpen(true);
+  };
+
+  const handleMoveToStage = async (newStatus) => {
     if (!selectedLead || selectedLead.status === newStatus) {
       setIsMoveModalOpen(false);
       setSelectedLead(null);
@@ -114,28 +97,21 @@ export default function Pipeline() {
     }
   };
 
-  const openMoveModal = (lead) => {
-    setSelectedLead(lead);
-    setIsMoveModalOpen(true);
-  };
-
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400';
     if (score >= 60) return 'text-amber-600 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-400';
     return 'text-red-600 bg-red-100 dark:bg-red-900/50 dark:text-red-400';
   };
 
+  const totalLeads = leads.length;
+  const bookedLeads = getLeadsByStatus('booked').length;
+
   if (loading) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Pipeline</h1>
-        <div className="hidden md:flex gap-4 overflow-x-auto pb-4">
-          {[...Array(7)].map((_, i) => (
-            <div key={i} className="flex-shrink-0 w-72 h-96 skeleton rounded-xl" />
-          ))}
-        </div>
-        <div className="md:hidden space-y-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="h-24 skeleton rounded-xl" />
           ))}
         </div>
@@ -145,49 +121,77 @@ export default function Pipeline() {
 
   return (
     <div className="space-y-6" data-testid="pipeline-page">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Pipeline</h1>
-          <p className="text-muted-foreground hidden sm:block">Drag leads between stages</p>
-          <p className="text-muted-foreground sm:hidden">Tap to move leads</p>
+          <p className="text-muted-foreground">
+            {totalLeads} leads • {bookedLeads} booked
+          </p>
         </div>
+        <Button variant="outline" onClick={fetchLeads}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Desktop: Horizontal Pipeline */}
-      <div className="hidden md:flex gap-4 overflow-x-auto pb-4">
+      {/* Pipeline Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {pipelineStages.slice(0, 5).map((stage) => {
+          const count = getLeadsByStatus(stage.id).length;
+          const StageIcon = stage.icon;
+          return (
+            <Card key={stage.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => toggleStage(stage.id)}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2">
+                  <div className={cn("p-1.5 rounded-lg", stage.color.replace('bg-', 'bg-opacity-20 bg-'))}>
+                    <StageIcon className={cn("w-4 h-4", stage.textColor)} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">{stage.label}</p>
+                    <p className="text-lg font-bold">{count}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Pipeline Stages - Vertical Accordion Layout */}
+      <div className="space-y-3">
         {pipelineStages.map((stage) => {
           const stageLeads = getLeadsByStatus(stage.id);
+          const isExpanded = expandedStages.has(stage.id);
+          const StageIcon = stage.icon;
+          
           return (
-            <div
-              key={stage.id}
-              className="flex-shrink-0 w-72"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, stage.id)}
-              data-testid={`pipeline-column-${stage.id}`}
-            >
-              <Card className="h-full">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className={cn("w-2 h-2 rounded-full", stage.color)} />
-                      {stage.label}
-                    </div>
-                    <Badge variant="secondary">{stageLeads.length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2">
-                  <ScrollArea className="h-[calc(100vh-320px)]">
-                    <div className="space-y-2 pr-2">
-                      {stageLeads.map((lead) => (
+            <Card key={stage.id} data-testid={`pipeline-section-${stage.id}`}>
+              <CardHeader 
+                className="py-3 px-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => toggleStage(stage.id)}
+              >
+                <CardTitle className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-3 h-3 rounded-full", stage.color)} />
+                    <StageIcon className={cn("w-4 h-4", stage.textColor)} />
+                    <span>{stage.label}</span>
+                    <Badge variant="secondary" className="ml-2">{stageLeads.length}</Badge>
+                  </div>
+                  {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </CardTitle>
+              </CardHeader>
+              
+              {isExpanded && (
+                <CardContent className="pt-0 pb-4 px-4">
+                  {stageLeads.length === 0 ? (
+                    <p className="text-muted-foreground text-sm text-center py-4">No leads in this stage</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {stageLeads.slice(0, 20).map((lead) => (
                         <div
                           key={lead.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, lead)}
-                          className={cn(
-                            "p-3 rounded-lg border border-border bg-card cursor-grab active:cursor-grabbing",
-                            "hover:border-primary/50 hover:shadow-sm transition-all",
-                            draggedLead?.id === lead.id && "opacity-50"
-                          )}
+                          className="p-3 rounded-lg border border-border bg-muted/30 hover:border-primary/50 transition-all cursor-pointer"
+                          onClick={() => handleMoveClick(lead)}
                           data-testid={`pipeline-card-${lead.id}`}
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -199,7 +203,7 @@ export default function Pipeline() {
                               "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
                               getScoreColor(lead.lead_score)
                             )}>
-                              {lead.lead_score}
+                              {lead.lead_score || 0}
                             </div>
                           </div>
                           <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
@@ -208,157 +212,65 @@ export default function Pipeline() {
                           </div>
                         </div>
                       ))}
-                      {stageLeads.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground text-sm">
-                          No leads
+                      {stageLeads.length > 20 && (
+                        <div className="p-3 rounded-lg border border-dashed border-border flex items-center justify-center">
+                          <span className="text-sm text-muted-foreground">+{stageLeads.length - 20} more</span>
                         </div>
                       )}
                     </div>
-                  </ScrollArea>
+                  )}
                 </CardContent>
-              </Card>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Desktop: Secondary Stages */}
-      <div className="hidden md:grid grid-cols-2 gap-4">
-        {secondaryStages.map((stage) => {
-          const stageLeads = getLeadsByStatus(stage.id);
-          return (
-            <Card
-              key={stage.id}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, stage.id)}
-            >
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full", stage.color)} />
-                    {stage.label}
-                  </div>
-                  <Badge variant="secondary">{stageLeads.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-32">
-                  <div className="flex flex-wrap gap-2">
-                    {stageLeads.map((lead) => (
-                      <div
-                        key={lead.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, lead)}
-                        className="px-3 py-1.5 rounded-full border border-border bg-muted/50 text-sm cursor-grab"
-                      >
-                        {lead.business_name}
-                      </div>
-                    ))}
-                    {stageLeads.length === 0 && (
-                      <p className="text-muted-foreground text-sm">No leads</p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
+              )}
             </Card>
           );
         })}
       </div>
 
-      {/* Mobile: Vertical Stage List */}
-      <div className="md:hidden space-y-4">
-        {allStages.map((stage) => {
-          const stageLeads = getLeadsByStatus(stage.id);
-          const StageIcon = stage.icon;
-          return (
-            <Card key={stage.id} className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", stage.color)}>
-                      <StageIcon className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-white">{stage.label}</span>
-                  </div>
-                  <Badge variant="secondary" className="bg-slate-800 text-slate-300">{stageLeads.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {stageLeads.length === 0 ? (
-                  <p className="text-slate-500 text-sm text-center py-4">No leads</p>
-                ) : (
-                  <div className="space-y-2">
-                    {stageLeads.slice(0, 5).map((lead) => (
-                      <div
-                        key={lead.id}
-                        onClick={() => openMoveModal(lead)}
-                        className="flex items-center justify-between p-3 rounded-lg bg-slate-800 border border-slate-700 cursor-pointer active:bg-slate-700"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
-                            getScoreColor(lead.lead_score)
-                          )}>
-                            {lead.lead_score}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm text-white truncate">{lead.business_name}</p>
-                            <p className="text-xs text-slate-400 truncate">{lead.city}</p>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                      </div>
-                    ))}
-                    {stageLeads.length > 5 && (
-                      <p className="text-xs text-slate-500 text-center">+{stageLeads.length - 5} more</p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Mobile Move Modal */}
+      {/* Move Lead Dialog */}
       <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white">Move Lead</DialogTitle>
+            <DialogTitle>Move Lead</DialogTitle>
           </DialogHeader>
           {selectedLead && (
             <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-slate-800 border border-slate-700">
-                <p className="font-medium text-white">{selectedLead.business_name}</p>
-                <p className="text-sm text-slate-400">{selectedLead.category} • {selectedLead.city}</p>
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="font-medium">{selectedLead.business_name}</p>
+                <p className="text-sm text-muted-foreground">{selectedLead.category} • {selectedLead.city}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Current: <Badge variant="secondary">{selectedLead.status?.replace(/_/g, ' ')}</Badge>
+                </p>
               </div>
-              <p className="text-sm text-slate-400">Select new stage:</p>
-              <div className="grid grid-cols-2 gap-2">
-                {allStages.map((stage) => {
-                  const StageIcon = stage.icon;
-                  const isCurrentStage = selectedLead.status === stage.id;
-                  return (
-                    <Button
-                      key={stage.id}
-                      variant={isCurrentStage ? "secondary" : "outline"}
-                      className={cn(
-                        "justify-start h-auto py-3",
-                        isCurrentStage && "bg-slate-700 border-slate-600",
-                        !isCurrentStage && "border-slate-700 text-slate-300 hover:bg-slate-800"
-                      )}
-                      onClick={() => handleMobileMove(stage.id)}
-                      disabled={isCurrentStage}
-                    >
-                      <div className={cn("w-6 h-6 rounded flex items-center justify-center mr-2", stage.color)}>
-                        <StageIcon className="w-3 h-3 text-white" />
-                      </div>
-                      <span className="text-xs">{stage.label}</span>
-                    </Button>
-                  );
-                })}
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Move to stage:</label>
+                <Select onValueChange={handleMoveToStage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pipelineStages.map((stage) => (
+                      <SelectItem 
+                        key={stage.id} 
+                        value={stage.id}
+                        disabled={stage.id === selectedLead.status}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", stage.color)} />
+                          {stage.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
