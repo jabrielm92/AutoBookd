@@ -1648,9 +1648,11 @@ async def rescore_lead(lead_id: str, user: dict = Depends(get_current_user)):
 
 # ----- Conversations -----
 @api_router.post("/conversations", response_model=Conversation)
-async def create_conversation(message: MessageCreate):
-    # Check if conversation exists for this lead
-    existing = await db.conversations.find_one({"lead_id": message.lead_id}, {"_id": 0})
+async def create_conversation(message: MessageCreate, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
+    
+    # Check if conversation exists for this lead and tenant
+    existing = await db.conversations.find_one({"lead_id": message.lead_id, "tenant_id": tenant_id}, {"_id": 0})
     
     if existing:
         # Add message to existing conversation
@@ -1662,13 +1664,13 @@ async def create_conversation(message: MessageCreate):
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await db.conversations.update_one(
-            {"lead_id": message.lead_id},
+            {"lead_id": message.lead_id, "tenant_id": tenant_id},
             {
                 "$push": {"messages": new_message},
                 "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
             }
         )
-        conv = await db.conversations.find_one({"lead_id": message.lead_id}, {"_id": 0})
+        conv = await db.conversations.find_one({"lead_id": message.lead_id, "tenant_id": tenant_id}, {"_id": 0})
         return conv
     
     # Create new conversation
@@ -1686,6 +1688,7 @@ async def create_conversation(message: MessageCreate):
     doc = conv.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['updated_at'] = doc['updated_at'].isoformat()
+    doc['tenant_id'] = tenant_id
     await db.conversations.insert_one(doc)
     
     # Update lead status
