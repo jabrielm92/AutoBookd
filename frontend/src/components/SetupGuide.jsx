@@ -131,14 +131,15 @@ const setupSteps = [
     icon: MessageSquare,
     color: 'text-pink-400',
     bg: 'bg-pink-900/30',
-    description: 'Let AI read and respond to incoming replies automatically.',
+    description: 'Automatically receive, classify, and respond to lead replies. Calendar link sent on 2nd positive reply.',
     freeCredits: 'Included with Resend',
     instructions: [
-      'Set up a subdomain for replies (e.g., replies.yourdomain.com)',
-      'Configure MX records pointing to Resend',
-      'Add inbound webhook in Resend dashboard',
-      'Enable Auto-Reply in Settings → System',
-      'See detailed guide below'
+      'Create a subdomain (e.g., replies.yourdomain.com)',
+      'Add MX record pointing to inbound-smtp.resend.com',
+      'Add subdomain to Resend with "Receiving" enabled',
+      'Create webhook in Resend → your backend URL',
+      'Enable Auto-Reply in Settings',
+      'Click "View Full Guide" below for details'
     ],
     link: 'https://resend.com/docs/dashboard/webhooks/introduction',
     required: false,
