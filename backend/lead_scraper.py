@@ -583,7 +583,7 @@ class WebsiteScraper:
         Scrape key pages from a website for AI research
         
         Returns:
-            Dict with homepage, about, services, contact content
+            Dict with homepage, about, services, contact content, emails, and company info
         """
         result = {
             "url": url,
@@ -596,6 +596,7 @@ class WebsiteScraper:
             "emails_found": [],
             "best_email": None,
             "phone_found": None,
+            "company_info": {},
             "scraped_at": datetime.now(timezone.utc).isoformat(),
             "success": False,
             "error": None
@@ -608,6 +609,8 @@ class WebsiteScraper:
         domain = url.replace('https://', '').replace('http://', '').split('/')[0]
         all_emails = set()
         all_html = ""
+        all_text = ""
+        main_soup = None
         
         try:
             # Scrape homepage
@@ -617,6 +620,7 @@ class WebsiteScraper:
                 html_content = response.text
                 all_html += html_content
                 soup = BeautifulSoup(html_content, 'html.parser')
+                main_soup = soup
                 
                 # Extract title
                 title_tag = soup.find('title')
@@ -627,29 +631,35 @@ class WebsiteScraper:
                 result["meta_description"] = meta_desc.get('content', '') if meta_desc else ""
                 
                 # Extract main content
-                result["homepage"] = self._extract_text(soup)
+                homepage_text = self._extract_text(soup)
+                result["homepage"] = homepage_text
+                all_text += homepage_text + " "
                 result["success"] = True
                 
                 # Extract emails from homepage
                 all_emails.update(self._extract_emails_from_html(html_content, domain))
                 
                 # Try to find and scrape about page
-                about_links = soup.find_all('a', href=re.compile(r'about|who-we-are|our-story', re.I))
+                about_links = soup.find_all('a', href=re.compile(r'about|who-we-are|our-story|team', re.I))
                 if about_links:
                     about_url = self._resolve_url(url, about_links[0].get('href', ''))
                     about_content, about_html = await self._scrape_page_with_html(about_url)
                     result["about"] = about_content
+                    all_text += about_content + " "
                     if about_html:
                         all_emails.update(self._extract_emails_from_html(about_html, domain))
+                        all_html += about_html
                 
                 # Try to find services page
-                services_links = soup.find_all('a', href=re.compile(r'service|what-we-do|solution', re.I))
+                services_links = soup.find_all('a', href=re.compile(r'service|what-we-do|solution|offering', re.I))
                 if services_links:
                     services_url = self._resolve_url(url, services_links[0].get('href', ''))
                     services_content, services_html = await self._scrape_page_with_html(services_url)
                     result["services"] = services_content
+                    all_text += services_content + " "
                     if services_html:
                         all_emails.update(self._extract_emails_from_html(services_html, domain))
+                        all_html += services_html
                 
                 # Try to find contact page (highest priority for emails!)
                 contact_links = soup.find_all('a', href=re.compile(r'contact|get-in-touch|reach-us', re.I))
@@ -669,6 +679,10 @@ class WebsiteScraper:
                 # Set email results
                 result["emails_found"] = list(all_emails)
                 result["best_email"] = self._select_best_email(list(all_emails), domain)
+                
+                # Extract structured company information
+                if main_soup:
+                    result["company_info"] = self._extract_company_info(main_soup, all_text)
                 
         except httpx.TimeoutException:
             result["error"] = "timeout"
