@@ -26,6 +26,115 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
+// Extracted component to avoid re-render issues
+const ConversationDetail = ({ conv, lead, inModal, newMessage, setNewMessage, onSendMessage, onEditEmail }) => {
+  return (
+    <div className={cn("flex flex-col", inModal ? "h-[70vh]" : "h-full")}>
+      <div className={cn("border-b p-4", inModal ? "border-slate-700" : "border-border")}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-lg text-white">{lead?.business_name}</h3>
+            <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+              {lead?.email && (
+                <span className="flex items-center gap-1">
+                  <Mail className="w-3 h-3" />
+                  <span className="truncate max-w-[200px]">{lead.email}</span>
+                </span>
+              )}
+              {lead?.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  {lead.phone}
+                </span>
+              )}
+            </div>
+          </div>
+          <Badge>{lead?.category}</Badge>
+        </div>
+      </div>
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {conv.messages.map((message, idx) => (
+            <div
+              key={message.id || idx}
+              className={cn(
+                "flex gap-3",
+                message.direction === 'outbound' ? "flex-row-reverse" : ""
+              )}
+            >
+              <div className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                message.direction === 'outbound' 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted"
+              )}>
+                {message.direction === 'outbound' ? (
+                  <Bot className="w-4 h-4" />
+                ) : (
+                  <User className="w-4 h-4" />
+                )}
+              </div>
+              <div className={cn(
+                "max-w-[80%] rounded-2xl px-4 py-2",
+                message.direction === 'outbound'
+                  ? "bg-primary text-primary-foreground rounded-br-md"
+                  : "bg-muted rounded-bl-md"
+              )}>
+                <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className={cn(
+                    "text-xs",
+                    message.direction === 'outbound' 
+                      ? "text-primary-foreground/70" 
+                      : "text-muted-foreground"
+                  )}>
+                    {format(new Date(message.timestamp), 'h:mm a')}
+                    {message.status === 'draft' && <span className="ml-2 text-amber-300">(Draft)</span>}
+                  </p>
+                  {message.direction === 'outbound' && message.status !== 'sent' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => onEditEmail(message, conv.lead_id)}
+                    >
+                      <Edit3 className="w-3 h-3 mr-1" />
+                      Edit & Send
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+      <div className={cn("p-4 border-t", inModal ? "border-slate-700" : "border-border")}>
+        <div className="flex gap-2">
+          <Textarea
+            placeholder="Type a message..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            className={cn("min-h-[60px] resize-none", inModal && "bg-slate-800 border-slate-700")}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                onSendMessage();
+              }
+            }}
+          />
+          <Button 
+            onClick={onSendMessage}
+            disabled={!newMessage.trim()}
+            className="self-end"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Conversations() {
   const [conversations, setConversations] = useState([]);
   const [leads, setLeads] = useState([]);
