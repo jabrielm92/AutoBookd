@@ -528,9 +528,10 @@ PRODUCT-SPECIFIC GUIDELINES:
             if parts:
                 global_guidelines = "\nEMAIL GUIDELINES (FOLLOW STRICTLY):\n" + "\n".join(parts)
         
+        # NOTE: Calendar link is now sent AFTER positive reply, not in initial sequence
         calendar_context = ""
-        if calendar_link:
-            calendar_context = f"\nInclude this booking link in Email 1: {calendar_link}"
+        # if calendar_link:
+        #     calendar_context = f"\nInclude this booking link in Email 1: {calendar_link}"
         
         # Calculate delays based on follow_up_days
         delays = [0, follow_up_days, follow_up_days * 2, follow_up_days * 3]
