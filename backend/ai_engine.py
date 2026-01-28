@@ -138,7 +138,7 @@ BUSINESS:
 
 WEBSITE DATA:
 {website_content}
-
+{company_context}
 {product_context}
 
 {rules}
