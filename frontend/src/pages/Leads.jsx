@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getLeads, createLead, deleteLead, updateLead, bulkDeleteLeads, importCSV } from '@/lib/api';
+import { getLeads, createLead, deleteLead, updateLead, bulkDeleteLeads, importCSV, exportLeadsCSV } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
