@@ -123,6 +123,12 @@ class Conversation(BaseModel):
     messages: List[Dict[str, Any]] = Field(default_factory=list)
     sentiment_trajectory: List[float] = Field(default_factory=list)
     current_sentiment: float = 0.0
+    # Manual email fields
+    recipient_email: Optional[str] = None
+    recipient_name: Optional[str] = None
+    reply_address: Optional[str] = None
+    is_manual: bool = False
+    reply_count: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
