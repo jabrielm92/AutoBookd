@@ -109,6 +109,7 @@ export const exportLeadsCSV = async () => {
 export const getConversations = (params) => api.get('/conversations', { params });
 export const getConversation = (leadId) => api.get(`/conversations/${leadId}`);
 export const createConversation = (data) => api.post('/conversations', data);
+export const sendManualEmail = (data) => api.post('/conversations/manual', data);
 
 // Niches
 export const getNiches = () => api.get('/niches');
