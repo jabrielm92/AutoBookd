@@ -94,6 +94,16 @@ export const rescoreLead = (id) => api.post(`/leads/${id}/rescore`);
 export const importCSV = (formData) => api.post('/leads/import/csv', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 });
+export const exportLeadsCSV = async () => {
+  const response = await api.get('/leads/export/csv', { responseType: 'blob' });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'autobookd_leads.csv');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
 
 // Conversations
 export const getConversations = (params) => api.get('/conversations', { params });
