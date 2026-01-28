@@ -463,6 +463,79 @@ export default function Conversations() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Conversation Modal */}
+      <Dialog open={newEmailOpen} onOpenChange={setNewEmailOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white">New Conversation</DialogTitle>
+            <p className="text-sm text-slate-400">Compose and send a new email</p>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300">To (Email) *</Label>
+              <Input
+                type="email"
+                value={newEmail.to}
+                onChange={(e) => setNewEmail({...newEmail, to: e.target.value})}
+                className="bg-slate-800 border-slate-700 text-white"
+                placeholder="recipient@example.com"
+                data-testid="new-email-to"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Contact/Business Name (Optional)</Label>
+              <Input
+                value={newEmail.businessName}
+                onChange={(e) => setNewEmail({...newEmail, businessName: e.target.value})}
+                className="bg-slate-800 border-slate-700 text-white"
+                placeholder="John Smith or Acme Corp"
+                data-testid="new-email-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Subject *</Label>
+              <Input
+                value={newEmail.subject}
+                onChange={(e) => setNewEmail({...newEmail, subject: e.target.value})}
+                className="bg-slate-800 border-slate-700 text-white"
+                placeholder="Email subject..."
+                data-testid="new-email-subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Body *</Label>
+              <Textarea
+                value={newEmail.body}
+                onChange={(e) => setNewEmail({...newEmail, body: e.target.value})}
+                className="bg-slate-800 border-slate-700 text-white min-h-[200px]"
+                placeholder="Write your message..."
+                data-testid="new-email-body"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setNewEmailOpen(false);
+                setNewEmail({ to: '', subject: '', body: '', businessName: '' });
+              }} 
+              className="border-slate-600"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendNewEmail} 
+              disabled={sending || !newEmail.to || !newEmail.subject || !newEmail.body}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="send-new-email-btn"
+            >
+              {sending ? 'Sending...' : 'Send Email'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
