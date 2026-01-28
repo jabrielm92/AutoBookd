@@ -186,7 +186,7 @@ export default function Conversations() {
   };
 
   const filteredConversations = conversations.filter(conv => {
-    const lead = getLeadForConv(conv.lead_id);
+    const lead = getLeadForConv(conv);
     if (!lead) return false;
     return lead.business_name.toLowerCase().includes(searchTerm.toLowerCase());
   });
@@ -204,7 +204,7 @@ export default function Conversations() {
   }
 
   const ConversationDetail = ({ conv, inModal = false }) => {
-    const lead = getLeadForConv(conv.lead_id);
+    const lead = getLeadForConv(conv);
     return (
       <div className={cn("flex flex-col", inModal ? "h-[70vh]" : "h-full")}>
         <div className={cn("border-b p-4", inModal ? "border-slate-700" : "border-border")}>
