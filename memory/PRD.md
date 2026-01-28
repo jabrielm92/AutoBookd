@@ -87,23 +87,34 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] Stripe checkout integration
 - [x] Trial messaging
 
-### Onboarding Wizard ✅ (Updated Jan 27, 2025)
+### Onboarding Wizard ✅ (Updated Jan 28, 2025)
 - [x] Comprehensive SetupGuide component
 - [x] Collapsible cards for each integration
 - [x] Quick Start section (minimum required APIs)
-- [x] SerpAPI instructions with link
-- [x] Hunter.io instructions with link
-- [x] Apollo.io instructions (optional) with link
-- [x] OpenAI instructions with link
-- [x] Resend instructions with link
-- [x] Calendly setup with link
+- [x] SerpAPI instructions with link + **detailed step-by-step guide**
+- [x] Hunter.io instructions with link + **detailed step-by-step guide**
+- [x] Apollo.io instructions (optional) with link + **detailed step-by-step guide**
+- [x] OpenAI instructions with link + **detailed step-by-step guide**
+- [x] Resend instructions with link + **detailed step-by-step guide**
+- [x] Calendly setup with link + **detailed step-by-step guide**
+- [x] Stripe setup with link + **detailed step-by-step guide**
 - [x] Auto-Reply setup detailed guide
 - [x] DNS configuration guide for GoDaddy/Resend
 - [x] Inbound webhook setup instructions
-- [x] Free tier information for each service
+- [x] Free tier and pricing information for each service
+- [x] Troubleshooting sections for each integration
 - [x] "Go to Settings" button
 - [x] Skip setup option
 - [x] Setup Guide accessible from Dashboard via modal
+
+### Manual Email Composition ✅ (NEW - Jan 28, 2025)
+- [x] "New Conversation" button on Conversations page
+- [x] Modal with To (Email), Business Name (optional), Subject, Body fields
+- [x] Backend endpoint: POST /api/conversations/manual
+- [x] Creates conversation records with proper tenant_id
+- [x] Uses tenant's Resend API key for sending
+- [x] Reply-To header configured if reply_domain is set
+- [x] Conversation tracking for manual emails
 
 ### Admin Dashboard ✅ (NEW)
 - [x] Overview tab with recent signups
