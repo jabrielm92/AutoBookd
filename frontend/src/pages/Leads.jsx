@@ -121,6 +121,9 @@ export default function Leads() {
           params.status = statusFilter;
         }
       }
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
+      
       const { data } = await getLeads(params);
       setLeads(data || []);
       setSelectedIds(new Set());
@@ -135,7 +138,7 @@ export default function Leads() {
   useEffect(() => {
     fetchLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+  }, [statusFilter, dateFrom, dateTo]);
 
   const handleAddLead = async () => {
     try {
