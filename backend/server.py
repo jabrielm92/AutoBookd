@@ -1918,6 +1918,13 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
     if not resend_key or not from_email:
         raise HTTPException(status_code=400, detail="Resend API key and From Email required in settings")
     
+    # If lead_id provided, verify it belongs to tenant and get lead info
+    lead = None
+    if data.lead_id:
+        lead = await db.leads.find_one({"id": data.lead_id, "tenant_id": tenant_id}, {"_id": 0})
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+    
     # Build reply-to header if reply domain is configured
     reply_to = None
     unique_id = uuid.uuid4().hex[:12]
@@ -1936,6 +1943,13 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
         if reply_to:
             email_payload["reply_to"] = reply_to
         
+        # Add attachments if provided
+        if data.attachments:
+            email_payload["attachments"] = [
+                {"filename": att["filename"], "content": att["content"]}
+                for att in data.attachments
+            ]
+        
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.resend.com/emails",
@@ -1946,9 +1960,17 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
             if response.status_code not in [200, 201]:
                 raise HTTPException(status_code=500, detail=f"Email send failed: {response.text}")
         
-        # Create a new conversation record
+        # Create conversation record
         conv_id = f"conv_{uuid.uuid4().hex[:12]}"
-        business_name = data.business_name or data.to_email.split('@')[0].title()
+        # Use lead info if linked, otherwise use provided/derived name
+        if lead:
+            business_name = lead.get("business_name", data.to_email.split('@')[0].title())
+            final_lead_id = data.lead_id
+            is_manual = False
+        else:
+            business_name = data.business_name or data.to_email.split('@')[0].title()
+            final_lead_id = f"manual_{unique_id}"
+            is_manual = True
         
         message = {
             "id": f"msg_{uuid.uuid4().hex[:8]}",
@@ -1956,27 +1978,41 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
             "channel": "email",
             "content": f"Subject: {data.subject}\n\n{data.body}",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "status": "sent"
+            "status": "sent",
+            "has_attachments": bool(data.attachments)
         }
         
-        new_conv = {
-            "id": conv_id,
-            "lead_id": f"manual_{unique_id}",
-            "tenant_id": tenant_id,
-            "channel": "email",
-            "recipient_email": data.to_email,
-            "recipient_name": business_name,
-            "reply_address": reply_to,
-            "messages": [message],
-            "sentiment_trajectory": [],
-            "current_sentiment": 0.0,
-            "reply_count": 0,
-            "is_manual": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }
+        # Check if conversation exists for this lead
+        existing_conv = None
+        if data.lead_id:
+            existing_conv = await db.conversations.find_one({"lead_id": data.lead_id, "tenant_id": tenant_id})
         
-        await db.conversations.insert_one(new_conv)
+        if existing_conv:
+            # Append to existing conversation
+            await db.conversations.update_one(
+                {"lead_id": data.lead_id, "tenant_id": tenant_id},
+                {"$push": {"messages": message}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            conv_id = existing_conv.get("id", conv_id)
+        else:
+            # Create new conversation
+            new_conv = {
+                "id": conv_id,
+                "lead_id": final_lead_id,
+                "tenant_id": tenant_id,
+                "channel": "email",
+                "recipient_email": data.to_email,
+                "recipient_name": business_name,
+                "reply_address": reply_to,
+                "messages": [message],
+                "sentiment_trajectory": [],
+                "current_sentiment": 0.0,
+                "reply_count": 0,
+                "is_manual": is_manual,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.conversations.insert_one(new_conv)
         
         return {"status": "sent", "message": "Email sent successfully", "conversation_id": conv_id}
         
