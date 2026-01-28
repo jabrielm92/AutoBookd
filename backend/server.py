@@ -1132,6 +1132,7 @@ async def calendly_webhook(payload: Dict[str, Any]):
 async def process_email_reply(payload: Dict[str, Any]):
     """Process incoming email replies and classify intent"""
     from ai_engine import AIResearchEngine
+    from email_engine import EmailSender
     
     sender_email = payload.get("from", "").lower()
     subject = payload.get("subject", "")
@@ -1155,6 +1156,12 @@ async def process_email_reply(payload: Dict[str, Any]):
     intent = classification.get("intent", "neutral")
     action = classification.get("action", "human_review")
     
+    # Track reply count for this lead
+    reply_count = lead.get("reply_count", 0) + 1
+    positive_reply_count = lead.get("positive_reply_count", 0)
+    if intent == "positive":
+        positive_reply_count += 1
+    
     # Update lead status based on intent
     new_status = "engaged"
     if intent == "positive":
@@ -1168,6 +1175,9 @@ async def process_email_reply(payload: Dict[str, Any]):
             "status": new_status,
             "reply_intent": intent,
             "reply_action": action,
+            "reply_count": reply_count,
+            "positive_reply_count": positive_reply_count,
+            "last_reply_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
@@ -1180,7 +1190,6 @@ async def process_email_reply(payload: Dict[str, Any]):
         )
     
     # Record reply in conversation
-    tenant_id = lead.get("tenant_id")
     conversation = await db.conversations.find_one({"lead_id": lead["id"], "tenant_id": tenant_id}, {"_id": 0})
     reply_msg = {
         "id": str(uuid.uuid4()),
@@ -1214,17 +1223,82 @@ async def process_email_reply(payload: Dict[str, Any]):
         }
         await db.conversations.insert_one(new_conv)
     
-    # If positive and action is send_calendar, trigger auto-booking
     response = {
         "status": "processed",
         "lead_id": lead["id"],
         "intent": intent,
-        "action": action
+        "action": action,
+        "reply_count": reply_count
     }
     
-    if action == "send_calendar" and config.get("calendly_link"):
+    # AUTO-REPLY LOGIC: Send calendar link on SECOND positive reply
+    # (First reply = acknowledge, Second reply = they're serious, send booking link)
+    auto_reply_sent = False
+    if config and config.get("auto_reply_enabled") and intent == "positive":
+        resend_key = config.get("resend_api_key")
+        from_email = config.get("from_email")
+        sender_name = config.get("sender_name", "Team")
+        calendly_link = config.get("calendly_link")
+        
+        if resend_key and from_email:
+            email_sender = EmailSender(resend_key)
+            
+            if positive_reply_count == 1:
+                # First positive reply - acknowledge and express interest
+                auto_reply_body = f"""Thanks for getting back to me!
+
+I'd love to learn more about {lead.get('business_name', 'your business')} and see if there's a fit.
+
+What does your schedule look like this week for a quick 15-minute call?
+
+{sender_name}"""
+                auto_reply_subject = f"Re: {subject}" if subject else f"Re: {lead.get('business_name', 'Your inquiry')}"
+                
+            elif positive_reply_count >= 2:
+                # Second+ positive reply - send calendar link
+                auto_reply_body = f"""Perfect! Let's get something on the calendar.
+
+Here's my booking link - pick any time that works for you:
+{calendly_link}
+
+Looking forward to connecting!
+
+{sender_name}"""
+                auto_reply_subject = f"Re: {subject}" if subject else f"Let's schedule a call"
+            
+            if positive_reply_count >= 1:
+                try:
+                    result = await email_sender.send_email(
+                        to_email=sender_email,
+                        subject=auto_reply_subject,
+                        body=auto_reply_body,
+                        from_email=from_email,
+                        from_name=sender_name
+                    )
+                    auto_reply_sent = result.get("success", False)
+                    
+                    # Record auto-reply in conversation
+                    if auto_reply_sent:
+                        auto_msg = {
+                            "id": str(uuid.uuid4()),
+                            "content": f"Subject: {auto_reply_subject}\n\n{auto_reply_body}",
+                            "direction": "outbound",
+                            "channel": "email",
+                            "email_type": "auto_reply",
+                            "timestamp": datetime.now(timezone.utc).isoformat()
+                        }
+                        await db.conversations.update_one(
+                            {"lead_id": lead["id"], "tenant_id": tenant_id},
+                            {"$push": {"messages": auto_msg}}
+                        )
+                except Exception as e:
+                    logger.error(f"Auto-reply failed: {e}")
+            
+            await email_sender.close()
+    
+    response["auto_reply_sent"] = auto_reply_sent
+    if auto_reply_sent and positive_reply_count >= 2:
         response["calendar_link_sent"] = True
-        response["calendly_link"] = config["calendly_link"]
     
     return response
 
