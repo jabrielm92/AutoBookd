@@ -133,7 +133,6 @@ BUSINESS:
 - Name: {lead.get('business_name', 'Unknown')}
 - Category: {lead.get('category', 'General Business')}
 - Location: {lead.get('city', 'Unknown')}, {lead.get('state', '')}
-- Rating: {lead.get('rating', 'N/A')} stars ({lead.get('review_count', 0)} reviews)
 - Website: {lead.get('website', 'N/A')}
 
 WEBSITE DATA:
@@ -147,18 +146,36 @@ Analyze their business and return JSON:
 {{
     "pain_point": "Specific operational challenge they likely face (be concrete, not generic)",
     "opportunity": "What improvement or solution would benefit them most",
-    "opener": "A personalized first line that references something SPECIFIC about their business (a service they offer, their location advantage, their reviews, etc.) - must prove you researched them",
+    "opener": "A unique, personalized first line - see OPENER VARIETY RULES below",
     "services": "What services/products they offer",
     "target_customer": "Who their ideal customer is",
     "unique_angle": "What makes this business different from competitors",
     "personalization_quality": "high" | "medium" | "low"
 }}
 
-IMPORTANT: The opener must NOT use these generic phrases:
-- "I noticed your website"
-- "I came across your business"  
+OPENER VARIETY RULES - Make each opener genuinely unique by using ONE of these angles:
+1. SPECIFIC SERVICE: Reference a unique service they offer (not generic category)
+   Example: "Your same-day emergency plumbing service caught my eye..."
+2. LOCATION INSIGHT: Reference something about their service area
+   Example: "Serving the tri-state area for home repairs is no small feat..."
+3. EXPERTISE/NICHE: Reference their specialty or focus area
+   Example: "Your focus on commercial HVAC for restaurants is interesting..."
+4. ACHIEVEMENT: Reference years in business, certifications, or awards
+   Example: "Building a dental practice for 15+ years shows real staying power..."
+5. CUSTOMER FOCUS: Reference who they serve
+   Example: "Helping first-time homeowners navigate inspections is valuable work..."
+6. PROBLEM-SOLUTION: Lead with the problem you solve
+   Example: "Most medspas struggle with no-shows - does that sound familiar?"
+7. OBSERVATION: A genuine insight from their website
+   Example: "I noticed you offer both commercial and residential services..."
+
+NEVER use these patterns:
+- "I noticed your website" / "I came across your business"
+- "With X reviews" / "Your X-star rating" / mentioning ratings or review counts
 - "I see you're in the [industry] space"
-Instead, reference something SPECIFIC like their service menu, a review theme, their location, or their specialty."""
+- Generic compliments like "impressive" or "great work"
+
+The opener should feel like it was written specifically for THIS business."""
 
         try:
             response = await self.http_client.post(
