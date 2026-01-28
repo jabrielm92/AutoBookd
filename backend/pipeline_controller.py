@@ -569,7 +569,8 @@ class PipelineController:
                         lead_id=lead["id"],
                         emails=emails,
                         from_email=config.get("from_email", "outreach@yourdomain.com"),
-                        from_name=config.get("sender_name", "Team")
+                        from_name=config.get("sender_name", "Team"),
+                        tenant_id=config.get("tenant_id")
                     )
                     
                     # Update lead
