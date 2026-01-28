@@ -1406,7 +1406,8 @@ async def resume_sequence(sequence_id: str, user: dict = Depends(get_current_use
 
 # ----- Leads -----
 @api_router.post("/leads", response_model=Lead)
-async def create_lead(lead_data: LeadCreate):
+async def create_lead(lead_data: LeadCreate, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
     lead = Lead(**lead_data.model_dump())
     score, breakdown = calculate_lead_score(lead.model_dump())
     lead.lead_score = score
@@ -1415,6 +1416,7 @@ async def create_lead(lead_data: LeadCreate):
     doc = lead.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['updated_at'] = doc['updated_at'].isoformat()
+    doc['tenant_id'] = tenant_id
     if doc.get('last_contacted_at'):
         doc['last_contacted_at'] = doc['last_contacted_at'].isoformat()
     
