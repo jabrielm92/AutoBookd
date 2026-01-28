@@ -400,7 +400,7 @@ class ApolloEmailFinder:
 
 
 class WebsiteScraper:
-    """Scrape websites for research data"""
+    """Scrape websites for research data and company information"""
     
     # Email regex pattern
     EMAIL_PATTERN = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
@@ -410,6 +410,12 @@ class WebsiteScraper:
     
     # Domains to ignore
     IGNORE_DOMAINS = {'example.com', 'yourdomain.com', 'domain.com', 'email.com', 'sentry.io', 'wixpress.com', 'squarespace.com'}
+    
+    # Service-related keywords to look for
+    SERVICE_KEYWORDS = [
+        'services', 'solutions', 'offerings', 'what we do', 'our work', 
+        'capabilities', 'specialties', 'expertise'
+    ]
     
     def __init__(self):
         self.http_client = httpx.AsyncClient(
@@ -476,6 +482,101 @@ class WebsiteScraper:
         
         # Return any email
         return emails[0] if emails else None
+    
+    def _extract_company_info(self, soup: BeautifulSoup, all_text: str) -> Dict[str, Any]:
+        """Extract structured company information from website"""
+        company_info = {
+            "tagline": None,
+            "description": None,
+            "services": [],
+            "unique_selling_points": [],
+            "years_in_business": None,
+            "team_size": None,
+            "certifications": [],
+            "awards": [],
+            "locations_served": [],
+            "social_proof": []
+        }
+        
+        # Extract tagline (usually in h1, h2, or hero section)
+        hero_elements = soup.find_all(['h1', 'h2'], limit=3)
+        for el in hero_elements:
+            text = el.get_text(strip=True)
+            if 10 < len(text) < 150 and not any(skip in text.lower() for skip in ['menu', 'navigation', 'copyright']):
+                company_info["tagline"] = text
+                break
+        
+        # Extract meta description as company description
+        meta_desc = soup.find('meta', attrs={'name': 'description'})
+        if meta_desc:
+            company_info["description"] = meta_desc.get('content', '')[:500]
+        
+        # Extract services from lists
+        service_sections = soup.find_all(['ul', 'ol'], limit=10)
+        for section in service_sections:
+            items = section.find_all('li', limit=10)
+            for item in items:
+                text = item.get_text(strip=True)
+                if 5 < len(text) < 100:
+                    # Check if it looks like a service
+                    if any(kw in text.lower() for kw in ['service', 'solution', 'consulting', 'management', 'installation', 'repair', 'maintenance']):
+                        company_info["services"].append(text)
+        
+        # Look for years in business
+        year_patterns = [
+            r'since\s+(\d{4})',
+            r'established\s+(?:in\s+)?(\d{4})',
+            r'founded\s+(?:in\s+)?(\d{4})',
+            r'(\d+)\+?\s+years?\s+(?:of\s+)?experience',
+            r'over\s+(\d+)\s+years'
+        ]
+        for pattern in year_patterns:
+            match = re.search(pattern, all_text.lower())
+            if match:
+                company_info["years_in_business"] = match.group(1)
+                break
+        
+        # Look for certifications/licenses
+        cert_patterns = [
+            r'(licensed|certified|insured|bonded)',
+            r'(ISO\s*\d+)',
+            r'(BBB\s*(?:A\+?|accredited))',
+            r'(EPA\s*certified)',
+        ]
+        for pattern in cert_patterns:
+            matches = re.findall(pattern, all_text, re.I)
+            company_info["certifications"].extend([m for m in matches if m])
+        
+        # Look for social proof (reviews, ratings)
+        social_patterns = [
+            r'(\d+)\+?\s*(?:5[- ]star)?\s*reviews?',
+            r'(\d+(?:\.\d)?)\s*(?:star)?\s*rating',
+            r'(\d+)\+?\s*happy\s*customers?',
+            r'(\d+)\+?\s*projects?\s*completed'
+        ]
+        for pattern in social_patterns:
+            match = re.search(pattern, all_text.lower())
+            if match:
+                company_info["social_proof"].append(match.group(0))
+        
+        # Extract unique selling points (look for "why choose us" type sections)
+        usp_headers = soup.find_all(['h2', 'h3', 'h4'], string=re.compile(r'why\s+choose|what\s+sets|our\s+difference|benefits', re.I))
+        for header in usp_headers[:1]:
+            parent = header.find_parent(['section', 'div'])
+            if parent:
+                items = parent.find_all('li', limit=5)
+                for item in items:
+                    text = item.get_text(strip=True)
+                    if 10 < len(text) < 150:
+                        company_info["unique_selling_points"].append(text)
+        
+        # Clean up empty lists
+        company_info["services"] = list(set(company_info["services"]))[:10]
+        company_info["certifications"] = list(set(company_info["certifications"]))[:5]
+        company_info["social_proof"] = list(set(company_info["social_proof"]))[:5]
+        company_info["unique_selling_points"] = company_info["unique_selling_points"][:5]
+        
+        return company_info
     
     async def scrape_website(self, url: str) -> Dict[str, Any]:
         """
