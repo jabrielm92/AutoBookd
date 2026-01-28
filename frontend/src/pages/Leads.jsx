@@ -474,6 +474,7 @@ export default function Leads() {
             <SelectItem value="needs_research">Needs Research</SelectItem>
             <SelectItem value="ready_for_outreach">Ready for Outreach</SelectItem>
             <SelectItem value="in_sequence">In Sequence</SelectItem>
+            <SelectItem value="no_email">No Email</SelectItem>
             {Object.entries(statusLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>{label}</SelectItem>
             ))}
