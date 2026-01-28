@@ -1974,8 +1974,24 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
             final_lead_id = data.lead_id
             is_manual = False
         else:
+            # Create a new lead for this manual email
             business_name = data.business_name or data.to_email.split('@')[0].title()
-            final_lead_id = f"manual_{unique_id}"
+            new_lead_id = str(uuid.uuid4())
+            new_lead = {
+                "id": new_lead_id,
+                "tenant_id": tenant_id,
+                "business_name": business_name,
+                "email": data.to_email,
+                "category": "Manual Outreach",
+                "status": "outreach_sent",
+                "pipeline_stage": "in_sequence",
+                "lead_score": 50,
+                "score_breakdown": {"manual": 50},
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.leads.insert_one(new_lead)
+            final_lead_id = new_lead_id
             is_manual = True
         
         message = {
