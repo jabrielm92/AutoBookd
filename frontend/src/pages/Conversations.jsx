@@ -253,6 +253,48 @@ export default function Conversations() {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    const newAttachments = [];
+    
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error(`${file.name} is too large (max 5MB)`);
+        continue;
+      }
+      
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+      
+      newAttachments.push({ filename: file.name, content: base64 });
+    }
+    
+    setAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleLeadSelect = (leadId) => {
+    if (leadId) {
+      const lead = leads.find(l => l.id === leadId);
+      if (lead) {
+        setNewEmail(prev => ({
+          ...prev,
+          leadId,
+          to: lead.email || prev.to,
+          businessName: lead.business_name || prev.businessName
+        }));
+      }
+    } else {
+      setNewEmail(prev => ({ ...prev, leadId: '' }));
+    }
+  };
+
   const handleSendNewEmail = async () => {
     if (!newEmail.to || !newEmail.subject || !newEmail.body) {
       toast.error('Recipient, subject, and body are required');
@@ -271,12 +313,15 @@ export default function Conversations() {
         to_email: newEmail.to,
         subject: newEmail.subject,
         body: newEmail.body,
-        business_name: newEmail.businessName || null
+        business_name: newEmail.businessName || null,
+        lead_id: newEmail.leadId || null,
+        attachments: attachments.length > 0 ? attachments : null
       });
       
       toast.success('Email sent successfully!');
       setNewEmailOpen(false);
-      setNewEmail({ to: '', subject: '', body: '', businessName: '' });
+      setNewEmail({ to: '', subject: '', body: '', businessName: '', leadId: '' });
+      setAttachments([]);
       
       // Refresh conversations
       fetchData();
