@@ -459,8 +459,8 @@ export default function Leads() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Search leads..."
@@ -471,7 +471,7 @@ export default function Leads() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-56" data-testid="status-filter">
+          <SelectTrigger className="w-48" data-testid="status-filter">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
@@ -486,6 +486,35 @@ export default function Leads() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-36"
+            placeholder="From"
+            data-testid="date-from"
+          />
+          <span className="text-slate-400">to</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-36"
+            placeholder="To"
+            data-testid="date-to"
+          />
+          {(dateFrom || dateTo) && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="h-8 w-8"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         <Button variant="outline" size="icon" onClick={fetchLeads}>
           <RefreshCw className="w-4 h-4" />
         </Button>
