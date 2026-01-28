@@ -394,8 +394,10 @@ class SequenceManager:
     ):
         """Record sent email in conversation history"""
         
-        # Check if conversation exists
-        conversation = await self.db.conversations.find_one({"lead_id": lead["id"]}, {"_id": 0})
+        tenant_id = lead.get("tenant_id")
+        
+        # Check if conversation exists for this lead and tenant
+        conversation = await self.db.conversations.find_one({"lead_id": lead["id"], "tenant_id": tenant_id}, {"_id": 0})
         
         message = {
             "id": str(uuid.uuid4()),
@@ -409,7 +411,7 @@ class SequenceManager:
         
         if conversation:
             await self.db.conversations.update_one(
-                {"lead_id": lead["id"]},
+                {"lead_id": lead["id"], "tenant_id": tenant_id},
                 {
                     "$push": {"messages": message},
                     "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
@@ -419,6 +421,7 @@ class SequenceManager:
             conversation = {
                 "id": str(uuid.uuid4()),
                 "lead_id": lead["id"],
+                "tenant_id": tenant_id,
                 "channel": "email",
                 "messages": [message],
                 "sentiment_trajectory": [],
