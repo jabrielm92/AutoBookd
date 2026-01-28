@@ -332,8 +332,19 @@ class EmailSequenceGenerator:
         opportunity = research.get('opportunity', 'streamlined operations')
         business_name = lead.get('business_name', 'your business')
         
+        # Use scraped company info for deeper personalization
+        scraped_info = lead.get('scraped_company_info', {})
+        services = research.get('services', '')
+        if scraped_info.get('services'):
+            services = ', '.join(scraped_info['services'][:3])
+        
+        years_experience = scraped_info.get('years_in_business', '')
+        unique_angle = research.get('unique_angle', '')
+        certifications = ', '.join(scraped_info.get('certifications', [])[:2]) if scraped_info.get('certifications') else ''
+        
         # Use product info if available
         product_desc = product.get('description', '') if product else ''
+        product_name = product.get('name', 'our solution') if product else 'our solution'
         
         # Build value proposition from product
         value_prop = "respond to customers faster and never miss a lead"
@@ -349,6 +360,15 @@ class EmailSequenceGenerator:
                 pain_point = pain_point.replace(word, '').replace(word.lower(), '')
                 opportunity = opportunity.replace(word, '').replace(word.lower(), '')
         
+        # Build more personalized opener using scraped data
+        personalized_line = ""
+        if years_experience:
+            personalized_line = f"With {years_experience} years in the business, you've clearly built something special. "
+        elif certifications:
+            personalized_line = f"Your {certifications} credentials show your commitment to quality. "
+        elif services:
+            personalized_line = f"Your {services} services are clearly in demand in {lead.get('city', 'your area')}. "
+        
         sequence = [
             # Email 1: Personal opener
             {
@@ -357,7 +377,7 @@ class EmailSequenceGenerator:
                 "subject": f"Quick question about {business_name}",
                 "body": f"""{opener}
 
-I work with {lead.get('category', 'businesses')} to solve {pain_point} - typically helping them {value_prop}.
+{personalized_line}I work with {lead.get('category', 'businesses')} to solve {pain_point} - typically helping them {value_prop}.
 
 Would it make sense to chat for 15 minutes this week?
 
@@ -370,7 +390,7 @@ Would it make sense to chat for 15 minutes this week?
             {
                 "sequence_number": 2,
                 "delay_days": 3,
-                "subject": "Re: Quick question about {business_name}",
+                "subject": f"Re: Quick question about {business_name}",
                 "body": f"""Hey,
 
 Just circling back on my note.
@@ -385,7 +405,7 @@ Curious - how are you currently handling {pain_point.lower()}?
             {
                 "sequence_number": 3,
                 "delay_days": 6,
-                "subject": "Re: Quick question about {business_name}",
+                "subject": f"Re: Quick question about {business_name}",
                 "body": f"""Quick thought -
 
 I recently helped a {lead.get('category', 'similar business')} streamline their operations significantly. They went from missing 30% of leads to capturing nearly all of them.
