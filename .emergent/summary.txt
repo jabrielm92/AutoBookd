@@ -4,69 +4,65 @@ The user wants to transform the existing Intelligent Lead Automation System into
 **PRODUCT REQUIREMENTS (summarized from history):**
 1.  **Landing Page & Marketing:** Create an epic, feature-rich landing page. Provide marketing materials for a Skool community.
 2.  **SaaS Functionality:** Implement multi-tenant authentication, a 24-hour free trial, and a  Stripe subscription. Users should be able to see their subscription status and manage it.
-3.  **Onboarding:** Create a comprehensive setup guide for all required API keys (SerpAPI, Hunter, Apollo, etc.) and integrate it into the onboarding flow and dashboard.
+3.  **Onboarding:** Create a comprehensive setup guide for all required API keys and integrate it into the onboarding flow and dashboard. This guide must be detailed for all integrations.
 4.  **Core Features:**
     *   **Lead Discovery:** Find leads by location.
-    *   **Data Enrichment:** Get emails and phone numbers (Hunter/Apollo).
-    *   **AI Pipeline:** Research leads, score them, and generate multi-step GPT-4o email sequences with custom user prompts.
+    *   **Data Enrichment:** Get emails and phone numbers. The system should prioritize free website scraping before using paid APIs (Hunter/Apollo).
+    *   **AI Pipeline:** Research leads using scraped website data, score them, and generate unique, multi-step GPT-4o email sequences.
     *   **Automation Control:** Allow users to toggle auto-sending of emails. If disabled, users must be able to edit and send generated drafts manually.
-    *   **Reply Handling:** Process inbound replies.
+    *   **Manual Composition:** Allow users to compose and send new emails from scratch within the Conversations page.
+    *   **Reply Handling:** Process inbound replies, classify intent, and trigger intelligent auto-replies. The booking link should be sent on the second positive reply.
     *   **Data Management:** Users must be able to export leads to CSV. Admins need a dashboard for analytics.
-5.  **Multi-tenancy:** This is the most critical requirement. Each tenant's data (leads, settings, API keys, products, etc.) must be completely isolated. New users must see a blank slate.
-6.  **UI/UX:** The entire application must be mobile-responsive, with no horizontal scrolling. The UI should be clean and intuitive.
-7.  **Deployment:** The application must be fully prepared for production deployment on Vercel (frontend) and Railway (backend) with MongoDB Atlas. All Emergent-specific or localhost code must be removed.
+5.  **Multi-tenancy:** This is the most critical requirement. Each tenant's data must be completely isolated.
+6.  **UI/UX:** The entire application must be mobile-responsive, clean, and intuitive.
+7.  **Deployment:** The application must be fully prepared for production deployment on Vercel (frontend) and Railway (backend) with MongoDB Atlas.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a feature-rich, multi-tenant SaaS platform. The agent has completed a massive overhaul to fix critical multi-tenancy bugs, ensuring data is isolated by a  across most of the backend. A data migration was performed to assign legacy data to the admin user.
+The application is a functional, multi-tenant SaaS platform that has undergone a massive code audit to ensure production readiness and data isolation. The core multi-tenancy data leak issues have been resolved by enforcing  across the backend.
 
-Key recent accomplishments include:
-- A complete mobile-responsive redesign of the Leads, Pipeline, Conversations, and Discovery pages.
-- Implementation of an Auto-Send Emails toggle, replacing the old Test Mode.
-- A new feature allowing users to edit and manually send draft emails from the Conversations page.
-- A revamped, detailed landing page and new marketing materials.
-- An Export to CSV feature for leads.
-- A fix for the core pipeline, making it tenant-aware so it can run again.
-
-However, the user has stressed that remnants of old, non-tenant-aware code and deployment-specific issues may still exist. The agent was in the middle of a final, comprehensive audit to find and eliminate these last issues.
+Recent key accomplishments include:
+- A complete, production-focused code audit, fixing dozens of tenant-isolation bugs.
+- Implementation of Edit/Delete functionality for Products and Discovery Sets.
+- A redesigned, mobile-friendly vertical layout for the Pipeline page.
+- An enhanced web scraper that now extracts emails and detailed company info directly from websites to improve email personalization and reduce API costs.
+- Reworked AI prompts to generate more unique and varied email openers, avoiding repetitive phrases.
+- Updated reply-handling logic to send the calendar link on the second positive reply, not the first.
+- A detailed, generic setup guide for the Auto-Reply feature was created and integrated.
 
 **Last working item**:
-- **Last item agent was working:** Conducting a full codebase audit to find and fix any remaining code that is not tenant-aware or is unsuitable for production deployment (e.g., hardcoded localhost URLs, old database query patterns).
+- **Last item agent was working:** The agent was simultaneously implementing two user-requested frontend features:
+    1.  **Detailed Setup Guides:** Expanding the  file to provide detailed, step-by-step instructions for all third-party integrations (OpenAI, Stripe, SerpAPI, etc.).
+    2.  **Manual Email Composition:** Adding a New Conversation feature to the  page, which includes a button and a modal for users to write and send emails from scratch.
 - **Status:** IN PROGRESS
-- **Agent Testing Done:** N (The audit itself is the work in progress)
-- **Which testing method agent to use?** both
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** both. Frontend testing agent to verify the UI for the new guides and the New Conversation modal. Backend testing will be needed for the new API endpoint that will support sending manual emails.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1:** Final Code Audit for Production Readiness (P0)
-
-  **Issues Detail:**
-  - **Issue 1:** Final Code Audit for Production Readiness
-     - **Attempted fixes:** The agent has already fixed dozens of endpoints and database queries. The current task is to fix the remaining issues found during a  audit.
-     - **Next debug checklist:**
-        1.  Fix  and  which still use the old  pattern. They must query using .
-        2.  Secure any unauthenticated endpoints, such as the Resend webhook, if necessary.
-        3.  Replace hardcoded URLs like  with environment variables (e.g., for  in ).
-        4.  Add the  filter to any remaining database queries that lack it, such as  in .
-     - **Why fix this issue and what will be achieved with the fix?** To permanently resolve all multi-tenancy data-leaking bugs, ensure the application is stable, and make it fully ready for production deployment on Vercel and Railway, fulfilling the user's core requirement.
-     - **Status:** IN PROGRESS
-     - **Is recurring issue?** Y
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on other issue:** none
+There are no pending bugs. The work is focused on feature development.
 
 **In progress Task List**:
-- **Task 1:** Complete the final code audit and fix all identified issues (P0)
-     - **Where to resume:** The agent has identified the problematic files and code snippets via . The next step is to use  or  to apply the fixes outlined in the Next debug checklist above.
-     - **What will be achieved with this?** A clean, production-ready, and truly multi-tenant codebase.
+- **Task 1: Complete New Conversation Feature (P0)**
+     - **Where to resume:**
+        - **Backend:** Create a new API endpoint (e.g., ) in . This endpoint must be authenticated, accept a recipient email, subject, body, and optional attachments. It should use the tenant's Resend key to send the email and create a new record in the  collection with the correct .
+        - **Frontend:** Update  to add the New Conversation button, a modal with fields for To, Subject, Body, and file attachments, and the state management and API call to the new backend endpoint.
+     - **What will be achieved with this?** Users will be able to initiate new email conversations manually from within the app, and replies will be tracked by the existing auto-reply system.
      - **Status:** IN PROGRESS
      - **Should Test frontend/backend/both after fix?** both
+     - **Blocked on something:** The backend endpoint for sending manual emails does not exist yet.
+
+- **Task 2: Complete Detailed Setup Guides (P0)**
+     - **Where to resume:** The agent has a complete, updated version of  ready. The next step is to use the  tool with  to apply the changes.
+     - **What will be achieved with this?** The onboarding experience will be significantly improved, with every integration in the setup guide having a detailed, user-friendly walkthrough.
+     - **Status:** IN PROGRESS
+     - **Should Test frontend/backend/both after fix?** frontend
      - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
 -   **Task 1 (P1):** Build Out Admin Dashboard. The page at  needs to be fully implemented to display tenant information, subscription status, and usage analytics.
--   **Task 2 (P1):** Edit/Delete Saved Sets and Products. The user requested the ability to edit or delete discovery sets and products.
 
 **Future Tasks:**
 -   **Email Warm-up Feature:** Implement the Coming Soon email warm-up scheduler.
@@ -74,20 +70,24 @@ However, the user has stressed that remnants of old, non-tenant-aware code and d
 -   **Feedback Loop & A/B Testing:** Implement systems to auto-tune AI prompts and messages based on performance.
 
 **Completed work in this session**
-- **Critical Multi-Tenancy Fix:** Overhauled the backend to enforce tenant isolation, fixing a bug where new users saw admin data. Applied  filters to most endpoints and DB queries.
-- **Data Migration:** Ran a script to assign  to all legacy data (products, conversations, bookings) for the admin account.
-- **Pipeline Repair:** Fixed the core processing pipeline which had stopped working due to lack of tenant context.
-- **Mobile UI Overhaul:** Re-architected the Leads, Pipeline, Conversations, and Discovery pages to be fully responsive, replacing tables and drag-and-drop with mobile-friendly cards and modals.
-- **Auto-Send Toggle:** Replaced the confusing Test Mode with a clear Auto-Send Emails toggle throughout the UI and backend logic.
-- **Manual Email Sending:** Added a feature to the Conversations page to let users edit and manually send AI-generated emails when auto-send is off.
-- **Feature Additions:** Implemented an Export to CSV function on the Leads page.
-- **Landing Page & Marketing:** Completely redesigned the landing page with detailed feature descriptions and created a marketing document ().
-- **Onboarding & UI Fixes:** Integrated the  component, updated free-tier text, changed trial to 24 hours, and removed the demo button from the landing page.
+- **Critical Multi-Tenancy & Production Audit:** Completed a comprehensive backend overhaul to enforce tenant isolation and prepare for deployment. Fixed dozens of database queries and API endpoints to be tenant-aware and removed development artifacts like . Verified with the testing agent.
+- **Edit/Delete for Products & Sets:** Implemented full CRUD functionality (backend APIs and frontend UI) for Products and Discovery Sets.
+- **Bug Fixes:**
+    - Fixed an issue where Pipeline Activity logs were not appearing due to a missing .
+    - Fixed a critical bug where new  and  were created without a .
+- **Feature Enhancements:**
+    - **Enhanced Web Scraper:** Scraper now extracts emails and detailed company info (services, tagline, social proof) from websites to improve personalization and save API credits.
+    - **Improved AI Email Generation:** Reworked AI prompts to create more varied and unique email openers, removing repetitive phrases about ratings.
+    - **Smarter Reply Logic:** The booking link is now sent on the second positive reply, not in the initial outreach.
+- **UI/UX Improvements:**
+    - **Leads Page:** Added date range filters.
+    - **Pipeline Page:** Redesigned with a mobile-friendly vertical accordion layout.
+    - **Setup Guide:** Created a detailed, generic guide for the Auto-Reply feature.
 
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork:** Production deployment instability and data discrepancies between tenants.
 - **Recurrence count:** 3+
-- **Status:** IN PROGRESS (The current Final Code Audit task is the definitive fix for this recurring root cause).
+- **Status:** RESOLVED. The comprehensive code audit completed in this session was the definitive fix for this recurring root cause.
 
 **Code Architecture**
 
@@ -101,73 +101,68 @@ However, the user has stressed that remnants of old, non-tenant-aware code and d
 
 **key DB schema**
 -   **users:** 
--   **system_config:**  (Now per-tenant)
--   All other major collections (, , , , , ) now include a  field.
+-   **system_config:** 
+-   **conversations:** Now includes  to track interaction for sending the calendar link.
+-   All other major collections (, , , etc.) now include and are filtered by .
 
 **All files of reference**
--    (Contains most endpoints, needs a final check)
--    (Recently made tenant-aware)
--    (Needs tenant-aware fix)
--    (Needs tenant-aware fix)
--    (All pages were recently updated for mobile and features)
--    (Handles pipeline status and start/stop controls)
-
-**Areas that need refactoring**:
-- The current Final Code Audit is effectively a refactoring task to ensure production readiness by removing all legacy, non-tenant-aware code patterns.
+-    (Currently being modified)
+-    (Currently being modified)
+-    (Will need a new endpoint)
+-    (Recently modified)
+-    (Recently modified)
+-    (Recently modified)
+-   
+-   
 
 **key api endpoints**
--   : Starts the lead generation pipeline for the current tenant.
--   : Fetches the configuration for the current tenant.
--   : Updates the configuration for the current tenant.
--   : **NEW** - Exports filtered leads to a CSV file.
--   : **NEW** - Manually sends a draft email.
--   All data-related endpoints (e.g., , ) are now filtered by .
+-    & 
+-    & 
+-    (now supports  and  query params)
+-    (handles inbound email replies)
+-   **Needs to be created:**  for the new manual email feature.
 
 **Critical Info for New Agent**
--   **Top Priority:** The user is out of patience with multi-tenancy bugs. Your absolute first task is to complete the code audit and fix every last instance of non-tenant-aware code. Do not start any new features until this is done and verified.
--   **Efficiency is Key:** The user has very few credits left. Be extremely efficient. Use  to find all issues first, then fix them in one go. Avoid trial-and-error.
--   **Deployment Focus:** The goal is a production-ready application for Vercel and Railway. Remove all hardcoded  values and other development artifacts.
--   **Tenant Context:** The application's architecture now depends entirely on the  from the authenticated user. The pipeline background task is also passed this  and must use it for all its database operations.
+-   **Priority:** The user wants two features implemented: 1) Detailed setup guides for all integrations, and 2) A New Conversation feature for manual email composition. These are your P0 tasks.
+-   **Multi-Tenancy is King:** The application is a multi-tenant SaaS deployed on Vercel and Railway. Every change, especially new backend endpoints, must be tenant-aware and use the  from the authenticated user.
+-   **Backend Work Required:** The New Conversation feature requires a new backend endpoint. Plan to create this in . It should handle sending email via the tenant's Resend account and correctly logging the conversation.
+-   **User is Credit Conscious:** Continue the pattern of efficient implementation. Use parallel tool calls where possible.
 
 **documents and test reports created in this job**
--   
 -   
 -    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** New tenants still see the admin's company name. This is the third time. (IN PROGRESS - Root cause found and being fixed)
-2.  **User:** Admin dashboard cards show no data, looks like a new user account. (EXPLAINED - Caused by data migration, should be fixed post-deploy)
-3.  **User:** Requested an Auto-Send toggle instead of Test Mode and the ability to edit/send emails if auto-send is off. (DONE)
-4.  **User:** Approved the plan to migrate data and implement the Auto-Send toggle. (DONE)
-5.  **User:** Confirmed that all features advertised on the new landing page must be functional. (DONE - Added missing CSV export)
-6.  **User:** Requested a complete landing page revamp to highlight the app's power and marketing material for Skool. (DONE)
-7.  **User:** Noticed Test Mode is still showing in the UI after it was supposed to be replaced. (DONE)
-8.  **User:** The pipeline is no longer starting. MAJOR ISSUE! (DONE - Fixed tenant context issue in pipeline)
-9.  **User:** Requested the ability to edit or delete saved sets and products. (PENDING)
-10. **User:** Stressed that the entire app needs to be reviewed to ensure it's fully multi-tenant and ready for production deployment, removing all Emergent-specific code. (IN PROGRESS - This is the current P0 task)
+10. **User:** Yes perfectly! Implement these additions diligently and efficiently using as less credits as possible. (IN PROGRESS)
+9.  **User:** Confirmed understanding of the two new feature requests: detailed setup guides for all integrations and a manual email composition feature. (DONE)
+8.  **User:** Asked if all setup guides have detailed instructions and requested the manual email composition feature. (IN PROGRESS)
+7.  **User:** Confirmed their DNS setup for the reply subdomain was incorrect and acknowledged the agent's explanation on multi-tenant Reply-To handling. Requested a setup guide for tenants. (DONE)
+6.  **User:** Asked for clarification on the subdomain setup for Resend inbound emails. (DONE)
+5.  **User:** Confirmed understanding of the calendar link timing and auto-reply setup, and asked if a  header needed to be coded. (DONE)
+4.  **User:** Asked where replies go, requested the calendar link be sent on the second message, and asked how to set up auto-replies. (DONE)
+3.  **User:** Asked how to change the email generation logic to make emails more unique and fresh. (DONE)
+2.  **User:** Explained that the website scraper should be able to find company info for email personalization. (DONE)
+1.  **User:** Pointed out that even with the Apollo fix, emails should be findable via website scraping. (DONE)
 
 **Project Health Check:**
--   **Broken:** Some data access points might still be non-tenant-aware, which is what the current audit is fixing.
--   **Mocked:** Email Warm-up feature is still a placeholder.
+-   **Broken:** No core functionality is broken.
+-   **Mocked:** Email Warm-up feature is a UI placeholder.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o:** requires User API Key
--   **SerpAPI:** requires User API Key
--   **Hunter.io:** requires User API Key
--   **Apollo.io:** requires User API Key
--   **Resend:** requires User API Key
--   **Stripe:** requires User API Key
--   **Calendly:** Webhook integration
+-   **OpenAI GPT-4o:** (Text Generation) requires User API Key
+-   **SerpAPI:** (Lead Discovery) requires User API Key
+-   **Hunter.io:** (Email Enrichment) requires User API Key
+-   **Apollo.io:** (Email Enrichment) requires User API Key
+-   **Resend:** (Email Sending/Receiving) requires User API Key
+-   **Stripe:** (Payments) requires User API Key
+-   **Calendly:** (Booking) Webhook integration
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (for initial mobile UI changes)
+-   **Testing agent used after significant changes:** YES, after the major multi-tenancy code audit. All 29 tests passed.
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** []
--   **Known regressions:** The pipeline stopped working due to tenant-awareness changes, but this has since been fixed.
+-   **Known regressions:** None.
 
 **Credentials to test flow:**
 -   **Admin User:**  (password: )
--   A new test user was created via API for tenant isolation testing: 
-
-**What agent forgot to execute**
-The agent's initial implementation of multi-tenancy was incomplete, missing many endpoints and the background pipeline controller. This has been the primary source of bugs in the last several interactions. The current task is a direct response to this, aiming to comprehensively fix all remaining omissions.</analysis>
+-   **Test User:**  (for checking tenant isolation)</analysis>
