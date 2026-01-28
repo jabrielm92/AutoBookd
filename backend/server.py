@@ -1468,6 +1468,8 @@ async def get_leads(
     pipeline_stage: Optional[str] = None,
     min_score: Optional[int] = None,
     niche_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     limit: int = Query(100, le=500),
     skip: int = 0,
     user: dict = Depends(get_current_user_optional)
@@ -1486,7 +1488,17 @@ async def get_leads(
     if niche_id:
         query['niche_id'] = niche_id
     
-    leads = await db.leads.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    # Date filtering
+    if date_from or date_to:
+        date_query = {}
+        if date_from:
+            date_query["$gte"] = date_from
+        if date_to:
+            date_query["$lte"] = date_to + "T23:59:59"
+        if date_query:
+            query['created_at'] = date_query
+    
+    leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     return leads
 
 @api_router.get("/leads/{lead_id}", response_model=Lead)
