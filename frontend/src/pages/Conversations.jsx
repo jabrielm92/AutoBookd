@@ -314,9 +314,19 @@ export default function Conversations() {
 
   return (
     <div className="space-y-6" data-testid="conversations-page">
-      <div>
-        <h1 className="text-2xl font-bold">Conversations</h1>
-        <p className="text-muted-foreground">{conversations.length} active conversations</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Conversations</h1>
+          <p className="text-muted-foreground">{conversations.length} active conversations</p>
+        </div>
+        <Button 
+          onClick={() => setNewEmailOpen(true)} 
+          className="bg-red-600 hover:bg-red-700"
+          data-testid="new-conversation-btn"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Conversation
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
@@ -337,7 +347,7 @@ export default function Conversations() {
             <ScrollArea className="h-[calc(100vh-340px)]">
               <div className="space-y-1 p-2">
                 {filteredConversations.map((conv) => {
-                  const lead = getLeadForConv(conv.lead_id);
+                  const lead = getLeadForConv(conv);
                   const lastMessage = conv.messages[conv.messages.length - 1];
                   return (
                     <div
