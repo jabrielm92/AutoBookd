@@ -134,6 +134,40 @@ export default function Conversations() {
     }
   };
 
+  const handleSendNewEmail = async () => {
+    if (!newEmail.to || !newEmail.subject || !newEmail.body) {
+      toast.error('Recipient, subject, and body are required');
+      return;
+    }
+    
+    // Basic email validation
+    if (!newEmail.to.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    setSending(true);
+    try {
+      await api.post('/conversations/manual', {
+        to_email: newEmail.to,
+        subject: newEmail.subject,
+        body: newEmail.body,
+        business_name: newEmail.businessName || null
+      });
+      
+      toast.success('Email sent successfully!');
+      setNewEmailOpen(false);
+      setNewEmail({ to: '', subject: '', body: '', businessName: '' });
+      
+      // Refresh conversations
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send email');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const handleSelectConversation = (conv) => {
     setSelectedConv(conv);
     // On mobile, open modal
