@@ -56,6 +56,31 @@ class AIResearchEngine:
         Services: {website_data.get('services', '')[:500]}
         """
         
+        # Add scraped company info if available (from lead data)
+        scraped_info = lead.get('scraped_company_info', {})
+        company_context = ""
+        if scraped_info:
+            tagline = scraped_info.get('tagline', '')
+            services_list = scraped_info.get('services', [])
+            usps = scraped_info.get('unique_selling_points', [])
+            years = scraped_info.get('years_in_business', '')
+            certs = scraped_info.get('certifications', [])
+            social = scraped_info.get('social_proof', [])
+            
+            company_context = "\nSCRAPED COMPANY INSIGHTS:\n"
+            if tagline:
+                company_context += f"- Tagline: {tagline}\n"
+            if services_list:
+                company_context += f"- Services Offered: {', '.join(services_list[:5])}\n"
+            if usps:
+                company_context += f"- Selling Points: {', '.join(usps[:3])}\n"
+            if years:
+                company_context += f"- Years in Business: {years}\n"
+            if certs:
+                company_context += f"- Certifications: {', '.join(certs[:3])}\n"
+            if social:
+                company_context += f"- Social Proof: {', '.join(social[:3])}\n"
+        
         # Build product context
         product_context = ""
         if product:
