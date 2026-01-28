@@ -83,6 +83,8 @@ export default function Leads() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('stage') || 'all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [selectedLead, setSelectedLead] = useState(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isCSVDialogOpen, setIsCSVDialogOpen] = useState(false);
