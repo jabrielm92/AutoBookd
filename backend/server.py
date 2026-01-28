@@ -1382,6 +1382,11 @@ async def get_sequences(status: Optional[str] = None, limit: int = 50, user: dic
 
 @api_router.post("/sequences/{sequence_id}/pause")
 async def pause_sequence(sequence_id: str, user: dict = Depends(get_current_user)):
+    # Verify sequence belongs to tenant
+    sequence = await db.sequences.find_one({"id": sequence_id, "tenant_id": user["id"]}, {"_id": 0})
+    if not sequence:
+        raise HTTPException(status_code=404, detail="Sequence not found")
+    
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     await pipeline.sequence_manager.pause_sequence(sequence_id)
@@ -1389,6 +1394,11 @@ async def pause_sequence(sequence_id: str, user: dict = Depends(get_current_user
 
 @api_router.post("/sequences/{sequence_id}/resume")
 async def resume_sequence(sequence_id: str, user: dict = Depends(get_current_user)):
+    # Verify sequence belongs to tenant
+    sequence = await db.sequences.find_one({"id": sequence_id, "tenant_id": user["id"]}, {"_id": 0})
+    if not sequence:
+        raise HTTPException(status_code=404, detail="Sequence not found")
+    
     from pipeline_controller import get_pipeline
     pipeline = get_pipeline(db)
     await pipeline.sequence_manager.resume_sequence(sequence_id)
