@@ -746,74 +746,149 @@ export default function Leads() {
 
       {/* Lead Detail Dialog */}
       <Dialog open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedLead && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <div className={cn("score-badge", getScoreBadgeClass(selectedLead.lead_score))}>
-                    {selectedLead.lead_score}
-                  </div>
-                  {selectedLead.business_name}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-500 text-xs">Category</Label>
-                    <p className="font-medium">{selectedLead.category}</p>
-                  </div>
-                  <div>
-                    <Label className="text-slate-500 text-xs">Location</Label>
-                    <p className="font-medium">{selectedLead.city}, {selectedLead.state}</p>
-                  </div>
-                  <div>
-                    <Label className="text-slate-500 text-xs">Email</Label>
-                    <p className="font-medium">{selectedLead.email || '-'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-slate-500 text-xs">Phone</Label>
-                    <p className="font-medium">{selectedLead.phone || '-'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-slate-500 text-xs">Added</Label>
-                    <p className="font-medium">{formatDate(selectedLead.created_at)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-slate-500 text-xs">Stage</Label>
-                    <Badge className={`status-${selectedLead.status} mt-1`}>
-                      {pipelineLabels[selectedLead.pipeline_stage] || statusLabels[selectedLead.status]}
-                    </Badge>
-                  </div>
-                </div>
-                
-                {selectedLead.research && (
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <Label className="text-slate-500 text-xs">AI Research</Label>
-                    <p className="text-sm mt-1"><strong>Pain Point:</strong> {selectedLead.research.pain_point}</p>
-                    <p className="text-sm mt-1"><strong>Opportunity:</strong> {selectedLead.research.opportunity}</p>
-                    <p className="text-sm mt-1"><strong>Opener:</strong> {selectedLead.research.opener}</p>
-                  </div>
-                )}
-
-                <div>
-                  <Label className="text-slate-500 text-xs">Score Breakdown</Label>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {Object.entries(selectedLead.score_breakdown || {}).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between p-2 rounded bg-slate-50 text-sm">
-                        <span className="text-slate-600">{key.replace(/_/g, ' ')}</span>
-                        <span className={cn("font-medium", value > 0 ? "text-emerald-600" : "text-red-600")}>
-                          {value > 0 ? '+' : ''}{value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
+            <LeadDetailContent 
+              lead={selectedLead} 
+              onUpdate={async (updates) => {
+                await updateLead(selectedLead.id, updates);
+                fetchLeads();
+                setSelectedLead({...selectedLead, ...updates});
+                toast.success('Lead updated');
+              }}
+              onClose={() => setSelectedLead(null)}
+              formatDate={formatDate}
+              getScoreBadgeClass={getScoreBadgeClass}
+            />
           )}
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Extracted component for lead detail with edit capability
+function LeadDetailContent({ lead, onUpdate, onClose, formatDate, getScoreBadgeClass }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    business_name: lead.business_name || '',
+    category: lead.category || '',
+    city: lead.city || '',
+    state: lead.state || '',
+    email: lead.email || '',
+    phone: lead.phone || '',
+    website: lead.website || ''
+  });
+
+  const handleSave = async () => {
+    await onUpdate(form);
+    setEditing(false);
+  };
+
+  const statusLabels = {
+    uncontacted: 'Uncontacted', scraped: 'Scraped', outreach_sent: 'Outreach Sent',
+    engaged: 'Engaged', discovery: 'Discovery', qualified: 'Qualified',
+    calendar_offered: 'Calendar Offered', booked: 'Booked', stalled: 'Stalled', disqualified: 'Disqualified'
+  };
+  const pipelineLabels = {
+    needs_enrichment: 'Needs Enrichment', needs_research: 'Needs Research',
+    ready_for_outreach: 'Ready for Outreach', in_sequence: 'In Sequence',
+    no_email: 'No Email', no_domain: 'No Domain', low_score: 'Low Score'
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-3">
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-bold", 
+            lead.lead_score >= 80 ? "bg-emerald-500" : lead.lead_score >= 60 ? "bg-amber-500" : "bg-red-500")}>
+            {lead.lead_score}
+          </div>
+          {editing ? (
+            <Input value={form.business_name} onChange={e => setForm({...form, business_name: e.target.value})} className="text-lg font-semibold" />
+          ) : lead.business_name}
+        </DialogTitle>
+      </DialogHeader>
+      <div className="grid gap-6 py-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-slate-500 text-xs">Category</Label>
+            {editing ? <Input value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="mt-1" />
+              : <p className="font-medium">{lead.category}</p>}
+          </div>
+          <div>
+            <Label className="text-slate-500 text-xs">Location</Label>
+            {editing ? (
+              <div className="flex gap-2 mt-1">
+                <Input value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="City" className="flex-1" />
+                <Input value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="State" className="w-20" />
+              </div>
+            ) : <p className="font-medium">{lead.city}, {lead.state}</p>}
+          </div>
+          <div>
+            <Label className="text-slate-500 text-xs">Email</Label>
+            {editing ? <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="mt-1" />
+              : <p className="font-medium">{lead.email || '-'}</p>}
+          </div>
+          <div>
+            <Label className="text-slate-500 text-xs">Phone</Label>
+            {editing ? <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="mt-1" />
+              : <p className="font-medium">{lead.phone || '-'}</p>}
+          </div>
+          <div>
+            <Label className="text-slate-500 text-xs">Website</Label>
+            {editing ? <Input value={form.website} onChange={e => setForm({...form, website: e.target.value})} className="mt-1" />
+              : <p className="font-medium">{lead.website || '-'}</p>}
+          </div>
+          <div>
+            <Label className="text-slate-500 text-xs">Added</Label>
+            <p className="font-medium">{formatDate(lead.created_at)}</p>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-slate-500 text-xs">Stage</Label>
+            <Badge className={`status-${lead.status} mt-1`}>
+              {pipelineLabels[lead.pipeline_stage] || statusLabels[lead.status]}
+            </Badge>
+          </div>
+        </div>
+        
+        {lead.research && (
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <Label className="text-slate-400 text-xs">AI Research</Label>
+            <p className="text-sm mt-1"><strong>Pain Point:</strong> {lead.research.pain_point}</p>
+            <p className="text-sm mt-1"><strong>Opportunity:</strong> {lead.research.opportunity}</p>
+            <p className="text-sm mt-1"><strong>Opener:</strong> {lead.research.opener}</p>
+          </div>
+        )}
+
+        <div>
+          <Label className="text-slate-500 text-xs">Score Breakdown</Label>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {Object.keys(lead.score_breakdown || {}).length > 0 ? (
+              Object.entries(lead.score_breakdown).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between p-2 rounded bg-slate-800/50 text-sm">
+                  <span className="text-slate-400 capitalize">{key.replace(/_/g, ' ')}</span>
+                  <span className={cn("font-medium", value > 0 ? "text-emerald-400" : "text-red-400")}>
+                    {value > 0 ? '+' : ''}{value}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-500 text-sm col-span-2">No score breakdown available</p>
+            )}
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        {editing ? (
+          <>
+            <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button onClick={handleSave} className="bg-red-600 hover:bg-red-700">Save Changes</Button>
+          </>
+        ) : (
+          <Button onClick={() => setEditing(true)} variant="outline">Edit Lead</Button>
+        )}
+      </DialogFooter>
+    </>
   );
 }
