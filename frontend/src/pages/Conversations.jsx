@@ -529,13 +529,37 @@ export default function Conversations() {
       </Dialog>
 
       {/* New Conversation Modal */}
-      <Dialog open={newEmailOpen} onOpenChange={setNewEmailOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+      <Dialog open={newEmailOpen} onOpenChange={(open) => {
+        setNewEmailOpen(open);
+        if (!open) {
+          setNewEmail({ to: '', subject: '', body: '', businessName: '', leadId: '' });
+          setAttachments([]);
+        }
+      }}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">New Conversation</DialogTitle>
             <p className="text-sm text-slate-400">Compose and send a new email</p>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Lead Selection Dropdown */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Link to Existing Lead (Optional)</Label>
+              <select
+                value={newEmail.leadId}
+                onChange={(e) => handleLeadSelect(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2 text-sm"
+                data-testid="new-email-lead-select"
+              >
+                <option value="">-- Select a lead or enter email manually --</option>
+                {leads.filter(l => l.email).map(lead => (
+                  <option key={lead.id} value={lead.id}>
+                    {lead.business_name} ({lead.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
             <div className="space-y-2">
               <Label className="text-slate-300">To (Email) *</Label>
               <Input
@@ -572,10 +596,47 @@ export default function Conversations() {
               <Textarea
                 value={newEmail.body}
                 onChange={(e) => setNewEmail({...newEmail, body: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white min-h-[200px]"
+                className="bg-slate-800 border-slate-700 text-white min-h-[150px]"
                 placeholder="Write your message..."
                 data-testid="new-email-body"
               />
+            </div>
+            
+            {/* Attachments Section */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Attachments (Optional)</Label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-md cursor-pointer hover:bg-slate-700 transition-colors">
+                  <Paperclip className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm text-slate-300">Add Files</span>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif"
+                    data-testid="new-email-attachments"
+                  />
+                </label>
+                <span className="text-xs text-slate-500">Max 5MB per file</span>
+              </div>
+              {attachments.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {attachments.map((att, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-slate-800 px-3 py-2 rounded-md">
+                      <span className="text-sm text-slate-300 truncate">{att.filename}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAttachment(idx)}
+                        className="h-6 w-6 p-0 text-slate-400 hover:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -583,7 +644,8 @@ export default function Conversations() {
               variant="outline" 
               onClick={() => {
                 setNewEmailOpen(false);
-                setNewEmail({ to: '', subject: '', body: '', businessName: '' });
+                setNewEmail({ to: '', subject: '', body: '', businessName: '', leadId: '' });
+                setAttachments([]);
               }} 
               className="border-slate-600"
             >
