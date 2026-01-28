@@ -1897,6 +1897,8 @@ class ManualEmailCreate(BaseModel):
     subject: str
     body: str
     business_name: Optional[str] = None
+    lead_id: Optional[str] = None
+    attachments: Optional[List[Dict[str, str]]] = None  # [{filename, content (base64)}]
 
 @api_router.post("/conversations/manual")
 async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_current_user)):
