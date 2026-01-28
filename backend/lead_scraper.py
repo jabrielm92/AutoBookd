@@ -402,6 +402,15 @@ class ApolloEmailFinder:
 class WebsiteScraper:
     """Scrape websites for research data"""
     
+    # Email regex pattern
+    EMAIL_PATTERN = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
+    
+    # Common generic email prefixes (preferred order)
+    GENERIC_PREFIXES = ['info', 'contact', 'hello', 'sales', 'support', 'admin', 'office', 'enquiries', 'inquiries']
+    
+    # Domains to ignore
+    IGNORE_DOMAINS = {'example.com', 'yourdomain.com', 'domain.com', 'email.com', 'sentry.io', 'wixpress.com', 'squarespace.com'}
+    
     def __init__(self):
         self.http_client = httpx.AsyncClient(
             timeout=15.0,
@@ -410,6 +419,63 @@ class WebsiteScraper:
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
         )
+    
+    def _extract_emails_from_html(self, html_content: str, domain: str = None) -> List[str]:
+        """Extract all email addresses from HTML content"""
+        emails = set()
+        
+        # Find all email patterns
+        found = self.EMAIL_PATTERN.findall(html_content.lower())
+        
+        for email in found:
+            # Skip invalid/fake emails
+            email_domain = email.split('@')[1] if '@' in email else ''
+            if email_domain in self.IGNORE_DOMAINS:
+                continue
+            if 'example' in email or 'test@' in email or 'noreply' in email:
+                continue
+            # Skip image file extensions
+            if any(email.endswith(ext) for ext in ['.png', '.jpg', '.gif', '.svg', '.webp']):
+                continue
+            emails.add(email)
+        
+        # Also check mailto: links
+        mailto_pattern = re.compile(r'mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})')
+        mailto_emails = mailto_pattern.findall(html_content.lower())
+        for email in mailto_emails:
+            email_domain = email.split('@')[1] if '@' in email else ''
+            if email_domain not in self.IGNORE_DOMAINS:
+                emails.add(email)
+        
+        return list(emails)
+    
+    def _select_best_email(self, emails: List[str], domain: str = None) -> Optional[str]:
+        """Select the best email from a list, preferring generic business emails"""
+        if not emails:
+            return None
+        
+        # First, prefer emails matching the website domain
+        if domain:
+            domain_clean = domain.lower().replace('www.', '').split('/')[0]
+            domain_emails = [e for e in emails if domain_clean in e]
+            if domain_emails:
+                emails = domain_emails
+        
+        # Prefer generic emails (info@, contact@, etc.)
+        for prefix in self.GENERIC_PREFIXES:
+            for email in emails:
+                if email.startswith(f"{prefix}@"):
+                    return email
+        
+        # Return first non-personal looking email
+        for email in emails:
+            local_part = email.split('@')[0]
+            # Skip likely personal emails (first.last@ patterns)
+            if '.' not in local_part and len(local_part) < 20:
+                return email
+        
+        # Return any email
+        return emails[0] if emails else None
     
     async def scrape_website(self, url: str) -> Dict[str, Any]:
         """
@@ -426,6 +492,9 @@ class WebsiteScraper:
             "contact": "",
             "title": "",
             "meta_description": "",
+            "emails_found": [],
+            "best_email": None,
+            "phone_found": None,
             "scraped_at": datetime.now(timezone.utc).isoformat(),
             "success": False,
             "error": None
@@ -435,12 +504,18 @@ class WebsiteScraper:
         if not url.startswith(("http://", "https://")):
             url = f"https://{url}"
         
+        domain = url.replace('https://', '').replace('http://', '').split('/')[0]
+        all_emails = set()
+        all_html = ""
+        
         try:
             # Scrape homepage
             response = await self.http_client.get(url)
             
             if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
+                html_content = response.text
+                all_html += html_content
+                soup = BeautifulSoup(html_content, 'html.parser')
                 
                 # Extract title
                 title_tag = soup.find('title')
@@ -454,23 +529,45 @@ class WebsiteScraper:
                 result["homepage"] = self._extract_text(soup)
                 result["success"] = True
                 
+                # Extract emails from homepage
+                all_emails.update(self._extract_emails_from_html(html_content, domain))
+                
                 # Try to find and scrape about page
                 about_links = soup.find_all('a', href=re.compile(r'about|who-we-are|our-story', re.I))
                 if about_links:
                     about_url = self._resolve_url(url, about_links[0].get('href', ''))
-                    result["about"] = await self._scrape_page(about_url)
+                    about_content, about_html = await self._scrape_page_with_html(about_url)
+                    result["about"] = about_content
+                    if about_html:
+                        all_emails.update(self._extract_emails_from_html(about_html, domain))
                 
                 # Try to find services page
                 services_links = soup.find_all('a', href=re.compile(r'service|what-we-do|solution', re.I))
                 if services_links:
                     services_url = self._resolve_url(url, services_links[0].get('href', ''))
-                    result["services"] = await self._scrape_page(services_url)
+                    services_content, services_html = await self._scrape_page_with_html(services_url)
+                    result["services"] = services_content
+                    if services_html:
+                        all_emails.update(self._extract_emails_from_html(services_html, domain))
                 
-                # Try to find contact page
+                # Try to find contact page (highest priority for emails!)
                 contact_links = soup.find_all('a', href=re.compile(r'contact|get-in-touch|reach-us', re.I))
                 if contact_links:
                     contact_url = self._resolve_url(url, contact_links[0].get('href', ''))
-                    result["contact"] = await self._scrape_page(contact_url)
+                    contact_content, contact_html = await self._scrape_page_with_html(contact_url)
+                    result["contact"] = contact_content
+                    if contact_html:
+                        all_emails.update(self._extract_emails_from_html(contact_html, domain))
+                
+                # Extract phone number
+                phone_pattern = re.compile(r'[\(]?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]?\d{4}')
+                phones = phone_pattern.findall(all_html)
+                if phones:
+                    result["phone_found"] = phones[0]
+                
+                # Set email results
+                result["emails_found"] = list(all_emails)
+                result["best_email"] = self._select_best_email(list(all_emails), domain)
                 
         except httpx.TimeoutException:
             result["error"] = "timeout"
@@ -480,6 +577,17 @@ class WebsiteScraper:
             logger.debug(f"Error scraping {url}: {e}")
         
         return result
+    
+    async def _scrape_page_with_html(self, url: str) -> tuple:
+        """Scrape a single page and return both text content and raw HTML"""
+        try:
+            response = await self.http_client.get(url)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                return self._extract_text(soup), response.text
+        except:
+            pass
+        return "", ""
     
     async def _scrape_page(self, url: str) -> str:
         """Scrape a single page and return text content"""
