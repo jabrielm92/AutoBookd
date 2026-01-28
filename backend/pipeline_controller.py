@@ -288,15 +288,16 @@ class PipelineController:
                 }).limit(10).to_list(10)
                 
                 if leads:
-                    await self._log_activity("enrich", f"Processing {len(leads)} leads via {provider_name}", "info")
+                    await self._log_activity("enrich", f"Processing {len(leads)} leads", "info")
                 
                 for lead in leads:
                     if not self.is_running:
                         break
                     
                     domain = lead.get("domain") or lead.get("website", "").split("/")[0]
+                    website = lead.get("website", "")
                     
-                    if not domain:
+                    if not domain and not website:
                         await self.db.leads.update_one(
                             {"id": lead["id"]},
                             {"$set": {"pipeline_stage": "no_domain", "updated_at": datetime.now(timezone.utc).isoformat()}}
@@ -304,19 +305,53 @@ class PipelineController:
                         await self._log_activity("enrich", f"No domain for {lead.get('business_name')}", "warning", lead.get('business_name'))
                         continue
                     
-                    await self._log_activity("enrich", f"Looking up email for {lead.get('business_name')} ({provider_name})", "info", lead.get('business_name'))
+                    email_data = None
+                    email_source = None
                     
-                    # Find email using configured provider
-                    email_data = await email_finder.find_email(domain, lead.get("business_name"))
+                    # STEP 1: Try to scrape email directly from website (FREE!)
+                    if website:
+                        await self._log_activity("enrich", f"Scraping website for {lead.get('business_name')}", "info", lead.get('business_name'))
+                        scraper = WebsiteScraper()
+                        try:
+                            website_data = await scraper.scrape_website(website)
+                            await scraper.close()
+                            
+                            if website_data.get("best_email"):
+                                email_data = {
+                                    "email": website_data["best_email"],
+                                    "confidence": 85,  # High confidence - found on their own website
+                                    "type": "scraped",
+                                    "emails_found": website_data.get("emails_found", [])
+                                }
+                                email_source = "website_scrape"
+                                await self._log_activity("enrich", f"Found email on website: {email_data['email']}", "success", lead.get('business_name'))
+                            
+                            # Also save phone if found
+                            if website_data.get("phone_found") and not lead.get("phone"):
+                                await self.db.leads.update_one(
+                                    {"id": lead["id"]},
+                                    {"$set": {"phone": website_data["phone_found"]}}
+                                )
+                        except Exception as e:
+                            logger.debug(f"Website scrape error: {e}")
+                            await scraper.close()
+                    
+                    # STEP 2: If no email from website, try enrichment API
+                    if not email_data and domain:
+                        await self._log_activity("enrich", f"Trying {provider_name} for {lead.get('business_name')}", "info", lead.get('business_name'))
+                        email_data = await email_finder.find_email(domain, lead.get("business_name"))
+                        if email_data and email_data.get("email"):
+                            email_source = provider_name.lower()
                     
                     if email_data and email_data.get("email"):
                         update_data = {
                             "email": email_data["email"],
                             "email_confidence": email_data.get("confidence", 0),
                             "email_type": email_data.get("type"),
+                            "email_source": email_source,
                             "contact_name": f"{email_data.get('first_name', '')} {email_data.get('last_name', '')}".strip() or None,
                             "contact_position": email_data.get("position"),
-                            "enrichment_provider": provider_name.lower(),
+                            "enrichment_provider": email_source,
                             "pipeline_stage": "needs_research",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }
@@ -326,7 +361,7 @@ class PipelineController:
                         if email_data.get("linkedin_url"):
                             update_data["linkedin_url"] = email_data["linkedin_url"]
                             
-                        await self._log_activity("enrich", f"Email found: {email_data['email']}", "success", lead.get('business_name'))
+                        await self._log_activity("enrich", f"Enriched with email: {email_data['email']} (via {email_source})", "success", lead.get('business_name'))
                     else:
                         update_data = {
                             "pipeline_stage": "no_email",
@@ -341,8 +376,8 @@ class PipelineController:
                     
                     logger.info(f"Enriched {lead['business_name']}: {'email found' if email_data else 'no email'}")
                     
-                    # Rate limit API
-                    await asyncio.sleep(2)
+                    # Rate limit
+                    await asyncio.sleep(1)
                 
                 # Wait before next batch
                 await asyncio.sleep(30)
