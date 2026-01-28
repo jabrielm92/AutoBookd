@@ -456,12 +456,8 @@ But if you're curious about what's possible, I'm happy to do a quick no-pressure
             }
         ]
         
-        # Add calendar link to appropriate emails if provided
-        if calendar_link:
-            sequence[0]["body"] = sequence[0]["body"].replace(
-                "Would it make sense to chat for 15 minutes this week?",
-                f"Would it make sense to chat for 15 minutes this week?\n\nBook a time here: {calendar_link}"
-            )
+        # NOTE: Calendar link is now sent AFTER a positive reply, not in initial sequence
+        # This happens in the webhook handler at /webhooks/email/reply
         
         return sequence
     
