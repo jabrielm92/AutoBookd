@@ -544,7 +544,6 @@ TARGET BUSINESS:
 - Industry: {lead.get('category')}
 - Location: {lead.get('city')}, {lead.get('state')}
 - Website: {lead.get('website', 'N/A')}
-- Rating: {lead.get('rating', 'N/A')} ({lead.get('review_count', 0)} reviews)
 
 RESEARCH INSIGHTS:
 - Specific Pain Point: {research.get('pain_point')}
@@ -552,6 +551,7 @@ RESEARCH INSIGHTS:
 - Their Services: {research.get('services')}
 - Target Customer: {research.get('target_customer', 'local customers')}
 - Personalized Opener: {research.get('opener')}
+- Unique Angle: {research.get('unique_angle', '')}
 {product_context}
 {custom_guidelines}
 {global_guidelines}
@@ -563,8 +563,13 @@ SENDER:
 SEQUENCE REQUIREMENTS:
 
 EMAIL 1 (Day 0 - Personal Opener):
-- Start with a specific observation about THEIR business (not generic)
-- Reference something unique: their reviews, services, or local market
+- Start with a specific observation about THEIR business using ONE of these angles:
+  * A specific service they offer (not generic category)
+  * Their geographic focus or service area
+  * Their specialization or niche
+  * Years in business or expertise
+  * The type of customer they serve
+  * A problem-first approach
 - Connect their pain point to your solution naturally
 - Soft CTA: "Would it make sense to chat?"
 - Max 80 words
@@ -589,12 +594,14 @@ EMAIL 4 (Day {delays[3]} - Breakup):
 
 CRITICAL RULES:
 - NO typos or grammatical errors
+- NEVER mention ratings, reviews, or star counts
 - NO generic phrases like "I noticed your website" or "I came across your business"
 - Each email MUST feel unique to THIS specific business
 - Sound like a helpful human, not a salesperson
 - Vary sentence structure and length
 - Use their actual business name naturally
 - Match the tone to a {lead.get('category')} business owner
+- Each opener should be different - don't follow a formula
 
 OUTPUT valid JSON array:
 [
