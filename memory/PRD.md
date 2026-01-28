@@ -113,11 +113,19 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] **Lead Selection dropdown** - Link to existing lead (auto-fills email/name)
 - [x] **File attachments** - Upload PDFs, images (max 5MB per file)
 - [x] Backend endpoint: POST /api/conversations/manual
+- [x] **Auto-creates new lead** when no existing lead selected
 - [x] Creates conversation records with proper tenant_id
 - [x] If linked to lead, appends to existing conversation
 - [x] Uses tenant's Resend API key for sending with attachments
 - [x] Reply-To header configured if reply_domain is set
 - [x] Auto-Reply integration works for manual emails
+- [x] **Conversation model updated** to include recipient_email, recipient_name, is_manual fields
+- [x] **Manual conversations now display correctly** in conversation list
+
+### Lead Filters ✅ (Updated Jan 28, 2025)
+- [x] Added "No Email" filter (33 leads need email addresses)
+- [x] All pipeline stage filters working: needs_enrichment, needs_research, ready_for_outreach, in_sequence, no_email
+- [x] All status filters working: scraped, uncontacted, outreach_sent, engaged, qualified, etc.
 
 ### Admin Dashboard ✅ (NEW)
 - [x] Overview tab with recent signups
