@@ -190,7 +190,8 @@ class SequenceManager:
         lead_id: str,
         emails: List[Dict[str, Any]],
         from_email: str,
-        from_name: str
+        from_name: str,
+        tenant_id: str = None
     ) -> str:
         """
         Create an email sequence for a lead
@@ -202,6 +203,7 @@ class SequenceManager:
         sequence = {
             "id": sequence_id,
             "lead_id": lead_id,
+            "tenant_id": tenant_id,
             "status": "active",
             "current_step": 0,
             "emails": emails,
