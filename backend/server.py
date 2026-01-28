@@ -1424,15 +1424,17 @@ async def create_lead(lead_data: LeadCreate, user: dict = Depends(get_current_us
     return lead
 
 @api_router.post("/leads/bulk", response_model=Dict[str, Any])
-async def bulk_create_leads(data: LeadBulkCreate):
+async def bulk_create_leads(data: LeadBulkCreate, user: dict = Depends(get_current_user)):
+    tenant_id = user["id"]
     created = 0
     skipped = 0
     
     for lead_data in data.leads:
-        # Check for duplicates
+        # Check for duplicates within tenant
         existing = await db.leads.find_one({
             "business_name": lead_data.business_name,
-            "city": lead_data.city
+            "city": lead_data.city,
+            "tenant_id": tenant_id
         })
         if existing:
             skipped += 1
@@ -1446,6 +1448,7 @@ async def bulk_create_leads(data: LeadBulkCreate):
         doc = lead.model_dump()
         doc['created_at'] = doc['created_at'].isoformat()
         doc['updated_at'] = doc['updated_at'].isoformat()
+        doc['tenant_id'] = tenant_id
         
         await db.leads.insert_one(doc)
         created += 1
@@ -1453,7 +1456,7 @@ async def bulk_create_leads(data: LeadBulkCreate):
         # Update niche stats
         if lead_data.niche_id:
             await db.niches.update_one(
-                {"id": lead_data.niche_id},
+                {"id": lead_data.niche_id, "tenant_id": tenant_id},
                 {"$inc": {"leads_scraped": 1}}
             )
     
