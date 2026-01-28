@@ -401,7 +401,15 @@ export default function Conversations() {
         {/* Desktop: Conversation Detail */}
         <Card className="lg:col-span-2 hidden lg:flex lg:flex-col">
           {selectedConv ? (
-            <ConversationDetail conv={selectedConv} />
+            <ConversationDetail 
+              conv={selectedConv} 
+              lead={getLeadForConv(selectedConv)}
+              inModal={false}
+              newMessage={newMessage}
+              setNewMessage={setNewMessage}
+              onSendMessage={handleSendMessage}
+              onEditEmail={handleEditEmail}
+            />
           ) : (
             <CardContent className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
@@ -426,7 +434,15 @@ export default function Conversations() {
             </div>
           </DialogHeader>
           {selectedConv && (
-            <ConversationDetail conv={selectedConv} inModal={true} />
+            <ConversationDetail 
+              conv={selectedConv} 
+              lead={getLeadForConv(selectedConv)}
+              inModal={true}
+              newMessage={newMessage}
+              setNewMessage={setNewMessage}
+              onSendMessage={handleSendMessage}
+              onEditEmail={handleEditEmail}
+            />
           )}
         </DialogContent>
       </Dialog>
