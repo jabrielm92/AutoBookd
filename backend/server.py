@@ -1180,7 +1180,8 @@ async def process_email_reply(payload: Dict[str, Any]):
         )
     
     # Record reply in conversation
-    conversation = await db.conversations.find_one({"lead_id": lead["id"]}, {"_id": 0})
+    tenant_id = lead.get("tenant_id")
+    conversation = await db.conversations.find_one({"lead_id": lead["id"], "tenant_id": tenant_id}, {"_id": 0})
     reply_msg = {
         "id": str(uuid.uuid4()),
         "content": f"Subject: {subject}\n\n{body}",
@@ -1192,12 +1193,26 @@ async def process_email_reply(payload: Dict[str, Any]):
     
     if conversation:
         await db.conversations.update_one(
-            {"lead_id": lead["id"]},
+            {"lead_id": lead["id"], "tenant_id": tenant_id},
             {
                 "$push": {"messages": reply_msg},
                 "$set": {"current_sentiment": 1.0 if intent == "positive" else (-1.0 if intent == "negative" else 0.0)}
             }
         )
+    else:
+        # Create new conversation if it doesn't exist
+        new_conv = {
+            "id": str(uuid.uuid4()),
+            "lead_id": lead["id"],
+            "tenant_id": tenant_id,
+            "channel": "email",
+            "messages": [reply_msg],
+            "sentiment_trajectory": [],
+            "current_sentiment": 1.0 if intent == "positive" else (-1.0 if intent == "negative" else 0.0),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.conversations.insert_one(new_conv)
     
     # If positive and action is send_calendar, trigger auto-booking
     response = {
