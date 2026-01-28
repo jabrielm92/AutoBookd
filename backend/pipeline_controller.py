@@ -326,11 +326,25 @@ class PipelineController:
                                 email_source = "website_scrape"
                                 await self._log_activity("enrich", f"Found email on website: {email_data['email']}", "success", lead.get('business_name'))
                             
-                            # Also save phone if found
+                            # Save scraped company info for email personalization
+                            scraped_data_update = {}
+                            if website_data.get("company_info"):
+                                scraped_data_update["scraped_company_info"] = website_data["company_info"]
+                            if website_data.get("title"):
+                                scraped_data_update["website_title"] = website_data["title"]
+                            if website_data.get("meta_description"):
+                                scraped_data_update["website_description"] = website_data["meta_description"]
+                            if website_data.get("about"):
+                                scraped_data_update["about_page"] = website_data["about"][:2000]  # Limit size
+                            if website_data.get("services"):
+                                scraped_data_update["services_page"] = website_data["services"][:2000]
                             if website_data.get("phone_found") and not lead.get("phone"):
+                                scraped_data_update["phone"] = website_data["phone_found"]
+                            
+                            if scraped_data_update:
                                 await self.db.leads.update_one(
                                     {"id": lead["id"]},
-                                    {"$set": {"phone": website_data["phone_found"]}}
+                                    {"$set": scraped_data_update}
                                 )
                         except Exception as e:
                             logger.debug(f"Website scrape error: {e}")
