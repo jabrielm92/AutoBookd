@@ -1892,6 +1892,97 @@ async def send_draft_email(lead_id: str, data: Dict[str, Any], user: dict = Depe
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
 
+class ManualEmailCreate(BaseModel):
+    to_email: str
+    subject: str
+    body: str
+    business_name: Optional[str] = None
+
+@api_router.post("/conversations/manual")
+async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_current_user)):
+    """Send a new email to any recipient (manual composition)"""
+    tenant_id = user["id"]
+    
+    # Get config for email settings
+    config = await db.system_config.find_one({"tenant_id": tenant_id}, {"_id": 0})
+    if not config:
+        raise HTTPException(status_code=400, detail="Please configure email settings first")
+    
+    resend_key = config.get("resend_api_key")
+    from_email = config.get("from_email")
+    sender_name = config.get("sender_name", "Team")
+    reply_domain = config.get("reply_domain")
+    
+    if not resend_key or not from_email:
+        raise HTTPException(status_code=400, detail="Resend API key and From Email required in settings")
+    
+    # Build reply-to header if reply domain is configured
+    reply_to = None
+    unique_id = uuid.uuid4().hex[:12]
+    if reply_domain:
+        reply_to = f"reply-{unique_id}@{reply_domain}"
+    
+    # Send via Resend
+    import httpx
+    try:
+        email_payload = {
+            "from": f"{sender_name} <{from_email}>",
+            "to": [data.to_email],
+            "subject": data.subject,
+            "text": data.body
+        }
+        if reply_to:
+            email_payload["reply_to"] = reply_to
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}"},
+                json=email_payload
+            )
+            
+            if response.status_code not in [200, 201]:
+                raise HTTPException(status_code=500, detail=f"Email send failed: {response.text}")
+        
+        # Create a new conversation record
+        conv_id = f"conv_{uuid.uuid4().hex[:12]}"
+        business_name = data.business_name or data.to_email.split('@')[0].title()
+        
+        message = {
+            "id": f"msg_{uuid.uuid4().hex[:8]}",
+            "direction": "outbound",
+            "channel": "email",
+            "content": f"Subject: {data.subject}\n\n{data.body}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "sent"
+        }
+        
+        new_conv = {
+            "id": conv_id,
+            "lead_id": f"manual_{unique_id}",
+            "tenant_id": tenant_id,
+            "channel": "email",
+            "recipient_email": data.to_email,
+            "recipient_name": business_name,
+            "reply_address": reply_to,
+            "messages": [message],
+            "sentiment_trajectory": [],
+            "current_sentiment": 0.0,
+            "reply_count": 0,
+            "is_manual": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.conversations.insert_one(new_conv)
+        
+        return {"status": "sent", "message": "Email sent successfully", "conversation_id": conv_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
 # ----- Niches -----
 @api_router.post("/niches", response_model=Niche)
 async def create_niche(niche_data: NicheCreate, user: dict = Depends(get_current_user)):

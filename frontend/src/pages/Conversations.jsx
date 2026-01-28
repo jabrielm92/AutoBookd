@@ -9,7 +9,8 @@ import {
   Phone,
   Search,
   X,
-  Edit3
+  Edit3,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,8 @@ export default function Conversations() {
   const [editEmailOpen, setEditEmailOpen] = useState(false);
   const [editingEmail, setEditingEmail] = useState({ subject: '', body: '', leadId: '' });
   const [sending, setSending] = useState(false);
+  const [newEmailOpen, setNewEmailOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState({ to: '', subject: '', body: '', businessName: '' });
 
   useEffect(() => {
     fetchData();
