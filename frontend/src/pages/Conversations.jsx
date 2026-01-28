@@ -62,8 +62,17 @@ export default function Conversations() {
     }
   };
 
-  const getLeadForConv = (leadId) => {
-    return leads.find(l => l.id === leadId);
+  const getLeadForConv = (conv) => {
+    // Handle manual conversations that don't have a lead
+    if (conv.is_manual || conv.lead_id?.startsWith('manual_')) {
+      return {
+        id: conv.lead_id,
+        business_name: conv.recipient_name || 'Manual Email',
+        email: conv.recipient_email,
+        category: 'Manual'
+      };
+    }
+    return leads.find(l => l.id === conv.lead_id);
   };
 
   const handleSendMessage = async () => {
