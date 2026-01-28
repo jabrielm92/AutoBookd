@@ -384,7 +384,9 @@ class EmailSequenceGenerator:
         elif certifications:
             personalized_line = f"Your {certifications} credentials show your commitment to quality. "
         elif services:
-            personalized_line = f"Your {services} services are clearly in demand in {lead.get('city', 'your area')}. "
+            personalized_line = f"Your focus on {services} is exactly what businesses in {lead.get('city', 'your area')} need. "
+        elif lead.get('category'):
+            personalized_line = f"Running a {lead.get('category').lower()} business in {lead.get('city', 'a competitive market')} takes real dedication. "
         
         sequence = [
             # Email 1: Personal opener
