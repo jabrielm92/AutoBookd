@@ -843,46 +843,65 @@ async def start_system(
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
     
+    # CRITICAL: Clear old scrape config and set new one from discovery set
     if discovery_set_id:
         discovery_set = await db.discovery_sets.find_one({"id": discovery_set_id, "tenant_id": tenant_id}, {"_id": 0})
         if not discovery_set:
             raise HTTPException(status_code=404, detail="Discovery set not found")
-        # Also update scrape config with discovery set settings
-        await db.scrape_config.update_one(
-            {"tenant_id": tenant_id},
-            {"$set": {
-                "keywords": discovery_set.get("keywords", []),
-                "locations": discovery_set.get("locations", []),
-                "min_reviews": discovery_set.get("min_reviews", 5),
-                "max_per_search": discovery_set.get("max_per_search", 20),
-                "daily_limit": discovery_set.get("daily_limit", 50)
-            }},
-            upsert=True
-        )
+        
+        # Delete old config first to ensure clean state
+        await db.scrape_config.delete_many({"tenant_id": tenant_id})
+        
+        # Insert fresh scrape config from discovery set
+        await db.scrape_config.insert_one({
+            "tenant_id": tenant_id,
+            "keywords": discovery_set.get("keywords", []),
+            "locations": discovery_set.get("locations", []),
+            "min_reviews": discovery_set.get("min_reviews", 5),
+            "max_per_search": discovery_set.get("max_per_search", 20),
+            "daily_limit": discovery_set.get("daily_limit", 50),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        })
+    else:
+        # No discovery set - ensure scrape config exists with defaults
+        existing = await db.scrape_config.find_one({"tenant_id": tenant_id})
+        if not existing:
+            await db.scrape_config.insert_one({
+                "tenant_id": tenant_id,
+                "keywords": [],
+                "locations": [],
+                "min_reviews": 5,
+                "max_per_search": 20,
+                "daily_limit": 50,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            })
     
     # Convert auto_send_emails to test_mode (inverted logic)
     test_mode = not auto_send_emails
+    
+    # Mark this tenant's config as running (and others as not running)
+    await db.system_config.update_many(
+        {"is_running": True},
+        {"$set": {"is_running": False}}
+    )
     
     # Update config with selections
     await db.system_config.update_one(
         {"tenant_id": tenant_id},
         {"$set": {
+            "tenant_id": tenant_id,
             "test_mode": test_mode,
             "auto_send_emails": auto_send_emails,
             "active_product_id": product_id,
-            "active_discovery_set_id": discovery_set_id
+            "active_discovery_set_id": discovery_set_id,
+            "is_running": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
         }},
         upsert=True
     )
     
     # Start pipeline in background
     background_tasks.add_task(pipeline.start)
-    
-    await db.system_config.update_one(
-        {"tenant_id": tenant_id},
-        {"$set": {"is_running": True, "updated_at": datetime.now(timezone.utc).isoformat()}},
-        upsert=True
-    )
     
     mode_msg = " (Drafts Only - Emails Not Sent)" if not auto_send_emails else ""
     return {
