@@ -574,8 +574,10 @@ class PipelineController:
                         upsert=True
                     )
                 
-                # Create new sequences for ready leads
+                # Create new sequences for ready leads (tenant-filtered)
+                tenant_id = config.get("tenant_id")
                 ready_leads = await self.db.leads.find({
+                    "tenant_id": tenant_id,
                     "pipeline_stage": "ready_for_outreach",
                     "sequence_id": {"$exists": False}
                 }).limit(5).to_list(5)

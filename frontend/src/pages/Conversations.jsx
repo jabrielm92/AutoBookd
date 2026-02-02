@@ -191,11 +191,16 @@ export default function Conversations() {
     if (!newMessage.trim() || !selectedConv) return;
 
     try {
-      await createConversation({
-        lead_id: selectedConv.lead_id,
-        content: newMessage,
-        direction: 'outbound',
-        channel: 'email'
+      // Get original subject from first message for "Re:" prefix
+      const firstMsg = selectedConv.messages?.[0]?.content || '';
+      const subjectMatch = firstMsg.match(/^Subject:\s*(.+?)(?:\n|$)/);
+      const originalSubject = subjectMatch ? subjectMatch[1].trim() : '';
+      const replySubject = originalSubject.startsWith('Re:') ? originalSubject : `Re: ${originalSubject || 'Your inquiry'}`;
+      
+      // Send email directly via the send endpoint
+      await api.post(`/conversations/${selectedConv.lead_id}/send`, {
+        subject: replySubject,
+        body: newMessage
       });
       
       // Refresh conversations
@@ -205,9 +210,9 @@ export default function Conversations() {
       if (updated) setSelectedConv(updated);
       
       setNewMessage('');
-      toast.success('Message sent');
+      toast.success('Email sent');
     } catch (error) {
-      toast.error('Failed to send message');
+      toast.error(error.response?.data?.detail || 'Failed to send email');
     }
   };
 
