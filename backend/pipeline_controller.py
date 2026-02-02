@@ -281,8 +281,10 @@ class PipelineController:
                 email_finder = await self._get_email_finder()
                 provider_name = "Apollo" if isinstance(email_finder, ApolloEmailFinder) else "Hunter"
                 
-                # Get leads needing enrichment
+                # Get leads needing enrichment (tenant-filtered)
+                tenant_id = config.get("tenant_id")
                 leads = await self.db.leads.find({
+                    "tenant_id": tenant_id,
                     "pipeline_stage": "needs_enrichment",
                     "email": {"$exists": False}
                 }).limit(10).to_list(10)
@@ -419,8 +421,10 @@ class PipelineController:
                 
                 self.ai_engine.api_key = config["openai_api_key"]
                 
-                # Get leads needing research
+                # Get leads needing research (tenant-filtered)
+                tenant_id = config.get("tenant_id")
                 leads = await self.db.leads.find({
+                    "tenant_id": tenant_id,
                     "pipeline_stage": "needs_research",
                     "email": {"$exists": True}
                 }).limit(5).to_list(5)
