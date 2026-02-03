@@ -41,7 +41,7 @@ export default function TermsPage() {
 
           <h2>4. Subscription and Payment</h2>
           <p>
-            AutoBookd offers a subscription-based service at $29.99/month with a 3-day free trial. 
+            AutoBookd offers a subscription-based service at $29.99/month with a 24-hour free trial. 
             By subscribing, you authorize us to charge your payment method on a recurring monthly basis. 
             You may cancel at any time, and your access will continue until the end of your billing period.
           </p>

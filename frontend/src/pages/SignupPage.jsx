@@ -62,7 +62,7 @@ export default function SignupPage() {
         {/* Card */}
         <div className="bg-slate-900/80 backdrop-blur-lg rounded-2xl border border-red-900/20 p-8">
           <h1 className="text-2xl font-bold text-white text-center mb-2">Create your account</h1>
-          <p className="text-slate-400 text-center mb-8">Start your 3-day free trial</p>
+          <p className="text-slate-400 text-center mb-8">Start your 24-hour free trial</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
