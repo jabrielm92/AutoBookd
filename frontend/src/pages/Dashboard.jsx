@@ -174,7 +174,7 @@ export default function Dashboard() {
 
         <Card 
           className="metric-card"
-          onClick={() => navigate('/leads?stage=in_sequence')}
+          onClick={() => navigate('/conversations')}
           data-testid="stat-contacted"
         >
           <CardContent className="pt-6">
