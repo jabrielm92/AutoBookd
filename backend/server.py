@@ -2010,6 +2010,11 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
             business_name = lead.get("business_name", data.to_email.split('@')[0].title())
             final_lead_id = data.lead_id
             is_manual = False
+            # Update existing lead status to outreach_sent
+            await db.leads.update_one(
+                {"id": data.lead_id, "tenant_id": tenant_id},
+                {"$set": {"status": "outreach_sent", "pipeline_stage": "in_sequence", "last_contacted_at": datetime.now(timezone.utc).isoformat()}}
+            )
         else:
             # Create a new lead for this manual email
             business_name = data.business_name or data.to_email.split('@')[0].title()
