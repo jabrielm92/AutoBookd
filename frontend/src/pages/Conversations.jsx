@@ -176,6 +176,45 @@ export default function Conversations() {
     }
   };
 
+  const handleDeleteConversation = async (convId) => {
+    if (!confirm('Delete this conversation?')) return;
+    try {
+      await api.delete(`/conversations/${convId}`);
+      toast.success('Conversation deleted');
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      if (selectedConv?.id === convId) {
+        setSelectedConv(null);
+      }
+    } catch (error) {
+      toast.error('Failed to delete conversation');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedForDelete.length === 0) return;
+    if (!confirm(`Delete ${selectedForDelete.length} conversation(s)?`)) return;
+    try {
+      await api.post('/conversations/bulk-delete', { ids: selectedForDelete });
+      toast.success(`${selectedForDelete.length} conversation(s) deleted`);
+      setConversations(prev => prev.filter(c => !selectedForDelete.includes(c.id)));
+      if (selectedForDelete.includes(selectedConv?.id)) {
+        setSelectedConv(null);
+      }
+      setSelectedForDelete([]);
+      setDeleteMode(false);
+    } catch (error) {
+      toast.error('Failed to delete conversations');
+    }
+  };
+
+  const toggleSelectForDelete = (convId) => {
+    setSelectedForDelete(prev => 
+      prev.includes(convId) 
+        ? prev.filter(id => id !== convId)
+        : [...prev, convId]
+    );
+  };
+
   const getLeadForConv = (conv) => {
     // Handle manual conversations that don't have a lead
     if (conv.is_manual || conv.lead_id?.startsWith('manual_')) {
