@@ -942,7 +942,7 @@ async def get_pipeline_activity(limit: int = 20, user: dict = Depends(get_curren
         "scraped": await db.leads.count_documents(tenant_filter),
         "enriched": await db.leads.count_documents({**tenant_filter, "email": {"$exists": True, "$ne": None}}),
         "researched": await db.leads.count_documents({**tenant_filter, "research": {"$exists": True}}),
-        "in_sequence": await db.leads.count_documents({**tenant_filter, "pipeline_stage": "in_sequence"}),
+        "in_sequence": await db.leads.count_documents({**tenant_filter, "status": "outreach_sent"}),
         "emails_sent": await db.sequences.count_documents({**tenant_filter, "current_step": {"$gt": 0}})
     }
     
