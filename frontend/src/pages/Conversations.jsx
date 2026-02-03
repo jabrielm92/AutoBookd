@@ -138,6 +138,7 @@ const ConversationDetail = ({ conv, lead, inModal, newMessage, setNewMessage, on
 };
 
 export default function Conversations() {
+  const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [leads, setLeads] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
@@ -157,6 +158,24 @@ export default function Conversations() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Handle ?new=leadId param to start conversation for specific lead
+  useEffect(() => {
+    const newLeadId = searchParams.get('new');
+    if (newLeadId && leads.length > 0) {
+      const lead = leads.find(l => l.id === newLeadId);
+      if (lead && lead.email) {
+        setNewEmail({
+          to: lead.email,
+          subject: '',
+          body: '',
+          businessName: lead.business_name || '',
+          leadId: lead.id
+        });
+        setNewEmailOpen(true);
+      }
+    }
+  }, [searchParams, leads]);
 
   const fetchData = async () => {
     try {
