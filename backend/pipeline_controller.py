@@ -629,8 +629,9 @@ class PipelineController:
                     
                     # Get product info if available
                     product = None
+                    tenant_id = config.get("tenant_id")
                     if config.get("active_product_id"):
-                        product = await self.db.products.find_one({"id": config.get("active_product_id")}, {"_id": 0})
+                        product = await self.db.products.find_one({"id": config.get("active_product_id"), "tenant_id": tenant_id}, {"_id": 0})
                     
                     # Set OpenAI API key from config for AI sequence generation
                     openai_key = config.get("openai_api_key")

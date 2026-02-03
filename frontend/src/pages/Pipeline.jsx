@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const pipelineStages = [
+  { id: 'scraped', label: 'Scraped', icon: Users, color: 'bg-slate-500', textColor: 'text-slate-600 dark:text-slate-400' },
   { id: 'uncontacted', label: 'Uncontacted', icon: Users, color: 'bg-gray-500', textColor: 'text-gray-600 dark:text-gray-400' },
   { id: 'outreach_sent', label: 'Outreach Sent', icon: Mail, color: 'bg-blue-500', textColor: 'text-blue-600 dark:text-blue-400' },
   { id: 'engaged', label: 'Engaged', icon: MessageSquare, color: 'bg-amber-500', textColor: 'text-amber-600 dark:text-amber-400' },

@@ -390,8 +390,8 @@ export default function Conversations() {
 
   const filteredConversations = conversations.filter(conv => {
     const lead = getLeadForConv(conv);
-    if (!lead) return false;
-    return lead.business_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const name = lead?.business_name || conv.recipient_name || 'Unknown';
+    return name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   if (loading) {
