@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { useOutletContext, useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Upload, 
@@ -19,7 +19,8 @@ import {
   FileSpreadsheet,
   Clock,
   X,
-  Download
+  Download,
+  MessageSquare
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
