@@ -583,8 +583,14 @@ class PipelineController:
                     await asyncio.sleep(3600)
                     continue
                 
-                # Process due sequences first
-                sequence_stats = await self.sequence_manager.process_due_sequences(test_mode=test_mode)
+                # Process due sequences first (tenant-filtered, current run only)
+                tenant_id = config.get("tenant_id")
+                pipeline_started = config.get("pipeline_started_at")
+                sequence_stats = await self.sequence_manager.process_due_sequences(
+                    test_mode=test_mode,
+                    tenant_id=tenant_id,
+                    pipeline_started_at=pipeline_started
+                )
                 
                 if sequence_stats["sent"] > 0:
                     await self._log_activity("sequence", f"Sent {sequence_stats['sent']} follow-up emails", "success")
