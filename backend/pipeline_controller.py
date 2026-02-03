@@ -281,13 +281,20 @@ class PipelineController:
                 email_finder = await self._get_email_finder()
                 provider_name = "Apollo" if isinstance(email_finder, ApolloEmailFinder) else "Hunter"
                 
-                # Get leads needing enrichment (tenant-filtered)
+                # Get leads needing enrichment (tenant-filtered, current run only)
                 tenant_id = config.get("tenant_id")
-                leads = await self.db.leads.find({
+                pipeline_started = config.get("pipeline_started_at")
+                
+                query = {
                     "tenant_id": tenant_id,
                     "pipeline_stage": "needs_enrichment",
                     "email": {"$exists": False}
-                }).limit(10).to_list(10)
+                }
+                # Only process leads from current pipeline run
+                if pipeline_started:
+                    query["created_at"] = {"$gte": pipeline_started}
+                
+                leads = await self.db.leads.find(query).limit(10).to_list(10)
                 
                 if leads:
                     await self._log_activity("enrich", f"Processing {len(leads)} leads", "info")
@@ -421,13 +428,20 @@ class PipelineController:
                 
                 self.ai_engine.api_key = config["openai_api_key"]
                 
-                # Get leads needing research (tenant-filtered)
+                # Get leads needing research (tenant-filtered, current run only)
                 tenant_id = config.get("tenant_id")
-                leads = await self.db.leads.find({
+                pipeline_started = config.get("pipeline_started_at")
+                
+                query = {
                     "tenant_id": tenant_id,
                     "pipeline_stage": "needs_research",
                     "email": {"$exists": True}
-                }).limit(5).to_list(5)
+                }
+                # Only process leads from current pipeline run
+                if pipeline_started:
+                    query["created_at"] = {"$gte": pipeline_started}
+                
+                leads = await self.db.leads.find(query).limit(5).to_list(5)
                 
                 if leads:
                     await self._log_activity("research", f"Researching {len(leads)} leads with AI", "info")
@@ -578,13 +592,20 @@ class PipelineController:
                         upsert=True
                     )
                 
-                # Create new sequences for ready leads (tenant-filtered)
+                # Create new sequences for ready leads (tenant-filtered, current run only)
                 tenant_id = config.get("tenant_id")
-                ready_leads = await self.db.leads.find({
+                pipeline_started = config.get("pipeline_started_at")
+                
+                query = {
                     "tenant_id": tenant_id,
                     "pipeline_stage": "ready_for_outreach",
                     "sequence_id": {"$exists": False}
-                }).limit(5).to_list(5)
+                }
+                # Only process leads from current pipeline run
+                if pipeline_started:
+                    query["created_at"] = {"$gte": pipeline_started}
+                
+                ready_leads = await self.db.leads.find(query).limit(5).to_list(5)
                 
                 if ready_leads:
                     await self._log_activity("sequence", f"Creating sequences for {len(ready_leads)} leads", "info")
