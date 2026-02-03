@@ -530,8 +530,6 @@ PRODUCT-SPECIFIC GUIDELINES:
         
         # NOTE: Calendar link is now sent AFTER positive reply, not in initial sequence
         calendar_context = ""
-        # if calendar_link:
-        #     calendar_context = f"\nInclude this booking link in Email 1: {calendar_link}"
         
         # Calculate delays based on follow_up_days
         delays = [0, follow_up_days, follow_up_days * 2, follow_up_days * 3]
@@ -557,50 +555,20 @@ RESEARCH INSIGHTS:
 SENDER:
 - Name: {sender_name}
 - Company: {sender_company}
-{calendar_context}
 
-SEQUENCE REQUIREMENTS:
+SEQUENCE STRUCTURE:
+- Email 1 (Day 0): Personal opener connecting their pain point to your product/service
+- Email 2 (Day {delays[1]}): Short follow-up, ask about their current process
+- Email 3 (Day {delays[2]}): Value-focused, mention specific benefits of your product
+- Email 4 (Day {delays[3]}): Polite breakup, offer to close the loop
 
-EMAIL 1 (Day 0 - Personal Opener):
-- Start with a specific observation about THEIR business using ONE of these angles:
-  * A specific service they offer (not generic category)
-  * Their geographic focus or service area
-  * Their specialization or niche
-  * Years in business or expertise
-  * The type of customer they serve
-  * A problem-first approach
-- Connect their pain point to your solution naturally
-- Soft CTA: "Would it make sense to chat?"
-- Max 80 words
-
-EMAIL 2 (Day {delays[1]} - Pattern Interrupt):
-- Very short (under 40 words)
-- Ask ONE specific question about their current process
-- No links, no pitch
-- Casual tone
-
-EMAIL 3 (Day {delays[2]} - Value & Proof):
-- Lead with a specific result or case study
-- Make it relevant to their industry ({lead.get('category')})
-- Bridge to how this applies to them
-- Max 70 words
-
-EMAIL 4 (Day {delays[3]} - Breakup):
-- Acknowledge the busy reality
-- Offer a clear "close the loop" out
-- Leave door open without being pushy
-- Max 50 words
-
-CRITICAL RULES:
-- NO typos or grammatical errors
-- NEVER mention ratings, reviews, or star counts
-- NO generic phrases like "I noticed your website" or "I came across your business"
-- Each email MUST feel unique to THIS specific business
+CRITICAL REQUIREMENTS:
+- YOU MUST mention the product/service name and its specific features/benefits
+- Each email must reference the PRODUCT-SPECIFIC GUIDELINES above if provided
+- Personalize each email to THIS specific business
 - Sound like a helpful human, not a salesperson
-- Vary sentence structure and length
 - Use their actual business name naturally
-- Match the tone to a {lead.get('category')} business owner
-- Each opener should be different - don't follow a formula
+- NO generic templates - make each email unique
 
 OUTPUT valid JSON array:
 [
