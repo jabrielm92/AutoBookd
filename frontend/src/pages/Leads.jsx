@@ -79,6 +79,7 @@ const pipelineLabels = {
 };
 
 export default function Leads() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
