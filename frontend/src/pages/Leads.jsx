@@ -626,6 +626,12 @@ export default function Leads() {
                           <Eye className="w-4 h-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
+                        {lead.email && (
+                          <DropdownMenuItem onClick={() => navigate(`/conversations?new=${lead.id}`)}>
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Start Conversation
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => handleUpdateStatus(lead.id, 'qualified')}>
                           <CheckSquare className="w-4 h-4 mr-2" />
                           Mark Qualified
