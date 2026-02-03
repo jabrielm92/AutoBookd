@@ -151,6 +151,8 @@ export default function Conversations() {
   const [newEmailOpen, setNewEmailOpen] = useState(false);
   const [newEmail, setNewEmail] = useState({ to: '', subject: '', body: '', businessName: '', leadId: '' });
   const [attachments, setAttachments] = useState([]);
+  const [selectedForDelete, setSelectedForDelete] = useState([]);
+  const [deleteMode, setDeleteMode] = useState(false);
 
   useEffect(() => {
     fetchData();
