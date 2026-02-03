@@ -413,14 +413,44 @@ export default function Conversations() {
           <h1 className="text-2xl font-bold">Conversations</h1>
           <p className="text-muted-foreground">{conversations.length} active conversations</p>
         </div>
-        <Button 
-          onClick={() => setNewEmailOpen(true)} 
-          className="bg-red-600 hover:bg-red-700"
-          data-testid="new-conversation-btn"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Conversation
-        </Button>
+        <div className="flex gap-2">
+          {deleteMode ? (
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => { setDeleteMode(false); setSelectedForDelete([]); }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={selectedForDelete.length === 0}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete ({selectedForDelete.length})
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => setDeleteMode(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+              <Button 
+                onClick={() => setNewEmailOpen(true)} 
+                className="bg-red-600 hover:bg-red-700"
+                data-testid="new-conversation-btn"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Conversation
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
