@@ -1846,6 +1846,24 @@ async def get_conversation(lead_id: str, user: dict = Depends(get_current_user))
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conv
 
+@api_router.delete("/conversations/{conv_id}")
+async def delete_conversation(conv_id: str, user: dict = Depends(get_current_user)):
+    """Delete a single conversation"""
+    result = await db.conversations.delete_one({"id": conv_id, "tenant_id": user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"status": "deleted", "id": conv_id}
+
+@api_router.post("/conversations/bulk-delete")
+async def bulk_delete_conversations(data: Dict[str, List[str]], user: dict = Depends(get_current_user)):
+    """Delete multiple conversations"""
+    conv_ids = data.get("ids", [])
+    if not conv_ids:
+        raise HTTPException(status_code=400, detail="No conversation IDs provided")
+    
+    result = await db.conversations.delete_many({"id": {"$in": conv_ids}, "tenant_id": user["id"]})
+    return {"status": "deleted", "count": result.deleted_count}
+
 @api_router.post("/conversations/{lead_id}/send")
 async def send_draft_email(lead_id: str, data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Send or edit and send a draft email from conversation"""
