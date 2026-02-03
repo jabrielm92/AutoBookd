@@ -220,7 +220,7 @@ class SequenceManager:
         
         return sequence_id
     
-    async def process_due_sequences(self, test_mode: bool = False) -> Dict[str, int]:
+    async def process_due_sequences(self, test_mode: bool = False, tenant_id: str = None, pipeline_started_at: str = None) -> Dict[str, int]:
         """
         Process all sequences that have emails due
         
@@ -229,11 +229,22 @@ class SequenceManager:
         """
         now = datetime.now(timezone.utc)
         
-        # Find sequences with emails due
-        due_sequences = await self.db.sequences.find({
+        # Build query with tenant filter
+        query = {
             "status": "active",
             "next_send_at": {"$lte": now.isoformat()}
-        }).to_list(50)
+        }
+        
+        # Filter by tenant if provided
+        if tenant_id:
+            query["tenant_id"] = tenant_id
+        
+        # Only process sequences created in current pipeline run
+        if pipeline_started_at:
+            query["created_at"] = {"$gte": pipeline_started_at}
+        
+        # Find sequences with emails due
+        due_sequences = await self.db.sequences.find(query).to_list(50)
         
         stats = {"processed": 0, "sent": 0, "errors": 0, "test_mode": test_mode}
         
