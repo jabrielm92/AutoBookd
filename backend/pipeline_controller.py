@@ -277,6 +277,9 @@ class PipelineController:
         
         while self.is_running:
             try:
+                # Get config first
+                config = await self._get_config()
+                
                 # Get the configured email finder
                 email_finder = await self._get_email_finder()
                 provider_name = "Apollo" if isinstance(email_finder, ApolloEmailFinder) else "Hunter"
