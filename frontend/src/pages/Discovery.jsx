@@ -609,15 +609,15 @@ export default function Discovery() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-slate-300">Email Guidelines (Optional)</Label>
+                        <Label className="text-slate-300">AI Email Instructions</Label>
+                        <p className="text-xs text-slate-400 mb-1">Tell the AI how to pitch this product. Be specific!</p>
                         <Textarea
                           value={newProduct.email_guidelines}
                           onChange={(e) => setNewProduct({...newProduct, email_guidelines: e.target.value})}
-                          placeholder="Custom instructions for AI email generation:&#10;- Always mention we're local to their area&#10;- Focus on cost savings&#10;- Never mention competitors"
-                          rows={4}
+                          placeholder="Examples:&#10;• Focus on our 24/7 emergency response&#10;• Mention we're locally owned for 15 years&#10;• Emphasize cost savings over competitors&#10;• Reference their Google reviews when relevant&#10;• Highlight our same-day service guarantee"
+                          rows={5}
                           className="bg-slate-800 border-slate-700 text-white"
                         />
-                        <p className="text-xs text-slate-500">These guidelines will be followed by AI when writing emails for this product</p>
                       </div>
                     </div>
                     <DialogFooter>
@@ -654,8 +654,8 @@ export default function Discovery() {
                           </div>
                         )}
                         {product.email_guidelines && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">
-                            Has custom email guidelines
+                          <p className="text-xs text-blue-400 dark:text-blue-300 mt-2">
+                            ✓ Has AI email instructions
                           </p>
                         )}
                       </div>
@@ -804,18 +804,12 @@ export default function Discovery() {
 
               <Separator />
 
-              {/* Custom AI Prompt */}
-              <div className="space-y-3">
-                <Label className="text-blue-600 dark:text-blue-400">Custom AI Instructions</Label>
-                <p className="text-sm text-slate-500">
-                  Provide specific instructions for the AI to follow when writing emails. Be as detailed as you want.
+              {/* Note about product-specific guidelines */}
+              <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                <p className="text-sm text-blue-300">
+                  <strong>Tip:</strong> For product-specific AI instructions (how to pitch your service), add them when creating/editing a Product above. 
+                  The rules on this tab apply globally to all emails.
                 </p>
-                <Textarea
-                  value={emailGuidelines.custom_prompt || ''}
-                  onChange={(e) => setEmailGuidelines({...emailGuidelines, custom_prompt: e.target.value})}
-                  placeholder="e.g., Always mention our 10-year track record. Focus on cost savings. Reference their Google reviews when relevant. Keep subject lines under 6 words..."
-                  className="min-h-[150px]"
-                />
               </div>
             </CardContent>
           </Card>
@@ -859,12 +853,13 @@ export default function Discovery() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-300">Email Guidelines (Optional)</Label>
+                <Label className="text-slate-300">AI Email Instructions</Label>
+                <p className="text-xs text-slate-400 mb-1">Tell the AI how to pitch this product. Be specific!</p>
                 <Textarea
                   value={editingProduct.email_guidelines || ''}
                   onChange={(e) => setEditingProduct({...editingProduct, email_guidelines: e.target.value})}
-                  placeholder="Custom instructions for AI email generation..."
-                  rows={4}
+                  placeholder="Examples:&#10;• Focus on our 24/7 emergency response&#10;• Mention we're locally owned for 15 years&#10;• Emphasize cost savings over competitors"
+                  rows={5}
                   className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
