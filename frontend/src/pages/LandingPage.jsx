@@ -208,9 +208,9 @@ export default function LandingPage() {
             <Zap className="w-4 h-4" />
             AI-Powered Lead Generation & Outreach Automation
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-normal">
             Find Leads. Send Emails.
-            <span className="block bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent pb-2">
               Book Meetings.
             </span>
           </h1>
