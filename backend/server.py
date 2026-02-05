@@ -1395,12 +1395,12 @@ async def import_linkedin_lead(data: Dict[str, Any]):
     score, breakdown = calculate_lead_score(lead.model_dump())
     lead.lead_score = score
     lead.score_breakdown = breakdown
-    lead.status = LeadStatus.SCRAPED
+    lead.stage = LeadStage.SCRAPED
     
     doc = lead.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     doc['updated_at'] = doc['updated_at'].isoformat()
-    doc['pipeline_stage'] = 'needs_enrichment' if not lead.email else 'needs_research'
+    doc['stage'] = 'enriched' if lead.email else 'scraped'
     
     await db.leads.insert_one(doc)
     return {"status": "imported", "lead_id": lead.id, "score": score}
@@ -1880,17 +1880,17 @@ async def create_conversation(message: MessageCreate, user: dict = Depends(get_c
     doc['tenant_id'] = tenant_id
     await db.conversations.insert_one(doc)
     
-    # Update lead status
-    new_status = LeadStatus.OUTREACH_SENT if message.direction == "outbound" else LeadStatus.ENGAGED
-    await db.leads.update_one(
-        {"id": message.lead_id},
-        {"$set": {
-            "status": new_status.value,
-            "last_contacted_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        },
-        "$inc": {"follow_up_count": 1}}
-    )
+    # Update lead stage to contacted if outbound message
+    if message.direction == "outbound":
+        await db.leads.update_one(
+            {"id": message.lead_id},
+            {"$set": {
+                "stage": "contacted",
+                "last_contacted_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$inc": {"follow_up_count": 1, "emails_sent": 1}}
+        )
     
     return conv
 
@@ -2215,10 +2215,10 @@ async def create_booking(booking_data: BookingCreate, user: dict = Depends(get_c
     
     await db.bookings.insert_one(doc)
     
-    # Update lead status
+    # Update lead stage to booked
     await db.leads.update_one(
         {"id": booking_data.lead_id, "tenant_id": tenant_id},
-        {"$set": {"status": LeadStatus.BOOKED.value, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {"stage": "booked", "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     
     # Update niche stats
