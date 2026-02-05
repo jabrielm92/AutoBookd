@@ -334,6 +334,7 @@ export default function Pipeline() {
                       onViewDetails={handleViewDetails}
                       onMarkBooked={handleMarkBooked}
                       onDelete={handleDelete}
+                      onToggleFollowups={handleToggleFollowups}
                     />
                   ))
                 )}
