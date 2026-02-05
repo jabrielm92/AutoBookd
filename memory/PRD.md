@@ -233,11 +233,13 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 ### Core
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| /api/leads | GET | Get leads (tenant filtered) |
+| /api/leads | GET | Get leads (tenant filtered, stage param) |
+| /api/leads/migrate | POST | Migrate leads to new stage system |
+| /api/leads/{id}/mark-booked | POST | Mark lead as booked |
 | /api/system/start | POST | Start pipeline |
-| /api/pipeline/activity | GET | Real-time activity |
+| /api/pipeline/activity | GET | Real-time activity + stage counts |
 | /api/contact | POST | Contact form submission |
-| /api/conversations/manual | POST | Send manual email (NEW) |
+| /api/conversations/manual | POST | Send manual email |
 
 ---
 
