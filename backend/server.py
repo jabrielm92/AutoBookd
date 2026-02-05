@@ -1819,6 +1819,36 @@ async def mark_lead_booked(lead_id: str, user: dict = Depends(get_current_user))
     lead['stage'] = 'booked'
     return lead
 
+@api_router.post("/leads/{lead_id}/toggle-followups", response_model=Lead)
+async def toggle_lead_followups(lead_id: str, pause: bool = True, user: dict = Depends(get_current_user)):
+    """Pause or resume follow-up emails for a specific lead"""
+    tenant_id = user["id"]
+    query = {"id": lead_id, "tenant_id": tenant_id} if not is_admin(user) else {"id": lead_id}
+    lead = await db.leads.find_one(query, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    await db.leads.update_one(
+        query,
+        {"$set": {"pause_followups": pause, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # If pausing, also pause any active sequences
+    if pause:
+        await db.sequences.update_many(
+            {"lead_id": lead_id, "status": "active"},
+            {"$set": {"status": "paused", "paused_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        # Resume paused sequences
+        await db.sequences.update_many(
+            {"lead_id": lead_id, "status": "paused"},
+            {"$set": {"status": "active", "next_send_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    lead['pause_followups'] = pause
+    return lead
+
 @api_router.post("/leads/{lead_id}/rescore", response_model=Lead)
 async def rescore_lead(lead_id: str, user: dict = Depends(get_current_user)):
     tenant_id = user["id"]
