@@ -84,6 +84,7 @@ class Lead(BaseModel):
     emails_sent: int = 0
     emails_total: int = 4
     next_email_at: Optional[str] = None
+    pause_followups: bool = False  # User can pause follow-ups for specific leads
     last_contacted_at: Optional[datetime] = None
     # Reply tracking
     has_replied: bool = False
