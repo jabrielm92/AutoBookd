@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useOutletContext, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Upload, 
@@ -14,8 +14,7 @@ import {
   RefreshCw,
   Trash2,
   Eye,
-  CheckSquare,
-  Square,
+  Bookmark,
   FileSpreadsheet,
   Clock,
   X,
@@ -50,32 +49,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { getLeads, createLead, deleteLead, updateLead, bulkDeleteLeads, importCSV, exportLeadsCSV } from '@/lib/api';
+import { getLeads, createLead, deleteLead, updateLead, bulkDeleteLeads, importCSV, exportLeadsCSV, markLeadBooked } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 
-const statusLabels = {
-  uncontacted: 'Uncontacted',
+// Stage labels for the simplified system
+const stageLabels = {
   scraped: 'Scraped',
-  outreach_sent: 'Outreach Sent',
-  engaged: 'Engaged',
-  discovery: 'Discovery',
-  qualified: 'Qualified',
-  calendar_offered: 'Calendar Offered',
-  booked: 'Booked',
-  stalled: 'Stalled',
-  disqualified: 'Disqualified'
+  enriched: 'Enriched',
+  researched: 'Researched',
+  contacted: 'Contacted',
+  booked: 'Booked'
 };
 
-const pipelineLabels = {
-  needs_enrichment: 'Needs Enrichment',
-  needs_research: 'Needs Research',
-  ready_for_outreach: 'Ready for Outreach',
-  in_sequence: 'In Sequence',
-  replied: 'Replied',
-  booked: 'Booked'
+const stageColors = {
+  scraped: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  enriched: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',
+  researched: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+  contacted: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+  booked: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
 };
 
 export default function Leads() {
@@ -84,7 +77,7 @@ export default function Leads() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState(searchParams.get('stage') || 'all');
+  const [stageFilter, setStageFilter] = useState(searchParams.get('stage') || 'all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedLead, setSelectedLead] = useState(null);
@@ -108,20 +101,15 @@ export default function Leads() {
   useEffect(() => {
     const stage = searchParams.get('stage');
     if (stage) {
-      setStatusFilter(stage);
+      setStageFilter(stage);
     }
   }, [searchParams]);
 
   const fetchLeads = async () => {
     try {
       const params = { limit: 200 };
-      if (statusFilter && statusFilter !== 'all') {
-        const pipelineStages = ['needs_enrichment', 'needs_research', 'ready_for_outreach', 'in_sequence', 'low_score', 'no_email', 'no_domain'];
-        if (pipelineStages.includes(statusFilter)) {
-          params.pipeline_stage = statusFilter;
-        } else {
-          params.status = statusFilter;
-        }
+      if (stageFilter && stageFilter !== 'all') {
+        params.stage = stageFilter;
       }
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
@@ -140,7 +128,7 @@ export default function Leads() {
   useEffect(() => {
     fetchLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, dateFrom, dateTo]);
+  }, [stageFilter, dateFrom, dateTo]);
 
   const handleAddLead = async () => {
     try {
@@ -226,13 +214,13 @@ export default function Leads() {
     }
   };
 
-  const handleUpdateStatus = async (id, status) => {
+  const handleMarkBooked = async (id) => {
     try {
-      await updateLead(id, { status });
-      toast.success('Status updated');
+      await markLeadBooked(id);
+      toast.success('Lead marked as booked');
       fetchLeads();
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error('Failed to update lead');
     }
   };
 
@@ -254,7 +242,7 @@ export default function Leads() {
     }
   };
 
-  // Filter happens client-side on already fetched data (backend already filtered by statusFilter)
+  // Filter happens client-side on already fetched data
   const filteredLeads = leads.filter(lead => {
     if (!searchTerm) return true;
     const matchesSearch = 
@@ -266,15 +254,15 @@ export default function Leads() {
   });
 
   const getScoreBadgeClass = (score) => {
-    if (score >= 80) return 'score-badge-high';
-    if (score >= 60) return 'score-badge-medium';
-    return 'score-badge-low';
+    if (score >= 80) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400';
+    if (score >= 60) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400';
+    return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400';
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-      return format(parseISO(dateStr), 'MMM d, yyyy h:mm a');
+      return format(parseISO(dateStr), 'MMM d, yyyy');
     } catch {
       return '-';
     }
@@ -289,7 +277,6 @@ export default function Leads() {
           <p className="text-slate-500">{leads.length} total leads</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Bulk Delete */}
           {selectedIds.size > 0 && (
             <Button
               variant="destructive"
@@ -303,13 +290,11 @@ export default function Leads() {
             </Button>
           )}
 
-          {/* Export CSV */}
           <Button variant="outline" onClick={handleExportCSV} data-testid="csv-export-btn">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
 
-          {/* CSV Import */}
           <Dialog open={isCSVDialogOpen} onOpenChange={setIsCSVDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="csv-import-btn">
@@ -325,10 +310,10 @@ export default function Leads() {
                 <p className="text-sm text-slate-500">
                   Upload a CSV file with lead data. Supported columns:
                 </p>
-                <div className="bg-slate-50 rounded-lg p-4 text-xs font-mono">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-xs font-mono">
                   business_name, category, city, state, phone, email, website, rating, reviews
                 </div>
-                <div className="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center">
+                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-8 text-center">
                   <FileSpreadsheet className="w-10 h-10 mx-auto mb-3 text-slate-400" />
                   <input
                     ref={fileInputRef}
@@ -350,7 +335,6 @@ export default function Leads() {
             </DialogContent>
           </Dialog>
 
-          {/* Add Lead */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="add-lead-btn">
@@ -453,7 +437,7 @@ export default function Leads() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Simplified */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -465,21 +449,18 @@ export default function Leads() {
             data-testid="search-input"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48" data-testid="status-filter">
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-48" data-testid="stage-filter">
             <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filter" />
+            <SelectValue placeholder="Filter by Stage" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Leads</SelectItem>
-            <SelectItem value="needs_enrichment">Needs Enrichment</SelectItem>
-            <SelectItem value="needs_research">Needs Research</SelectItem>
-            <SelectItem value="ready_for_outreach">Ready for Outreach</SelectItem>
-            <SelectItem value="in_sequence">In Sequence</SelectItem>
-            <SelectItem value="no_email">No Email</SelectItem>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
+            <SelectItem value="scraped">Scraped (no email)</SelectItem>
+            <SelectItem value="enriched">Enriched (has email)</SelectItem>
+            <SelectItem value="researched">Researched (has score)</SelectItem>
+            <SelectItem value="contacted">Contacted</SelectItem>
+            <SelectItem value="booked">Booked</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2">
@@ -516,7 +497,6 @@ export default function Leads() {
         </Button>
       </div>
 
-      {/* Leads - Desktop Table / Mobile Cards */}
       {/* Desktop Table */}
       <Card className="hidden md:block">
         <CardContent className="p-0">
@@ -534,7 +514,7 @@ export default function Leads() {
                 <th>Business</th>
                 <th>Contact</th>
                 <th>Location</th>
-                <th>Added</th>
+                <th>Emails</th>
                 <th>Stage</th>
                 <th className="w-12"></th>
               </tr>
@@ -549,7 +529,10 @@ export default function Leads() {
                     />
                   </td>
                   <td>
-                    <div className={cn("score-badge", getScoreBadgeClass(lead.lead_score))}>
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold",
+                      getScoreBadgeClass(lead.lead_score)
+                    )}>
                       {lead.lead_score || 0}
                     </div>
                   </td>
@@ -601,17 +584,24 @@ export default function Leads() {
                     )}
                   </td>
                   <td>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <Clock className="w-3 h-3" />
-                      {formatDate(lead.created_at)}
+                    <div className="text-sm">
+                      {lead.emails_sent > 0 ? (
+                        <span className="text-blue-600 dark:text-blue-400 font-medium">
+                          {lead.emails_sent}/{lead.emails_total || 4} sent
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">0 sent</span>
+                      )}
+                      {lead.has_replied && (
+                        <span className="ml-2 text-emerald-600 dark:text-emerald-400 text-xs">
+                          Replied ✓
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td>
-                    <Badge className={cn(
-                      "text-xs",
-                      lead.pipeline_stage ? `status-${lead.pipeline_stage.replace(/_/g, '')}` : `status-${lead.status}`
-                    )}>
-                      {pipelineLabels[lead.pipeline_stage] || statusLabels[lead.status] || lead.status}
+                    <Badge className={cn("text-xs", stageColors[lead.stage] || stageColors.scraped)}>
+                      {stageLabels[lead.stage] || 'Scraped'}
                     </Badge>
                   </td>
                   <td>
@@ -627,15 +617,17 @@ export default function Leads() {
                           View Details
                         </DropdownMenuItem>
                         {lead.email && (
-                          <DropdownMenuItem onClick={() => navigate(`/conversations?new=${lead.id}`)}>
+                          <DropdownMenuItem onClick={() => navigate(`/dashboard/conversations?new=${lead.id}`)}>
                             <MessageSquare className="w-4 h-4 mr-2" />
                             Start Conversation
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => handleUpdateStatus(lead.id, 'qualified')}>
-                          <CheckSquare className="w-4 h-4 mr-2" />
-                          Mark Qualified
-                        </DropdownMenuItem>
+                        {lead.stage !== 'booked' && (
+                          <DropdownMenuItem onClick={() => handleMarkBooked(lead.id)}>
+                            <Bookmark className="w-4 h-4 mr-2" />
+                            Mark as Booked
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                           onClick={() => handleDeleteLead(lead.id)}
                           className="text-red-600"
@@ -663,7 +655,7 @@ export default function Leads() {
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
         {filteredLeads.map((lead) => (
-          <Card key={lead.id} className="bg-slate-900 border-slate-800" data-testid={`lead-card-${lead.id}`}>
+          <Card key={lead.id} data-testid={`lead-card-${lead.id}`}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -672,11 +664,14 @@ export default function Leads() {
                     onCheckedChange={() => toggleSelect(lead.id)}
                     className="mt-1"
                   />
-                  <div className={cn("score-badge flex-shrink-0", getScoreBadgeClass(lead.lead_score))}>
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0",
+                    getScoreBadgeClass(lead.lead_score)
+                  )}>
                     {lead.lead_score || 0}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white truncate">{lead.business_name}</p>
+                    <p className="font-medium truncate">{lead.business_name}</p>
                     <p className="text-xs text-slate-400">{lead.category}</p>
                   </div>
                 </div>
@@ -691,10 +686,12 @@ export default function Leads() {
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleUpdateStatus(lead.id, 'qualified')}>
-                      <CheckSquare className="w-4 h-4 mr-2" />
-                      Mark Qualified
-                    </DropdownMenuItem>
+                    {lead.stage !== 'booked' && (
+                      <DropdownMenuItem onClick={() => handleMarkBooked(lead.id)}>
+                        <Bookmark className="w-4 h-4 mr-2" />
+                        Mark as Booked
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)} className="text-red-600">
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete
@@ -710,37 +707,19 @@ export default function Leads() {
                     <span className="truncate">{lead.email}</span>
                   </div>
                 )}
-                {lead.phone && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{lead.phone}</span>
-                  </div>
-                )}
                 <div className="flex items-center gap-2 text-slate-400">
                   <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{lead.city}{lead.state && `, ${lead.state}`}</span>
                 </div>
-                {lead.website && (
-                  <a 
-                    href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-400 hover:underline"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate">{lead.website.replace(/^https?:\/\//, '')}</span>
-                  </a>
-                )}
               </div>
               
               <div className="mt-3 flex items-center justify-between">
-                <Badge className={cn(
-                  "text-xs",
-                  lead.pipeline_stage ? `status-${lead.pipeline_stage.replace(/_/g, '')}` : `status-${lead.status}`
-                )}>
-                  {pipelineLabels[lead.pipeline_stage] || statusLabels[lead.status] || lead.status}
+                <Badge className={cn("text-xs", stageColors[lead.stage] || stageColors.scraped)}>
+                  {stageLabels[lead.stage] || 'Scraped'}
                 </Badge>
-                <span className="text-xs text-slate-500">{formatDate(lead.created_at)}</span>
+                {lead.emails_sent > 0 && (
+                  <span className="text-xs text-blue-400">{lead.emails_sent}/{lead.emails_total || 4} sent</span>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -775,7 +754,6 @@ export default function Leads() {
   );
 }
 
-// Extracted component for lead detail with edit capability
 function LeadDetailContent({ lead, onUpdate, onClose, formatDate, getScoreBadgeClass }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -793,23 +771,14 @@ function LeadDetailContent({ lead, onUpdate, onClose, formatDate, getScoreBadgeC
     setEditing(false);
   };
 
-  const statusLabels = {
-    uncontacted: 'Uncontacted', scraped: 'Scraped', outreach_sent: 'Outreach Sent',
-    engaged: 'Engaged', discovery: 'Discovery', qualified: 'Qualified',
-    calendar_offered: 'Calendar Offered', booked: 'Booked', stalled: 'Stalled', disqualified: 'Disqualified'
-  };
-  const pipelineLabels = {
-    needs_enrichment: 'Needs Enrichment', needs_research: 'Needs Research',
-    ready_for_outreach: 'Ready for Outreach', in_sequence: 'In Sequence',
-    no_email: 'No Email', no_domain: 'No Domain', low_score: 'Low Score'
-  };
-
   return (
     <>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-bold", 
-            lead.lead_score >= 80 ? "bg-emerald-500" : lead.lead_score >= 60 ? "bg-amber-500" : "bg-red-500")}>
+          <div className={cn(
+            "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold", 
+            lead.lead_score >= 80 ? "bg-emerald-500" : lead.lead_score >= 60 ? "bg-amber-500" : "bg-red-500"
+          )}>
             {lead.lead_score}
           </div>
           {editing ? (
@@ -852,46 +821,48 @@ function LeadDetailContent({ lead, onUpdate, onClose, formatDate, getScoreBadgeC
             <Label className="text-slate-500 text-xs">Added</Label>
             <p className="font-medium">{formatDate(lead.created_at)}</p>
           </div>
-          <div className="col-span-2">
+          <div>
             <Label className="text-slate-500 text-xs">Stage</Label>
-            <Badge className={`status-${lead.status} mt-1`}>
-              {pipelineLabels[lead.pipeline_stage] || statusLabels[lead.status]}
+            <Badge className={cn("mt-1", stageColors[lead.stage] || stageColors.scraped)}>
+              {stageLabels[lead.stage] || 'Scraped'}
             </Badge>
+          </div>
+          <div>
+            <Label className="text-slate-500 text-xs">Emails Sent</Label>
+            <p className="font-medium">{lead.emails_sent || 0} / {lead.emails_total || 4}</p>
           </div>
         </div>
         
         {lead.research && (
-          <div className="bg-slate-800/50 rounded-lg p-4">
+          <div className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-4">
             <Label className="text-slate-400 text-xs">AI Research</Label>
-            <p className="text-sm mt-1"><strong>Pain Point:</strong> {lead.research.pain_point}</p>
-            <p className="text-sm mt-1"><strong>Opportunity:</strong> {lead.research.opportunity}</p>
-            <p className="text-sm mt-1"><strong>Opener:</strong> {lead.research.opener}</p>
+            {lead.research.pain_point && <p className="text-sm mt-1"><strong>Pain Point:</strong> {lead.research.pain_point}</p>}
+            {lead.research.opportunity && <p className="text-sm mt-1"><strong>Opportunity:</strong> {lead.research.opportunity}</p>}
+            {lead.research.opener && <p className="text-sm mt-1"><strong>Opener:</strong> {lead.research.opener}</p>}
           </div>
         )}
 
-        <div>
-          <Label className="text-slate-500 text-xs">Score Breakdown</Label>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {Object.keys(lead.score_breakdown || {}).length > 0 ? (
-              Object.entries(lead.score_breakdown).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between p-2 rounded bg-slate-800/50 text-sm">
-                  <span className="text-slate-400 capitalize">{key.replace(/_/g, ' ')}</span>
-                  <span className={cn("font-medium", value > 0 ? "text-emerald-400" : "text-red-400")}>
+        {lead.score_breakdown && Object.keys(lead.score_breakdown).length > 0 && (
+          <div>
+            <Label className="text-slate-500 text-xs">Score Breakdown</Label>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {Object.entries(lead.score_breakdown).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between p-2 rounded bg-slate-100 dark:bg-slate-800/50 text-sm">
+                  <span className="text-slate-500 capitalize">{key.replace(/_/g, ' ')}</span>
+                  <span className={cn("font-medium", value > 0 ? "text-emerald-600" : "text-red-600")}>
                     {value > 0 ? '+' : ''}{value}
                   </span>
                 </div>
-              ))
-            ) : (
-              <p className="text-slate-500 text-sm col-span-2">No score breakdown available</p>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <DialogFooter>
         {editing ? (
           <>
             <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="bg-red-600 hover:bg-red-700">Save Changes</Button>
+            <Button onClick={handleSave}>Save Changes</Button>
           </>
         ) : (
           <Button onClick={() => setEditing(true)} variant="outline">Edit Lead</Button>
