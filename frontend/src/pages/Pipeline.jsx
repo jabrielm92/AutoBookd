@@ -234,6 +234,16 @@ export default function Pipeline() {
     }
   };
 
+  const handleToggleFollowups = async (leadId, pause) => {
+    try {
+      await toggleLeadFollowups(leadId, pause);
+      toast.success(pause ? 'Follow-ups paused' : 'Follow-ups resumed');
+      fetchLeads();
+    } catch (error) {
+      toast.error('Failed to update lead');
+    }
+  };
+
   const handleDelete = async (leadId) => {
     try {
       await deleteLead(leadId);
