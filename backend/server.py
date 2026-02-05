@@ -1606,8 +1606,7 @@ async def bulk_create_leads(data: LeadBulkCreate, user: dict = Depends(get_curre
 
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(
-    status: Optional[LeadStatus] = None,
-    pipeline_stage: Optional[str] = None,
+    stage: Optional[str] = None,
     min_score: Optional[int] = None,
     niche_id: Optional[str] = None,
     date_from: Optional[str] = None,
@@ -1621,10 +1620,8 @@ async def get_leads(
     if user and not is_admin(user):
         query['tenant_id'] = user["id"]
     
-    if status:
-        query['status'] = status.value
-    if pipeline_stage:
-        query['pipeline_stage'] = pipeline_stage
+    if stage:
+        query['stage'] = stage
     if min_score:
         query['lead_score'] = {"$gte": min_score}
     if niche_id:
@@ -2053,10 +2050,10 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
             business_name = lead.get("business_name", data.to_email.split('@')[0].title())
             final_lead_id = data.lead_id
             is_manual = False
-            # Update existing lead status to outreach_sent
+            # Update existing lead stage to contacted
             await db.leads.update_one(
                 {"id": data.lead_id, "tenant_id": tenant_id},
-                {"$set": {"status": "outreach_sent", "pipeline_stage": "in_sequence", "last_contacted_at": datetime.now(timezone.utc).isoformat()}}
+                {"$set": {"stage": "contacted", "last_contacted_at": datetime.now(timezone.utc).isoformat()}, "$inc": {"emails_sent": 1}}
             )
         else:
             # Create a new lead for this manual email
@@ -2068,8 +2065,9 @@ async def send_manual_email(data: ManualEmailCreate, user: dict = Depends(get_cu
                 "business_name": business_name,
                 "email": data.to_email,
                 "category": "Manual Outreach",
-                "status": "outreach_sent",
-                "pipeline_stage": "in_sequence",
+                "stage": "contacted",
+                "emails_sent": 1,
+                "emails_total": 4,
                 "lead_score": 50,
                 "score_breakdown": {"manual": 50},
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -2278,21 +2276,18 @@ async def get_analytics(user: dict = Depends(get_current_user)):
     avg_result = await db.leads.aggregate(score_pipeline).to_list(1)
     avg_score = avg_result[0]['avg'] if avg_result else 0
     
-    # Niches/Categories performance - compute from leads directly
+    # Niches/Categories performance - compute from leads using new stage field
     category_pipeline = [
         {"$match": tenant_filter},
         {"$group": {
             "_id": "$category",
             "leads_scraped": {"$sum": 1},
             "leads_contacted": {"$sum": {"$cond": [
-                {"$in": ["$status", ["outreach_sent", "engaged", "discovery", "qualified", "calendar_offered", "booked"]]},
+                {"$eq": ["$stage", "contacted"]},
                 1, 0
             ]}},
-            "bookings": {"$sum": {"$cond": [{"$eq": ["$status", "booked"]}, 1, 0]}},
-            "replies": {"$sum": {"$cond": [
-                {"$in": ["$status", ["engaged", "discovery", "qualified", "calendar_offered", "booked"]]},
-                1, 0
-            ]}}
+            "bookings": {"$sum": {"$cond": [{"$eq": ["$stage", "booked"]}, 1, 0]}},
+            "replies": {"$sum": {"$cond": [{"$eq": ["$has_replied", True]}, 1, 0]}}
         }},
         {"$match": {"_id": {"$ne": None}}},
         {"$sort": {"leads_scraped": -1}},
