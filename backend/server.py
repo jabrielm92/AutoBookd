@@ -943,20 +943,56 @@ async def get_pipeline_activity(limit: int = 20, user: dict = Depends(get_curren
         {"_id": 0}
     ).sort("timestamp", -1).limit(limit).to_list(limit)
     
-    # Get current counts for this tenant
+    # Get current counts by stage for this tenant
     tenant_filter = {"tenant_id": tenant_id}
     counts = {
-        "scraped": await db.leads.count_documents(tenant_filter),
-        "enriched": await db.leads.count_documents({**tenant_filter, "email": {"$exists": True, "$ne": None}}),
-        "researched": await db.leads.count_documents({**tenant_filter, "research": {"$exists": True}}),
-        "in_sequence": await db.leads.count_documents({**tenant_filter, "status": "outreach_sent"}),
-        "emails_sent": await db.sequences.count_documents({**tenant_filter, "current_step": {"$gt": 0}})
+        "scraped": await db.leads.count_documents({**tenant_filter, "stage": "scraped"}),
+        "enriched": await db.leads.count_documents({**tenant_filter, "stage": "enriched"}),
+        "researched": await db.leads.count_documents({**tenant_filter, "stage": "researched"}),
+        "contacted": await db.leads.count_documents({**tenant_filter, "stage": "contacted"}),
+        "booked": await db.leads.count_documents({**tenant_filter, "stage": "booked"}),
+        "total": await db.leads.count_documents(tenant_filter)
     }
     
     return {
         "activities": list(reversed(activities)),
         "counts": counts
     }
+
+@api_router.post("/leads/migrate")
+async def migrate_leads(user: dict = Depends(get_current_user)):
+    """Migrate leads to new stage system"""
+    tenant_id = user["id"]
+    
+    # Get all leads for tenant
+    leads = await db.leads.find({"tenant_id": tenant_id}).to_list(None)
+    migrated = 0
+    
+    for lead in leads:
+        # Determine new stage based on old data
+        if lead.get("stage") in ["scraped", "enriched", "researched", "contacted", "booked"]:
+            continue  # Already migrated
+            
+        old_status = lead.get("status", "")
+        old_pipeline = lead.get("pipeline_stage", "")
+        emails_sent = lead.get("emails_sent", 0)
+        
+        if old_status == "outreach_sent" or old_pipeline == "in_sequence" or emails_sent > 0:
+            new_stage = "contacted"
+        elif lead.get("research") or lead.get("lead_score", 0) > 0:
+            new_stage = "researched"
+        elif lead.get("email"):
+            new_stage = "enriched"
+        else:
+            new_stage = "scraped"
+        
+        await db.leads.update_one(
+            {"id": lead["id"], "tenant_id": tenant_id},
+            {"$set": {"stage": new_stage, "emails_sent": emails_sent or 0, "emails_total": 4}}
+        )
+        migrated += 1
+    
+    return {"migrated": migrated}
 
 @api_router.post("/pipeline/activity")
 async def log_pipeline_activity(data: Dict[str, Any], user: dict = Depends(get_current_user)):
