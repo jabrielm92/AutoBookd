@@ -2317,7 +2317,7 @@ async def get_analytics(user: dict = Depends(get_current_user)):
 async def get_priority_queue(limit: int = 20, user: dict = Depends(get_current_user)):
     """Get leads ready for priority outreach (score >= 80)"""
     leads = await db.leads.find(
-        {"tenant_id": user["id"], "status": LeadStatus.UNCONTACTED.value, "lead_score": {"$gte": 80}},
+        {"tenant_id": user["id"], "stage": "researched", "lead_score": {"$gte": 80}},
         {"_id": 0}
     ).sort("lead_score", -1).limit(limit).to_list(limit)
     return leads
@@ -2326,19 +2326,20 @@ async def get_priority_queue(limit: int = 20, user: dict = Depends(get_current_u
 async def get_standard_queue(limit: int = 50, user: dict = Depends(get_current_user)):
     """Get leads for standard outreach (score 70-79)"""
     leads = await db.leads.find(
-        {"tenant_id": user["id"], "status": LeadStatus.UNCONTACTED.value, "lead_score": {"$gte": 70, "$lt": 80}},
+        {"tenant_id": user["id"], "stage": "researched", "lead_score": {"$gte": 70, "$lt": 80}},
         {"_id": 0}
     ).sort("lead_score", -1).limit(limit).to_list(limit)
     return leads
 
 @api_router.get("/queue/follow-up", response_model=List[Lead])
 async def get_followup_queue(limit: int = 30, user: dict = Depends(get_current_user)):
-    """Get leads needing follow-up"""
+    """Get leads needing follow-up (contacted but not yet completed sequence)"""
     leads = await db.leads.find(
         {
             "tenant_id": user["id"],
-            "status": {"$in": [LeadStatus.OUTREACH_SENT.value, LeadStatus.STALLED.value]},
-            "follow_up_count": {"$lt": 2}
+            "stage": "contacted",
+            "emails_sent": {"$lt": 4},
+            "has_replied": {"$ne": True}
         },
         {"_id": 0}
     ).limit(limit).to_list(limit)
