@@ -239,8 +239,9 @@ class PipelineController:
                             # Save lead with tenant_id
                             lead["id"] = str(uuid.uuid4())
                             lead["tenant_id"] = tenant_id
-                            lead["status"] = "scraped"
-                            lead["pipeline_stage"] = "needs_enrichment"
+                            lead["stage"] = "scraped"
+                            lead["emails_sent"] = 0
+                            lead["emails_total"] = 4
                             lead["created_at"] = datetime.now(timezone.utc).isoformat()
                             lead["updated_at"] = datetime.now(timezone.utc).isoformat()
                             
@@ -290,7 +291,7 @@ class PipelineController:
                 
                 query = {
                     "tenant_id": tenant_id,
-                    "pipeline_stage": "needs_enrichment",
+                    "stage": "scraped",
                     "email": {"$exists": False}
                 }
                 # Only process leads from current pipeline run
@@ -378,7 +379,7 @@ class PipelineController:
                             "contact_name": f"{email_data.get('first_name', '')} {email_data.get('last_name', '')}".strip() or None,
                             "contact_position": email_data.get("position"),
                             "enrichment_provider": email_source,
-                            "pipeline_stage": "needs_research",
+                            "stage": "enriched",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }
                         # Add Apollo-specific company info if available
@@ -389,8 +390,9 @@ class PipelineController:
                             
                         await self._log_activity("enrich", f"Enriched with email: {email_data['email']} (via {email_source})", "success", lead.get('business_name'))
                     else:
+                        # Keep as scraped but mark no email found
                         update_data = {
-                            "pipeline_stage": "no_email",
+                            "enrichment_attempted": True,
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }
                         await self._log_activity("enrich", f"No email found for {lead.get('business_name')}", "warning", lead.get('business_name'))
@@ -437,7 +439,7 @@ class PipelineController:
                 
                 query = {
                     "tenant_id": tenant_id,
-                    "pipeline_stage": "needs_research",
+                    "stage": "enriched",
                     "email": {"$exists": True}
                 }
                 # Only process leads from current pipeline run
@@ -470,7 +472,8 @@ class PipelineController:
                     # Calculate lead score
                     score = self._calculate_lead_score(lead, research, website_data)
                     
-                    # Update lead
+                    # Update lead - set stage to researched if score is good enough
+                    new_stage = "researched" if score >= 60 else "enriched"  # Keep enriched if low score
                     await self.db.leads.update_one(
                         {"id": lead["id"]},
                         {"$set": {
@@ -481,7 +484,7 @@ class PipelineController:
                                 "scraped": website_data.get("success", False)
                             },
                             "lead_score": score,
-                            "pipeline_stage": "ready_for_outreach" if score >= 60 else "low_score",
+                            "stage": new_stage,
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }}
                     )
@@ -607,7 +610,7 @@ class PipelineController:
                 
                 query = {
                     "tenant_id": tenant_id,
-                    "pipeline_stage": "ready_for_outreach",
+                    "stage": "researched",
                     "sequence_id": {"$exists": False}
                 }
                 # Only process leads from current pipeline run
@@ -659,12 +662,12 @@ class PipelineController:
                         tenant_id=config.get("tenant_id")
                     )
                     
-                    # Update lead
+                    # Update lead - mark as contacted once sequence created
                     await self.db.leads.update_one(
                         {"id": lead["id"]},
                         {"$set": {
                             "sequence_id": sequence_id,
-                            "pipeline_stage": "in_sequence",
+                            "stage": "contacted",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }}
                     )
@@ -782,8 +785,9 @@ class PipelineController:
                 continue
             
             lead["id"] = str(uuid.uuid4())
-            lead["status"] = "scraped"
-            lead["pipeline_stage"] = "needs_enrichment"
+            lead["stage"] = "scraped"
+            lead["emails_sent"] = 0
+            lead["emails_total"] = 4
             lead["created_at"] = datetime.now(timezone.utc).isoformat()
             lead["updated_at"] = datetime.now(timezone.utc).isoformat()
             
