@@ -43,17 +43,12 @@ app = FastAPI(title="AutoBookd AI", version="2.0.0")
 api_router = APIRouter(prefix="/api")
 
 # ============== ENUMS ==============
-class LeadStatus(str, Enum):
+class LeadStage(str, Enum):
     SCRAPED = "scraped"
-    UNCONTACTED = "uncontacted"
-    OUTREACH_SENT = "outreach_sent"
-    ENGAGED = "engaged"
-    DISCOVERY = "discovery"
-    QUALIFIED = "qualified"
-    CALENDAR_OFFERED = "calendar_offered"
+    ENRICHED = "enriched"
+    RESEARCHED = "researched"
+    CONTACTED = "contacted"
     BOOKED = "booked"
-    STALLED = "stalled"
-    DISQUALIFIED = "disqualified"
 
 class NicheStatus(str, Enum):
     ACTIVE = "active"
@@ -83,13 +78,25 @@ class Lead(BaseModel):
     maps_url: Optional[str] = None
     lead_score: int = 0
     score_breakdown: Dict[str, int] = Field(default_factory=dict)
-    status: LeadStatus = LeadStatus.UNCONTACTED
+    # Simplified stage system
+    stage: LeadStage = LeadStage.SCRAPED
+    # Email tracking
+    emails_sent: int = 0
+    emails_total: int = 4
+    next_email_at: Optional[str] = None
+    last_contacted_at: Optional[datetime] = None
+    # Reply tracking
+    has_replied: bool = False
+    reply_sentiment: Optional[str] = None
+    # Legacy fields (for migration compatibility)
+    status: Optional[str] = None
     pipeline_stage: Optional[str] = None
     niche_id: Optional[str] = None
     competitor_detected: Optional[str] = None
     pain_points: List[str] = Field(default_factory=list)
     context: Dict[str, Any] = Field(default_factory=dict)
-    last_contacted_at: Optional[datetime] = None
+    research: Optional[Dict[str, Any]] = None
+    sequence_id: Optional[str] = None
     follow_up_count: int = 0
     email_opens: int = 0
     email_clicks: int = 0
