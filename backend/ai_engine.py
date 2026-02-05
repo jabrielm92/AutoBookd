@@ -470,13 +470,18 @@ But if you're curious about what's possible, I'm happy to do a quick no-pressure
         calendar_link: str = None,
         product: Dict[str, Any] = None,
         follow_up_days: int = 2,
+        max_follow_ups: int = 3,
         email_guidelines: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """
         Generate fully AI-personalized sequence with industry-specific messaging
+        max_follow_ups controls how many follow-up emails (total emails = max_follow_ups + 1)
         """
         if not self.api_key:
             return self.generate_sequence(lead, research, sender_name, sender_company)
+        
+        # Calculate total emails (1 opener + follow_ups)
+        total_emails = min(max_follow_ups + 1, 4)  # Cap at 4 emails max
         
         product_context = ""
         custom_guidelines = ""
