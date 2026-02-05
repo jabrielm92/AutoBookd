@@ -290,13 +290,14 @@ class SequenceManager:
             )
             return {"success": False, "error": "no_email"}
         
-        # Check if lead replied or unsubscribed
-        if lead.get("status") in ["engaged", "qualified", "booked", "disqualified"]:
+        # Check if lead is booked, has replied, or follow-ups are paused
+        if lead.get("stage") == "booked" or lead.get("has_replied") or lead.get("pause_followups"):
+            reason = "booked" if lead.get("stage") == "booked" else "replied" if lead.get("has_replied") else "paused"
             await self.db.sequences.update_one(
                 {"id": sequence["id"]},
-                {"$set": {"status": "stopped", "reason": f"lead_status_{lead['status']}"}}
+                {"$set": {"status": "stopped", "reason": reason}}
             )
-            return {"success": True, "status": "stopped"}
+            return {"success": True, "status": "stopped", "reason": reason}
         
         # Get current email
         email_template = emails[current_step]
@@ -356,8 +357,18 @@ class SequenceManager:
             
             if next_send_at:
                 update_data["next_send_at"] = next_send_at
+                # Also update lead's next_email_at for easy querying
+                await self.db.leads.update_one(
+                    {"id": lead["id"]},
+                    {"$set": {"next_email_at": next_send_at}}
+                )
             else:
                 update_data["status"] = "completed"
+                # Clear lead's next_email_at when sequence is done
+                await self.db.leads.update_one(
+                    {"id": lead["id"]},
+                    {"$set": {"next_email_at": None}}
+                )
             
             await self.db.sequences.update_one(
                 {"id": sequence["id"]},

@@ -586,13 +586,11 @@ class PipelineController:
                     await asyncio.sleep(3600)
                     continue
                 
-                # Process due sequences first (tenant-filtered, current run only)
+                # Process due sequences first (tenant-filtered)
                 tenant_id = config.get("tenant_id")
-                pipeline_started = config.get("pipeline_started_at")
                 sequence_stats = await self.sequence_manager.process_due_sequences(
                     test_mode=test_mode,
-                    tenant_id=tenant_id,
-                    pipeline_started_at=pipeline_started
+                    tenant_id=tenant_id
                 )
                 
                 if sequence_stats["sent"] > 0:
