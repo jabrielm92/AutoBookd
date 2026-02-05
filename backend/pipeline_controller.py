@@ -648,6 +648,7 @@ class PipelineController:
                         calendar_link=config.get("calendly_link"),
                         product=product,
                         follow_up_days=config.get("follow_up_days", 2),
+                        max_follow_ups=config.get("max_follow_ups", 3),
                         email_guidelines=config.get("email_guidelines")
                     )
                     
