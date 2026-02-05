@@ -598,11 +598,19 @@ export default function Leads() {
                   <td>
                     <div className="text-sm">
                       {lead.emails_sent > 0 ? (
-                        <span className="text-blue-600 dark:text-blue-400 font-medium">
+                        <span className={cn(
+                          "font-medium",
+                          lead.pause_followups ? "text-slate-400 line-through" : "text-blue-600 dark:text-blue-400"
+                        )}>
                           {lead.emails_sent}/{lead.emails_total || 4} sent
                         </span>
                       ) : (
                         <span className="text-slate-400">0 sent</span>
+                      )}
+                      {lead.pause_followups && (
+                        <span className="ml-2 text-amber-600 dark:text-amber-400 text-xs">
+                          Paused
+                        </span>
                       )}
                       {lead.has_replied && (
                         <span className="ml-2 text-emerald-600 dark:text-emerald-400 text-xs">
