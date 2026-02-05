@@ -19,7 +19,9 @@ import {
   Clock,
   X,
   Download,
-  MessageSquare
+  MessageSquare,
+  PauseCircle,
+  PlayCircle
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +51,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { getLeads, createLead, deleteLead, updateLead, bulkDeleteLeads, importCSV, exportLeadsCSV, markLeadBooked } from '@/lib/api';
+import { getLeads, createLead, deleteLead, updateLead, bulkDeleteLeads, importCSV, exportLeadsCSV, markLeadBooked, toggleLeadFollowups } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
