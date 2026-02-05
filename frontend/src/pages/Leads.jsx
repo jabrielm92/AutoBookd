@@ -634,6 +634,21 @@ export default function Leads() {
                             Start Conversation
                           </DropdownMenuItem>
                         )}
+                        {lead.stage === 'contacted' && (
+                          <DropdownMenuItem onClick={() => handleToggleFollowups(lead.id, !lead.pause_followups)}>
+                            {lead.pause_followups ? (
+                              <>
+                                <PlayCircle className="w-4 h-4 mr-2" />
+                                Resume Follow-ups
+                              </>
+                            ) : (
+                              <>
+                                <PauseCircle className="w-4 h-4 mr-2" />
+                                Pause Follow-ups
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        )}
                         {lead.stage !== 'booked' && (
                           <DropdownMenuItem onClick={() => handleMarkBooked(lead.id)}>
                             <Bookmark className="w-4 h-4 mr-2" />
