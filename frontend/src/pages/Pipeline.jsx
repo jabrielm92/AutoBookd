@@ -11,7 +11,9 @@ import {
   Star,
   Eye,
   Bookmark,
-  Trash2
+  Trash2,
+  PauseCircle,
+  PlayCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getLeads, updateLead, markLeadBooked, deleteLead } from '@/lib/api';
+import { getLeads, updateLead, markLeadBooked, deleteLead, toggleLeadFollowups } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
