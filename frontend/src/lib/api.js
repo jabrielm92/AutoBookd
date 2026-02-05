@@ -91,6 +91,8 @@ export const updateLead = (id, data) => api.put(`/leads/${id}`, data);
 export const deleteLead = (id) => api.delete(`/leads/${id}`);
 export const bulkDeleteLeads = (ids) => api.post('/leads/bulk-delete', { ids });
 export const rescoreLead = (id) => api.post(`/leads/${id}/rescore`);
+export const markLeadBooked = (id) => api.post(`/leads/${id}/mark-booked`);
+export const migrateLeads = () => api.post('/leads/migrate');
 export const importCSV = (formData) => api.post('/leads/import/csv', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 });
