@@ -995,6 +995,66 @@ async def migrate_leads(user: dict = Depends(get_current_user)):
     
     return {"migrated": migrated}
 
+@api_router.post("/leads/fix-contacted")
+async def fix_contacted_leads(user: dict = Depends(get_current_user)):
+    """Fix leads marked as contacted but with 0 emails sent - revert to researched"""
+    tenant_id = user["id"]
+    
+    # Find leads with stage=contacted but emails_sent=0
+    leads = await db.leads.find({
+        "tenant_id": tenant_id,
+        "stage": "contacted",
+        "$or": [
+            {"emails_sent": 0},
+            {"emails_sent": {"$exists": False}}
+        ]
+    }).to_list(None)
+    
+    fixed = 0
+    kept_contacted = 0
+    
+    for lead in leads:
+        # Check if there's actually a conversation for this lead
+        conversation = await db.conversations.find_one({"lead_id": lead["id"], "tenant_id": tenant_id})
+        
+        if conversation and len(conversation.get("messages", [])) > 0:
+            # Has conversation with messages - count outbound messages as emails_sent
+            outbound_count = sum(1 for m in conversation.get("messages", []) if m.get("direction") == "outbound")
+            if outbound_count > 0:
+                await db.leads.update_one(
+                    {"id": lead["id"], "tenant_id": tenant_id},
+                    {"$set": {"emails_sent": outbound_count}}
+                )
+                kept_contacted += 1
+                continue
+        
+        # Check if there's an active sequence with sent emails
+        sequence = await db.sequences.find_one({"lead_id": lead["id"], "tenant_id": tenant_id})
+        if sequence and len(sequence.get("sent_emails", [])) > 0:
+            sent_count = len(sequence.get("sent_emails", []))
+            await db.leads.update_one(
+                {"id": lead["id"], "tenant_id": tenant_id},
+                {"$set": {"emails_sent": sent_count}}
+            )
+            kept_contacted += 1
+            continue
+        
+        # No evidence of contact - revert to researched (if has research) or enriched (if has email)
+        if lead.get("research") or lead.get("lead_score", 0) > 0:
+            new_stage = "researched"
+        elif lead.get("email"):
+            new_stage = "enriched"
+        else:
+            new_stage = "scraped"
+        
+        await db.leads.update_one(
+            {"id": lead["id"], "tenant_id": tenant_id},
+            {"$set": {"stage": new_stage, "emails_sent": 0}}
+        )
+        fixed += 1
+    
+    return {"fixed": fixed, "kept_contacted": kept_contacted, "total_checked": len(leads)}
+
 @api_router.post("/pipeline/activity")
 async def log_pipeline_activity(data: Dict[str, Any], user: dict = Depends(get_current_user)):
     """Log a pipeline activity event"""
