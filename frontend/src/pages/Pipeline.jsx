@@ -77,7 +77,7 @@ const stages = [
   },
 ];
 
-function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete }) {
+function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete, onToggleFollowups }) {
   const getScoreColor = (score) => {
     if (score >= 80) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400';
     if (score >= 60) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400';
@@ -87,6 +87,8 @@ function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete }) {
   const emailProgress = lead.emails_sent > 0 
     ? `${lead.emails_sent}/${lead.emails_total || 4} sent`
     : null;
+
+  const isPaused = lead.pause_followups;
 
   return (
     <div 
@@ -103,6 +105,9 @@ function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete }) {
           </p>
         </div>
         <div className="flex items-center gap-1">
+          {isPaused && (
+            <PauseCircle className="w-4 h-4 text-amber-500" title="Follow-ups paused" />
+          )}
           {lead.lead_score > 0 && (
             <div className={cn(
               "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold",
@@ -126,6 +131,21 @@ function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete }) {
                 <Eye className="w-4 h-4 mr-2" />
                 View Details
               </DropdownMenuItem>
+              {lead.stage === 'contacted' && (
+                <DropdownMenuItem onClick={() => onToggleFollowups(lead.id, !isPaused)}>
+                  {isPaused ? (
+                    <>
+                      <PlayCircle className="w-4 h-4 mr-2" />
+                      Resume Follow-ups
+                    </>
+                  ) : (
+                    <>
+                      <PauseCircle className="w-4 h-4 mr-2" />
+                      Pause Follow-ups
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
               {lead.stage !== 'booked' && (
                 <DropdownMenuItem onClick={() => onMarkBooked(lead.id)}>
                   <Bookmark className="w-4 h-4 mr-2" />
@@ -155,7 +175,7 @@ function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete }) {
           {emailProgress && (
             <>
               <span>•</span>
-              <span className="text-blue-600 dark:text-blue-400">{emailProgress}</span>
+              <span className={cn("text-blue-600 dark:text-blue-400", isPaused && "line-through")}>{emailProgress}</span>
             </>
           )}
           {lead.has_replied && (
