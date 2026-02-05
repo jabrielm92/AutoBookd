@@ -220,16 +220,16 @@ class SequenceManager:
         
         return sequence_id
     
-    async def process_due_sequences(self, test_mode: bool = False, tenant_id: str = None, pipeline_started_at: str = None) -> Dict[str, int]:
+    async def process_due_sequences(self, test_mode: bool = False, tenant_id: str = None) -> Dict[str, int]:
         """
-        Process all sequences that have emails due
+        Process all sequences that have emails due for follow-ups
         
         Returns:
             {"processed": count, "sent": count, "errors": count}
         """
         now = datetime.now(timezone.utc)
         
-        # Build query with tenant filter
+        # Build query - process ALL due sequences for tenant (not filtered by pipeline run)
         query = {
             "status": "active",
             "next_send_at": {"$lte": now.isoformat()}
@@ -238,10 +238,6 @@ class SequenceManager:
         # Filter by tenant if provided
         if tenant_id:
             query["tenant_id"] = tenant_id
-        
-        # Only process sequences created in current pipeline run
-        if pipeline_started_at:
-            query["created_at"] = {"$gte": pipeline_started_at}
         
         # Find sequences with emails due
         due_sequences = await self.db.sequences.find(query).to_list(50)
@@ -258,6 +254,11 @@ class SequenceManager:
                 result = await self._send_next_email(sequence)
                 if result["success"]:
                     stats["sent"] += 1
+                    # Update lead's email tracking
+                    await self.db.leads.update_one(
+                        {"id": sequence.get("lead_id"), "tenant_id": tenant_id},
+                        {"$inc": {"emails_sent": 1}, "$set": {"last_contacted_at": now.isoformat()}}
+                    )
                 else:
                     stats["errors"] += 1
             except Exception as e:
