@@ -375,10 +375,11 @@ class SequenceManager:
                 await self.db.leads.update_one(
                     {"id": lead["id"]},
                     {"$set": {
-                        "status": "outreach_sent",
+                        "stage": "contacted",
                         "last_contacted_at": datetime.now(timezone.utc).isoformat(),
                         "updated_at": datetime.now(timezone.utc).isoformat()
-                    }}
+                    },
+                    "$inc": {"emails_sent": 1}}
                 )
             else:
                 await self.db.leads.update_one(
@@ -387,7 +388,7 @@ class SequenceManager:
                         "last_contacted_at": datetime.now(timezone.utc).isoformat(),
                         "updated_at": datetime.now(timezone.utc).isoformat()
                     },
-                    "$inc": {"follow_up_count": 1}}
+                    "$inc": {"follow_up_count": 1, "emails_sent": 1}}
                 )
             
             # Create conversation record
