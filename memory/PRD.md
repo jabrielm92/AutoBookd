@@ -25,21 +25,32 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 - [x] **Updated all backend queries** to use new stage field
 - [x] **Pipeline controller** fully refactored for new stages
 - [x] **Mark as Booked**: POST /api/leads/{id}/mark-booked endpoint
-- [x] **Follow-up email logic fixed** - removed incorrect pipeline_started_at filter
+
+### Follow-up Email System Fixed ✅ (COMPLETED - Feb 5, 2025)
+**CRITICAL BUGS FIXED**
+- [x] **Fixed TypeError** - Removed invalid `pipeline_started_at` param from `process_due_sequences()`
+- [x] **Fixed stale status check** - Now uses `stage` field + `has_replied` + `pause_followups`
+- [x] **Wired up max_follow_ups setting** - AI now generates variable-length sequences (1-4 emails)
+- [x] **Added next_email_at tracking** on Lead model - shows when next follow-up is due
+- [x] **Pause/Resume Follow-ups** - New toggle endpoint and UI controls per lead
+- [x] **New endpoint**: POST /api/leads/{id}/toggle-followups?pause=true/false
+- [x] **UI indicators**: Paused leads show amber "Paused" badge in Emails column
+- [x] **Paused sequences**: When lead is paused, active sequences are paused in DB
 
 ### Kanban Pipeline Page ✅ (COMPLETED - Feb 5, 2025)
 - [x] **5-column Kanban layout**: Scraped, Enriched, Researched, Contacted, Booked
 - [x] **Lead cards** with score badge, business name, category, email
-- [x] **Action menu** per card: View Details, Mark as Booked, Delete
+- [x] **Action menu** per card: View Details, Pause/Resume Follow-ups, Mark as Booked, Delete
 - [x] **Stage icons and colors** for visual distinction
 - [x] **Scrollable columns** with lead counts
-- [x] **"No leads in this stage"** placeholder for empty columns
+- [x] **Pause indicator** icon on lead cards when follow-ups are paused
 
 ### Simplified Leads Page ✅ (COMPLETED - Feb 5, 2025)
 - [x] **6-option filter dropdown**: All Leads, Scraped, Enriched, Researched, Contacted, Booked
 - [x] **Stage badges** with color coding per stage
-- [x] **Emails column** showing X/4 sent count
+- [x] **Emails column** showing X/4 sent count with "Paused" indicator
 - [x] **Mark as Booked** action in row menu
+- [x] **Pause/Resume Follow-ups** action for contacted leads
 - [x] **Start Conversation** action for leads with email
 
 ### Updated Dashboard ✅ (COMPLETED - Feb 5, 2025)
