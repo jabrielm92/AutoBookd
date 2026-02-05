@@ -2240,35 +2240,27 @@ async def get_analytics(user: dict = Depends(get_current_user)):
     # Total leads
     total_leads = await db.leads.count_documents(tenant_filter)
     
-    # Leads by status
+    # Leads by stage (new simplified system)
     pipeline = [
         {"$match": tenant_filter},
-        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+        {"$group": {"_id": "$stage", "count": {"$sum": 1}}}
     ]
-    status_counts = await db.leads.aggregate(pipeline).to_list(20)
-    leads_by_status = {item['_id']: item['count'] for item in status_counts}
+    stage_counts = await db.leads.aggregate(pipeline).to_list(20)
+    leads_by_status = {item['_id']: item['count'] for item in stage_counts if item['_id']}
     
     # Total conversations
     total_conversations = await db.conversations.count_documents(tenant_filter)
     
-    # Total bookings
-    total_bookings = await db.bookings.count_documents(tenant_filter)
+    # Total bookings (from stage)
+    total_bookings = leads_by_status.get("booked", 0)
     
-    # Calculate rates
-    contacted = leads_by_status.get(LeadStatus.OUTREACH_SENT.value, 0) + \
-                leads_by_status.get(LeadStatus.ENGAGED.value, 0) + \
-                leads_by_status.get(LeadStatus.DISCOVERY.value, 0) + \
-                leads_by_status.get(LeadStatus.QUALIFIED.value, 0) + \
-                leads_by_status.get(LeadStatus.CALENDAR_OFFERED.value, 0) + \
-                leads_by_status.get(LeadStatus.BOOKED.value, 0)
+    # Calculate rates based on new stages
+    contacted = leads_by_status.get("contacted", 0) + leads_by_status.get("booked", 0)
     
-    engaged = leads_by_status.get(LeadStatus.ENGAGED.value, 0) + \
-              leads_by_status.get(LeadStatus.DISCOVERY.value, 0) + \
-              leads_by_status.get(LeadStatus.QUALIFIED.value, 0) + \
-              leads_by_status.get(LeadStatus.CALENDAR_OFFERED.value, 0) + \
-              leads_by_status.get(LeadStatus.BOOKED.value, 0)
+    # Count leads that have replied
+    replied_count = await db.leads.count_documents({**tenant_filter, "has_replied": True})
     
-    reply_rate = (engaged / contacted * 100) if contacted > 0 else 0
+    reply_rate = (replied_count / contacted * 100) if contacted > 0 else 0
     booking_rate = (total_bookings / contacted * 100) if contacted > 0 else 0
     
     # Average score
