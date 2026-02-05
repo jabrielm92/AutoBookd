@@ -57,7 +57,8 @@ const navItems = [
   { path: '/dashboard/discovery', icon: Target, label: 'Discovery' },
   // Bookings page hidden until webhook integration is ready
   // { path: '/dashboard/bookings', icon: Calendar, label: 'Bookings' },
-  { path: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
+  // Analytics page hidden - will integrate later
+  // { path: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
 

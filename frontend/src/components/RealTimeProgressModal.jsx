@@ -98,7 +98,7 @@ export default function RealTimeProgressModal({ isOpen, onClose, isRunning }) {
     { key: 'scrape', label: 'Scraped', count: counts.scraped || 0 },
     { key: 'enrich', label: 'Enriched', count: counts.enriched || 0 },
     { key: 'research', label: 'Researched', count: counts.researched || 0 },
-    { key: 'sequence', label: 'In Sequence', count: counts.in_sequence || 0 },
+    { key: 'sequence', label: 'Contacted', count: counts.contacted || 0 },
   ];
 
   return (

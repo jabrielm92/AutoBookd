@@ -339,7 +339,7 @@ export default function Discovery() {
     { key: 'scraped', label: 'Scraped', value: pipelineCounts.scraped || 0, icon: Search, color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30', stage: 'scraped' },
     { key: 'enriched', label: 'Enriched', value: pipelineCounts.enriched || 0, icon: Mail, color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30', stage: 'needs_research' },
     { key: 'researched', label: 'Researched', value: pipelineCounts.researched || 0, icon: FileText, color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30', stage: 'ready_for_outreach' },
-    { key: 'contacted', label: 'Contacted', value: pipelineCounts.in_sequence || 0, icon: Send, color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/30', stage: 'in_sequence' },
+    { key: 'contacted', label: 'Contacted', value: pipelineCounts.contacted || 0, icon: Send, color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/30', stage: 'contacted' },
     { key: 'emails_sent', label: 'Emails Sent', value: pipelineCounts.emails_sent || 0, icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30', stage: 'booked' }
   ];
 

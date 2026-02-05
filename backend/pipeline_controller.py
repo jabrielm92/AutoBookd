@@ -661,12 +661,11 @@ class PipelineController:
                         tenant_id=config.get("tenant_id")
                     )
                     
-                    # Update lead - mark as contacted once sequence created
+                    # Update lead - sequence created, ready to send (don't mark contacted until email sent)
                     await self.db.leads.update_one(
                         {"id": lead["id"]},
                         {"$set": {
                             "sequence_id": sequence_id,
-                            "stage": "contacted",
                             "updated_at": datetime.now(timezone.utc).isoformat()
                         }}
                     )
