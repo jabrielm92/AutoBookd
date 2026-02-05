@@ -1780,7 +1780,7 @@ async def import_csv_leads(file: UploadFile = File(...)):
             doc = lead.model_dump()
             doc['created_at'] = doc['created_at'].isoformat()
             doc['updated_at'] = doc['updated_at'].isoformat()
-            doc['pipeline_stage'] = 'needs_enrichment' if not lead.email else 'needs_research'
+            doc['stage'] = 'enriched' if lead.email else 'scraped'
             
             await db.leads.insert_one(doc)
             created += 1
@@ -1794,6 +1794,29 @@ async def import_csv_leads(file: UploadFile = File(...)):
         "skipped": skipped,
         "errors": errors[:5] if errors else []
     }
+
+@api_router.post("/leads/{lead_id}/mark-booked", response_model=Lead)
+async def mark_lead_booked(lead_id: str, user: dict = Depends(get_current_user)):
+    """Manually mark a lead as booked"""
+    tenant_id = user["id"]
+    query = {"id": lead_id, "tenant_id": tenant_id} if not is_admin(user) else {"id": lead_id}
+    lead = await db.leads.find_one(query, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    await db.leads.update_one(
+        query,
+        {"$set": {"stage": "booked", "booked_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Stop any active sequences for this lead
+    await db.sequences.update_many(
+        {"lead_id": lead_id, "status": "active"},
+        {"$set": {"status": "completed", "stop_reason": "booked"}}
+    )
+    
+    lead['stage'] = 'booked'
+    return lead
 
 @api_router.post("/leads/{lead_id}/rescore", response_model=Lead)
 async def rescore_lead(lead_id: str, user: dict = Depends(get_current_user)):
