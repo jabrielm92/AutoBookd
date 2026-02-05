@@ -55,7 +55,8 @@ const navItems = [
   { path: '/dashboard/pipeline', icon: Kanban, label: 'Pipeline' },
   { path: '/dashboard/conversations', icon: MessageSquare, label: 'Conversations' },
   { path: '/dashboard/discovery', icon: Target, label: 'Discovery' },
-  { path: '/dashboard/bookings', icon: Calendar, label: 'Bookings' },
+  // Bookings page hidden until webhook integration is ready
+  // { path: '/dashboard/bookings', icon: Calendar, label: 'Bookings' },
   { path: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
