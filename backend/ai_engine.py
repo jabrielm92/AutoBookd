@@ -539,7 +539,27 @@ PRODUCT-SPECIFIC GUIDELINES:
         # Calculate delays based on follow_up_days
         delays = [0, follow_up_days, follow_up_days * 2, follow_up_days * 3]
         
-        prompt = f"""You are an expert cold email copywriter. Generate a highly personalized 4-email sequence.
+        # Build dynamic sequence structure based on total_emails
+        sequence_instructions = []
+        email_json_examples = []
+        
+        if total_emails >= 1:
+            sequence_instructions.append(f"- Email 1 (Day 0): Personal opener connecting their pain point to your product/service")
+            email_json_examples.append('{{"sequence_number": 1, "delay_days": 0, "subject": "...", "body": "...", "type": "opener"}}')
+        if total_emails >= 2:
+            sequence_instructions.append(f"- Email 2 (Day {delays[1]}): Short follow-up, ask about their current process")
+            email_json_examples.append(f'{{"sequence_number": 2, "delay_days": {delays[1]}, "subject": "Re: [Email 1 subject]", "body": "...", "type": "follow_up"}}')
+        if total_emails >= 3:
+            sequence_instructions.append(f"- Email 3 (Day {delays[2]}): Value-focused, mention specific benefits of your product")
+            email_json_examples.append(f'{{"sequence_number": 3, "delay_days": {delays[2]}, "subject": "Re: [Email 1 subject]", "body": "...", "type": "proof"}}')
+        if total_emails >= 4:
+            sequence_instructions.append(f"- Email 4 (Day {delays[3]}): Polite breakup, offer to close the loop")
+            email_json_examples.append(f'{{"sequence_number": 4, "delay_days": {delays[3]}, "subject": "Closing the loop", "body": "...", "type": "breakup"}}')
+        
+        sequence_structure = "\n".join(sequence_instructions)
+        json_example = "[\n    " + ",\n    ".join(email_json_examples) + "\n]"
+        
+        prompt = f"""You are an expert cold email copywriter. Generate a highly personalized {total_emails}-email sequence.
 
 TARGET BUSINESS:
 - Name: {lead.get('business_name')}
@@ -561,11 +581,8 @@ SENDER:
 - Name: {sender_name}
 - Company: {sender_company}
 
-SEQUENCE STRUCTURE:
-- Email 1 (Day 0): Personal opener connecting their pain point to your product/service
-- Email 2 (Day {delays[1]}): Short follow-up, ask about their current process
-- Email 3 (Day {delays[2]}): Value-focused, mention specific benefits of your product
-- Email 4 (Day {delays[3]}): Polite breakup, offer to close the loop
+SEQUENCE STRUCTURE (Generate exactly {total_emails} emails):
+{sequence_structure}
 
 CRITICAL REQUIREMENTS:
 - YOU MUST mention the product/service name and its specific features/benefits
@@ -575,13 +592,8 @@ CRITICAL REQUIREMENTS:
 - Use their actual business name naturally
 - NO generic templates - make each email unique
 
-OUTPUT valid JSON array:
-[
-    {{"sequence_number": 1, "delay_days": 0, "subject": "...", "body": "...", "type": "opener"}},
-    {{"sequence_number": 2, "delay_days": {delays[1]}, "subject": "Re: [Email 1 subject]", "body": "...", "type": "follow_up"}},
-    {{"sequence_number": 3, "delay_days": {delays[2]}, "subject": "Re: [Email 1 subject]", "body": "...", "type": "proof"}},
-    {{"sequence_number": 4, "delay_days": {delays[3]}, "subject": "Closing the loop", "body": "...", "type": "breakup"}}
-]"""
+OUTPUT valid JSON array with exactly {total_emails} emails:
+{json_example}"""
 
         try:
             response = await self.http_client.post(
