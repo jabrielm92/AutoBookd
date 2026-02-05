@@ -4,90 +4,86 @@ The user wants to transform the existing Intelligent Lead Automation System into
 **PRODUCT REQUIREMENTS (summarized from history):**
 1.  **Landing Page & Marketing:** Create an epic, feature-rich landing page. Provide marketing materials for a Skool community.
 2.  **SaaS Functionality:** Implement multi-tenant authentication, a 24-hour free trial, and a  Stripe subscription. Users should be able to see their subscription status and manage it.
-3.  **Onboarding:** Create a comprehensive setup guide for all required API keys and integrate it into the onboarding flow and dashboard. This guide must be detailed for all integrations.
+3.  **Onboarding:** Create a comprehensive setup guide for all required API keys and integrate it into the onboarding flow and dashboard.
 4.  **Core Features:**
     *   **Lead Discovery:** Find leads by location.
-    *   **Data Enrichment:** Get emails and phone numbers. The system should prioritize free website scraping before using paid APIs (Hunter/Apollo).
-    *   **AI Pipeline:** Research leads using scraped website data, score them, and generate unique, multi-step GPT-4o email sequences.
-    *   **Automation Control:** Allow users to toggle auto-sending of emails. If disabled, users must be able to edit and send generated drafts manually.
-    *   **Manual Composition:** Allow users to compose and send new emails from scratch within the Conversations page.
-    *   **Reply Handling:** Process inbound replies, classify intent, and trigger intelligent auto-replies. The booking link should be sent on the second positive reply.
-    *   **Data Management:** Users must be able to export leads to CSV. Admins need a dashboard for analytics.
-5.  **Multi-tenancy:** This is the most critical requirement. Each tenant's data must be completely isolated.
-6.  **UI/UX:** The entire application must be mobile-responsive, clean, and intuitive.
-7.  **Deployment:** The application must be fully prepared for production deployment on Vercel (frontend) and Railway (backend) with MongoDB Atlas.
+    *   **Data Enrichment:** Get emails and phone numbers.
+    *   **AI Pipeline:** Research leads, score them, and generate unique, multi-step GPT-4o email sequences. The AI must use product information and user-defined rules.
+    *   **Automation Control:** Allow users to toggle auto-sending of emails.
+    *   **Manual Composition & Replies:** Allow users to compose/send new emails and reply to existing conversations.
+    *   **Data Management:** Users must be able to export leads and delete conversations.
+5.  **Multi-tenancy:** Each tenant's data must be completely isolated. This is a recurring issue and a top priority.
+6.  **UI/UX:** The application must be clean, intuitive, and mobile-responsive. The user wants to simplify the lead management workflow.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a functional, multi-tenant SaaS platform that has undergone a massive code audit to ensure production readiness and data isolation. The core multi-tenancy data leak issues have been resolved by enforcing  across the backend.
-
-Recent key accomplishments include:
-- A complete, production-focused code audit, fixing dozens of tenant-isolation bugs.
-- Implementation of Edit/Delete functionality for Products and Discovery Sets.
-- A redesigned, mobile-friendly vertical layout for the Pipeline page.
-- An enhanced web scraper that now extracts emails and detailed company info directly from websites to improve email personalization and reduce API costs.
-- Reworked AI prompts to generate more unique and varied email openers, avoiding repetitive phrases.
-- Updated reply-handling logic to send the calendar link on the second positive reply, not the first.
-- A detailed, generic setup guide for the Auto-Reply feature was created and integrated.
+The application is a functional, multi-tenant SaaS platform named AutoBookd. It includes user authentication, lead discovery, an AI pipeline for email generation, and manual email/conversation management. Most recently, the agent implemented lead editing, conversation deletion, and fixed numerous data consistency and pipeline bugs related to multi-tenancy. A major refactoring of the lead management system has just begun to address core UX and data model complexities.
 
 **Last working item**:
-- **Last item agent was working:** The agent was simultaneously implementing two user-requested frontend features:
-    1.  **Detailed Setup Guides:** Expanding the  file to provide detailed, step-by-step instructions for all third-party integrations (OpenAI, Stripe, SerpAPI, etc.).
-    2.  **Manual Email Composition:** Adding a New Conversation feature to the  page, which includes a button and a modal for users to write and send emails from scratch.
+- **Last item agent was working:** The agent was executing a major, user-approved refactor to simplify the entire lead management system. The goal is to replace the confusing  and  fields with a single, clear  field and redesign the UI around it. The agent had just started the backend work.
+    - **Agent's progress:**
+        1.  Updated the  model in  to use the new simplified  enum (, , , , ).
+        2.  Added a data migration endpoint  to transition existing data.
+        3.  Fixed the broken follow-up email logic in  by removing the incorrect  filter.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** both. Frontend testing agent to verify the UI for the new guides and the New Conversation modal. Backend testing will be needed for the new API endpoint that will support sending manual emails.
-- **User Testing Done:** N
+- **Which testing method agent to use?** both. This is a large-scale refactor.
+    - **Backend:** A testing agent is needed to run the migration script and verify all lead-related endpoints (, , ) work correctly with the new  model. It should also test that the follow-up email scheduler now correctly processes due emails.
+    - **Frontend:** A testing agent is needed to verify the completely redesigned Kanban-style Pipeline page, the simplified filters on the Leads page, the updated Dashboard cards, and confirm the Bookings page is hidden from the sidebar.
+- **User Testing Done:** N (User has stated they will test once the full refactor is deployed).
 
 **All Pending/In progress Issue list**:
-There are no pending bugs. The work is focused on feature development.
+The current work is a large task that consolidates and fixes multiple pending issues related to data consistency, UI confusion, and broken follow-up emails.
 
 **In progress Task List**:
-- **Task 1: Complete New Conversation Feature (P0)**
-     - **Where to resume:**
-        - **Backend:** Create a new API endpoint (e.g., ) in . This endpoint must be authenticated, accept a recipient email, subject, body, and optional attachments. It should use the tenant's Resend key to send the email and create a new record in the  collection with the correct .
-        - **Frontend:** Update  to add the New Conversation button, a modal with fields for To, Subject, Body, and file attachments, and the state management and API call to the new backend endpoint.
-     - **What will be achieved with this?** Users will be able to initiate new email conversations manually from within the app, and replies will be tracked by the existing auto-reply system.
+- **Task 1: Complete Lead Management System Refactor (P0)**
+     - **Where to resume:** The backend data model has been updated. The next steps are:
+        1.  **Backend:**
+            -   Update : Replace all logic using old  and  fields with the new  field.
+            -   Update analytics endpoints (, ) to query using the new  field.
+            -   Run the data migration via the  endpoint.
+        2.  **Frontend:**
+            -   **Rewrite :** Implement the new Kanban-style layout with columns for , , , , .
+            -   **Update :** Simplify the filter dropdown to use the new stages.
+            -   **Update :** Change the stat cards to reflect the new stages.
+            -   **Update :** Hide the Bookings page link from the sidebar navigation.
+     - **What will be achieved with this?** This will resolve major data inconsistencies, fix the broken follow-up email feature, and provide a much more intuitive and uniform UI for managing leads.
      - **Status:** IN PROGRESS
      - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on something:** The backend endpoint for sending manual emails does not exist yet.
-
-- **Task 2: Complete Detailed Setup Guides (P0)**
-     - **Where to resume:** The agent has a complete, updated version of  ready. The next step is to use the  tool with  to apply the changes.
-     - **What will be achieved with this?** The onboarding experience will be significantly improved, with every integration in the setup guide having a detailed, user-friendly walkthrough.
-     - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** frontend
-     - **Blocked on something:** None
+     - **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Task 1 (P1):** Build Out Admin Dashboard. The page at  needs to be fully implemented to display tenant information, subscription status, and usage analytics.
+-   **Task 1 (P1): Implement Done-For-You Pricing Tiers.** User has approved a plan to offer premium tiers where the SaaS owner manages all API keys. This requires implementing per-tenant usage tracking and updating Stripe. The plan is saved in .
+-   **Task 2 (P2): Add Gmail/Outlook Polling for Inbound Replies.** As a free alternative to Resend Pro, implement OAuth and API polling to fetch email replies directly from the user's inbox.
 
 **Future Tasks:**
--   **Email Warm-up Feature:** Implement the Coming Soon email warm-up scheduler.
--   **ColdIQ Integration:** Blocked until the user provides API documentation.
--   **Feedback Loop & A/B Testing:** Implement systems to auto-tune AI prompts and messages based on performance.
+-   Build out Admin Dashboard.
+-   Implement Email Warm-up scheduler.
+-   ColdIQ Integration (Blocked on user providing API docs).
+-   Feedback Loop & A/B Testing for AI prompts.
 
 **Completed work in this session**
-- **Critical Multi-Tenancy & Production Audit:** Completed a comprehensive backend overhaul to enforce tenant isolation and prepare for deployment. Fixed dozens of database queries and API endpoints to be tenant-aware and removed development artifacts like . Verified with the testing agent.
-- **Edit/Delete for Products & Sets:** Implemented full CRUD functionality (backend APIs and frontend UI) for Products and Discovery Sets.
-- **Bug Fixes:**
-    - Fixed an issue where Pipeline Activity logs were not appearing due to a missing .
-    - Fixed a critical bug where new  and  were created without a .
-- **Feature Enhancements:**
-    - **Enhanced Web Scraper:** Scraper now extracts emails and detailed company info (services, tagline, social proof) from websites to improve personalization and save API credits.
-    - **Improved AI Email Generation:** Reworked AI prompts to create more varied and unique email openers, removing repetitive phrases about ratings.
-    - **Smarter Reply Logic:** The booking link is now sent on the second positive reply, not in the initial outreach.
-- **UI/UX Improvements:**
-    - **Leads Page:** Added date range filters.
-    - **Pipeline Page:** Redesigned with a mobile-friendly vertical accordion layout.
-    - **Setup Guide:** Created a detailed, generic guide for the Auto-Reply feature.
+- **Feature: Manual Email Composition:** Implemented a New Conversation feature with a modal to send emails manually, including lead creation, lead selection, and file attachments.
+- **Feature: Lead & Conversation Management:** Added lead data editing and bulk/single conversation deletion.
+- **Critical Bug Fixes (Pipeline & Multi-tenancy):**
+    - Fixed multiple critical bugs where the pipeline would process leads from the wrong tenant or re-contact old leads. Added  and  filters to all pipeline loops.
+    - Fixed a bug preventing the correct discovery set (e.g., plumbers) from being used by ensuring the pipeline configuration is cleared and updated before each run.
+    - Resolved a  error in the enrichment loop.
+- **Critical Bug Fixes (Email Generation):**
+    - Removed a hardcoded email template from the AI engine to ensure emails are dynamically generated based on user-provided product info and rules.
+    - Fixed the logic to correctly pass the active product's information to the AI prompt.
+- **UX & Data Consistency Fixes:**
+    - Addressed discrepancies between dashboard analytics, pipeline status, and the number of visible conversations.
+    - Implemented a Start Conversation flow directly from the Leads page for leads in the Ready for Outreach stage.
+    - Simplified the email generation UX by consolidating AI instructions into the product creation form.
+- **Minor Fixes:** Updated 3-day trial to 24-hour trial and fixed a CSS clipping issue on the landing page.
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork:** Production deployment instability and data discrepancies between tenants.
+- **Issue recurrence in previous fork:** Data discrepancies and incorrect behavior due to missing  filters in database queries.
 - **Recurrence count:** 3+
-- **Status:** RESOLVED. The comprehensive code audit completed in this session was the definitive fix for this recurring root cause.
+- **Status:** IN PROGRESS. The agent has fixed this in several specific places (pipeline loops, sequence processing), and the current major refactor of the lead  is the final step to create a more robust data model to prevent these issues.
 
 **Code Architecture**
 
@@ -96,57 +92,61 @@ There are no pending bugs. The work is focused on feature development.
 -   **Frontend:** React, TailwindCSS, Shadcn/UI
 -   **Backend:** FastAPI, Pydantic
 -   **Database:** MongoDB Atlas
--   **Deployment:** Vercel (Frontend), Railway (Backend)
--   **Core Architecture:** **Multi-Tenancy** enforced by  filtering on all data operations.
+-   **Core Architecture:** **Multi-Tenancy** enforced by . The system is undergoing a refactor from a complex  +  model to a single, simplified  model for leads.
 
 **key DB schema**
+-   **leads (NEW PROPOSED):** 
 -   **users:** 
 -   **system_config:** 
--   **conversations:** Now includes  to track interaction for sending the calendar link.
--   All other major collections (, , , etc.) now include and are filtered by .
+-   **conversations:** 
 
 **All files of reference**
--    (Currently being modified)
--    (Currently being modified)
--    (Will need a new endpoint)
--    (Recently modified)
--    (Recently modified)
--    (Recently modified)
+-   
+-   
+-   
+-   
+-   
 -   
 -   
 
 **key api endpoints**
--    & 
--    & 
--    (now supports  and  query params)
--    (handles inbound email replies)
--   **Needs to be created:**  for the new manual email feature.
+-   : **New** endpoint to migrate lead data to the new  model.
+-   : For deleting one or more conversations.
+-   : For creating a new manual conversation and sending the first email.
+-   , , : These will need to be verified to ensure they work with the new  data model.
 
 **Critical Info for New Agent**
--   **Priority:** The user wants two features implemented: 1) Detailed setup guides for all integrations, and 2) A New Conversation feature for manual email composition. These are your P0 tasks.
--   **Multi-Tenancy is King:** The application is a multi-tenant SaaS deployed on Vercel and Railway. Every change, especially new backend endpoints, must be tenant-aware and use the  from the authenticated user.
--   **Backend Work Required:** The New Conversation feature requires a new backend endpoint. Plan to create this in . It should handle sending email via the tenant's Resend account and correctly logging the conversation.
--   **User is Credit Conscious:** Continue the pattern of efficient implementation. Use parallel tool calls where possible.
+-   **Your Top Priority (P0):** You must complete the large-scale refactor of the lead management system that the previous agent started. The user has approved the full plan (summarized in Chat Message 539).
+-   **Refactor Plan:**
+    1.  **Backend:** Finish updating  and analytics endpoints to use the new  model. Then run the data migration.
+    2.  **Frontend:** Rewrite  into a Kanban board, simplify filters in , update  cards, and hide the Bookings page in .
+-   **Follow-up Emails:** The AI must be aware when it's generating a follow-up. Use the  number passed to the AI sequence generator to add context to the prompt, like This is follow-up email 2 of 4 for this lead.
+-   **User Testing:** The user has explicitly stated they will test everything once the refactor is complete and deployed. Focus on delivering the full, working feature set.
 
 **documents and test reports created in this job**
 -   
 -    (updated)
+-    (new)
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. **User:** Yes perfectly! Implement these additions diligently and efficiently using as less credits as possible. (IN PROGRESS)
-9.  **User:** Confirmed understanding of the two new feature requests: detailed setup guides for all integrations and a manual email composition feature. (DONE)
-8.  **User:** Asked if all setup guides have detailed instructions and requested the manual email composition feature. (IN PROGRESS)
-7.  **User:** Confirmed their DNS setup for the reply subdomain was incorrect and acknowledged the agent's explanation on multi-tenant Reply-To handling. Requested a setup guide for tenants. (DONE)
-6.  **User:** Asked for clarification on the subdomain setup for Resend inbound emails. (DONE)
-5.  **User:** Confirmed understanding of the calendar link timing and auto-reply setup, and asked if a  header needed to be coded. (DONE)
-4.  **User:** Asked where replies go, requested the calendar link be sent on the second message, and asked how to set up auto-replies. (DONE)
-3.  **User:** Asked how to change the email generation logic to make emails more unique and fresh. (DONE)
-2.  **User:** Explained that the website scraper should be able to find company info for email personalization. (DONE)
-1.  **User:** Pointed out that even with the Apollo fix, emails should be findable via website scraping. (DONE)
+10. **User:** Approved the full plan to simplify the lead management system and fix the follow-up email logic. Stated they will test after completion and deployment. (IN PROGRESS)
+9.  **User:** Provided clarification on the desired simplified lead stages (don't track Engaged or Booked automatically, hide Bookings page, use Kanban layout) and requested a full implementation plan. (DONE)
+8.  **User:** Requested a complete overhaul of the lead stages and pipeline pages to be more simple, clear, and uniform, and pointed out that follow-up emails are not sending. (PLANNING)
+7.  **User:** Confirmed the agent should remove all hardcoded email templates and rely purely on user-defined product info and email rules. Also pointed out that the Contacted dashboard count is still wrong and the AI-generated emails are still generic. (FIXED/IN PROGRESS)
+6.  **User:** Approved the plan to fix the critical pipeline bugs (wrong discovery set, re-contacting old leads). Stated they will do the testing. (FIXED)
+5.  **User:** Provided clarification on how conversation replies should work (auto-generate Re: subject) and the nature of the pipeline bug (sending follow-ups prematurely). (DONE)
+4.  **User:** Confirmed understanding of the plan to fix conversation reply flow and the two critical pipeline bugs. (DONE)
+3.  **User:** Reported multiple new bugs: pipeline is using old discovery sets, re-contacting old leads, and a confusing UX for sending follow-up messages in a conversation. (INVESTIGATING)
+2.  **User:** Approved the plan to simplify the email generation UX by removing the redundant Custom AI Instructions field. (FIXED)
+1.  **User:** Pointed out that AI-generated emails are still generic and not using product info, and that there are major data discrepancies across the Dashboard, Pipeline, and Conversations pages. Requested a Start Conversation flow for leads. (INVESTIGATING)
 
 **Project Health Check:**
--   **Broken:** No core functionality is broken.
--   **Mocked:** Email Warm-up feature is a UI placeholder.
+-   **Broken:**
+    -   Data consistency across the Dashboard, Pipeline page, and Leads page is incorrect due to the mix of  and  fields (This is being fixed by the current refactor).
+    -   The UI for the Pipeline and Leads pages is confusing and does not accurately reflect the state of the leads (Also being fixed by the refactor).
+-   **Mocked:**
+    -   Email Warm-up feature is a UI placeholder.
+    -   Bookings page is about to be hidden as it's not fully functional.
 
 **3rd Party Integrations**
 -   **OpenAI GPT-4o:** (Text Generation) requires User API Key
@@ -155,14 +155,17 @@ There are no pending bugs. The work is focused on feature development.
 -   **Apollo.io:** (Email Enrichment) requires User API Key
 -   **Resend:** (Email Sending/Receiving) requires User API Key
 -   **Stripe:** (Payments) requires User API Key
--   **Calendly:** (Booking) Webhook integration
+-   **Calendly:** (Booking) Link-based, no active webhook integration.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES, after the major multi-tenancy code audit. All 29 tests passed.
+-   **Testing agent used after significant changes:** YES, for the manual email composition feature.
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** []
--   **Known regressions:** None.
+-   **Known regressions:** The pipeline has shown multiple regressions related to multi-tenancy (e.g., processing wrong leads, using old configs). The agent has been actively fixing these, and the current refactor aims to prevent them systemically.
 
 **Credentials to test flow:**
 -   **Admin User:**  (password: )
--   **Test User:**  (for checking tenant isolation)</analysis>
+-   **Test User:**  (for checking tenant isolation)
+
+**What agent forgot to execute**
+The previous agent correctly identified and planned fixes for all reported issues. The main pending action is the **completion and testing of the large-scale lead management refactor**. Only the initial backend steps were completed; the frontend rewrite and data migration are still pending.</analysis>
