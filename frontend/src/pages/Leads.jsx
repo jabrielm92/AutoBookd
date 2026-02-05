@@ -226,6 +226,16 @@ export default function Leads() {
     }
   };
 
+  const handleToggleFollowups = async (id, pause) => {
+    try {
+      await toggleLeadFollowups(id, pause);
+      toast.success(pause ? 'Follow-ups paused' : 'Follow-ups resumed');
+      fetchLeads();
+    } catch (error) {
+      toast.error('Failed to update lead');
+    }
+  };
+
   const toggleSelect = (id) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
