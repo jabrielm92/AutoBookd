@@ -15,6 +15,42 @@ AutoBookd is an autonomous AI Lead-to-Calendar Engine SaaS platform:
 
 ---
 
+## What's Been Implemented (Feb 5, 2025)
+
+### Lead Management System Refactor ✅ (COMPLETED - Feb 5, 2025)
+**MAJOR SIMPLIFICATION - Data Model Overhaul**
+- [x] **Replaced complex status/pipeline_stage with single `stage` field**
+- [x] **New 5-stage system**: scraped → enriched → researched → contacted → booked
+- [x] **Data migration endpoint**: POST /api/leads/migrate (79 leads migrated)
+- [x] **Updated all backend queries** to use new stage field
+- [x] **Pipeline controller** fully refactored for new stages
+- [x] **Mark as Booked**: POST /api/leads/{id}/mark-booked endpoint
+- [x] **Follow-up email logic fixed** - removed incorrect pipeline_started_at filter
+
+### Kanban Pipeline Page ✅ (COMPLETED - Feb 5, 2025)
+- [x] **5-column Kanban layout**: Scraped, Enriched, Researched, Contacted, Booked
+- [x] **Lead cards** with score badge, business name, category, email
+- [x] **Action menu** per card: View Details, Mark as Booked, Delete
+- [x] **Stage icons and colors** for visual distinction
+- [x] **Scrollable columns** with lead counts
+- [x] **"No leads in this stage"** placeholder for empty columns
+
+### Simplified Leads Page ✅ (COMPLETED - Feb 5, 2025)
+- [x] **6-option filter dropdown**: All Leads, Scraped, Enriched, Researched, Contacted, Booked
+- [x] **Stage badges** with color coding per stage
+- [x] **Emails column** showing X/4 sent count
+- [x] **Mark as Booked** action in row menu
+- [x] **Start Conversation** action for leads with email
+
+### Updated Dashboard ✅ (COMPLETED - Feb 5, 2025)
+- [x] **5 stage stat cards** with counts and conversion rates
+- [x] **Pipeline Funnel** progress bars by stage
+- [x] **Priority Queue** for leads with score ≥80
+- [x] **Follow-up Queue** for contacted leads needing follow-up
+- [x] **Bookings page hidden** from sidebar (until webhook ready)
+
+---
+
 ## What's Been Implemented (Jan 27, 2025)
 
 ### Multi-Tenancy SaaS Platform ✅ (COMPLETED - Jan 27, 2025)
