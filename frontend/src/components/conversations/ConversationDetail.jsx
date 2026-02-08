@@ -56,9 +56,9 @@ export default function ConversationDetail({
   }
 
   return (
-    <div className={cn("flex flex-col", inModal ? "h-[70vh]" : "h-full")}>
+    <div className={cn("flex flex-col min-h-0", inModal ? "h-[70vh]" : "h-full")}>
       {/* Header */}
-      <div className={cn("border-b p-4", inModal ? "border-slate-700" : "border-border")}>
+      <div className={cn("border-b p-4 flex-shrink-0", inModal ? "border-slate-700" : "border-border")}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export default function ConversationDetail({
       </div>
 
       {/* Messages with date grouping */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 min-h-0 p-4">
         <div className="space-y-4">
           {messagesWithDates.map((item, idx) => {
             if (item.type === 'date') {
@@ -147,7 +147,7 @@ export default function ConversationDetail({
       </ScrollArea>
 
       {/* Compose */}
-      <div className={cn("p-4 border-t", inModal ? "border-slate-700" : "border-border")}>
+      <div className={cn("p-4 border-t flex-shrink-0", inModal ? "border-slate-700" : "border-border")}>
         <div className="flex gap-2">
           <Textarea
             placeholder="Type a reply..."
