@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  MessageSquare, Plus, Search, Trash2, X, ArrowUpDown, Filter, Users,
+  MessageSquare, Plus, Search, Trash2, X, ArrowUpDown, Filter, Users, ArrowLeft,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getConversations, getLeads } from '@/lib/api';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -47,8 +46,8 @@ export default function Conversations() {
   const [sortBy, setSortBy] = useState('recent');
   const [filterBy, setFilterBy] = useState('');
 
-  // Mobile detail modal
-  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+  // Mobile: show detail view
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
   // Edit email modal
   const [editEmailOpen, setEditEmailOpen] = useState(false);
@@ -129,9 +128,11 @@ export default function Conversations() {
 
   const handleSelectConversation = (conv) => {
     setSelectedConv(conv);
-    if (window.innerWidth < 1024) {
-      setIsMobileDetailOpen(true);
-    }
+    setMobileShowDetail(true);
+  };
+
+  const handleMobileBack = () => {
+    setMobileShowDetail(false);
   };
 
   const handleSendMessage = async () => {
@@ -260,9 +261,9 @@ export default function Conversations() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Conversations</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+      <div className="flex flex-col h-[calc(100vh-152px)]">
+        <h1 className="text-2xl font-bold mb-4">Conversations</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
           <div className="skeleton rounded-xl" />
           <div className="col-span-2 skeleton rounded-xl hidden lg:block" />
         </div>
@@ -271,48 +272,50 @@ export default function Conversations() {
   }
 
   return (
-    <div className="space-y-6" data-testid="conversations-page">
+    <div className="flex flex-col h-[calc(100vh-152px)]" data-testid="conversations-page">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-bold">Conversations</h1>
-          <p className="text-muted-foreground">{conversations.length} conversations</p>
+          <p className="text-muted-foreground text-sm">{conversations.length} conversations</p>
         </div>
         <div className="flex gap-2">
           {deleteMode ? (
             <>
-              <Button variant="outline" onClick={() => { setDeleteMode(false); setSelectedForDelete([]); }}>
+              <Button variant="outline" size="sm" onClick={() => { setDeleteMode(false); setSelectedForDelete([]); }}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleBulkDelete} disabled={selectedForDelete.length === 0}>
-                <Trash2 className="w-4 h-4 mr-2" />
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={selectedForDelete.length === 0}>
+                <Trash2 className="w-4 h-4 mr-1" />
                 Delete ({selectedForDelete.length})
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setDeleteMode(true)}>
-                <Trash2 className="w-4 h-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={() => setDeleteMode(true)}>
+                <Trash2 className="w-4 h-4 mr-1" />
                 Delete
               </Button>
               <Button
+                size="sm"
                 onClick={() => setNewEmailOpen(true)}
                 className="bg-red-600 hover:bg-red-700"
                 data-testid="new-conversation-btn"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                New Conversation
+                <Plus className="w-4 h-4 mr-1" />
+                New
               </Button>
             </>
           )}
         </div>
       </div>
 
-      {/* Main layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-        {/* Left: conversation list */}
-        <Card className="lg:col-span-1 flex flex-col">
-          <CardHeader className="pb-2 space-y-2">
+      {/* Main layout - fixed height, no overflow */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+
+        {/* Left: conversation list — hidden on mobile when viewing detail */}
+        <Card className={`lg:col-span-1 flex flex-col overflow-hidden ${mobileShowDetail ? 'hidden lg:flex' : 'flex'}`}>
+          <CardHeader className="pb-2 space-y-2 flex-shrink-0">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -320,7 +323,7 @@ export default function Conversations() {
                 placeholder="Search conversations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9"
               />
             </div>
             {/* Sort & Filter row */}
@@ -351,7 +354,7 @@ export default function Conversations() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
+          <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full">
               <div className="space-y-1 p-2">
                 {filteredConversations.map((conv) => (
@@ -397,18 +400,31 @@ export default function Conversations() {
           </CardContent>
         </Card>
 
-        {/* Right: detail (desktop) */}
-        <Card className="lg:col-span-2 hidden lg:flex lg:flex-col">
+        {/* Right: detail panel */}
+        {/* Desktop: always visible. Mobile: shown when a conversation is selected */}
+        <Card className={`lg:col-span-2 flex-col overflow-hidden ${mobileShowDetail ? 'flex' : 'hidden lg:flex'}`}>
           {selectedConv ? (
-            <ConversationDetail
-              conv={selectedConv}
-              lead={getLeadForConv(selectedConv)}
-              inModal={false}
-              newMessage={newMessage}
-              setNewMessage={setNewMessage}
-              onSendMessage={handleSendMessage}
-              onEditEmail={handleEditEmail}
-            />
+            <>
+              {/* Mobile back button */}
+              <div className="lg:hidden flex items-center gap-2 p-3 border-b border-border flex-shrink-0">
+                <Button variant="ghost" size="sm" onClick={handleMobileBack} className="h-8 px-2">
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back
+                </Button>
+                <span className="text-sm font-medium truncate">
+                  {getLeadForConv(selectedConv)?.business_name || 'Conversation'}
+                </span>
+              </div>
+              <ConversationDetail
+                conv={selectedConv}
+                lead={getLeadForConv(selectedConv)}
+                inModal={false}
+                newMessage={newMessage}
+                setNewMessage={setNewMessage}
+                onSendMessage={handleSendMessage}
+                onEditEmail={handleEditEmail}
+              />
+            </>
           ) : (
             <CardContent className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
@@ -424,37 +440,6 @@ export default function Conversations() {
           )}
         </Card>
       </div>
-
-      {/* Mobile detail modal */}
-      <Dialog open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-md p-0 max-h-[90vh]">
-          <DialogHeader className="p-4 border-b border-slate-700">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-white">Conversation</DialogTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMobileDetailOpen(false)}
-                className="text-slate-400"
-                aria-label="Close conversation"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-          {selectedConv && (
-            <ConversationDetail
-              conv={selectedConv}
-              lead={getLeadForConv(selectedConv)}
-              inModal={true}
-              newMessage={newMessage}
-              setNewMessage={setNewMessage}
-              onSendMessage={handleSendMessage}
-              onEditEmail={handleEditEmail}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Edit email modal */}
       <EditEmailDialog
