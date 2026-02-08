@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   MessageSquare, Plus, Search, Trash2, X, ArrowUpDown, Filter, Users,
@@ -85,7 +85,7 @@ export default function Conversations() {
     }
   }, [searchParams, leads]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const params = { limit: 100, sort_by: sortBy };
       if (filterBy) params.filter_by = filterBy;
@@ -104,7 +104,7 @@ export default function Conversations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, filterBy, selectedConv]);
 
   // ---- Helpers ----
 
