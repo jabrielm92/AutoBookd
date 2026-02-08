@@ -63,6 +63,25 @@ export default function Conversations() {
   const [selectedForDelete, setSelectedForDelete] = useState([]);
   const [deleteMode, setDeleteMode] = useState(false);
 
+  const fetchData = useCallback(async () => {
+    try {
+      const params = { limit: 100, sort_by: sortBy };
+      if (filterBy) params.filter_by = filterBy;
+
+      const [convRes, leadsRes] = await Promise.all([
+        getConversations(params),
+        getLeads({ limit: 500 }),
+      ]);
+      setConversations(convRes.data);
+      setLeads(leadsRes.data);
+      setSelectedConv((prev) => prev || (convRes.data.length > 0 ? convRes.data[0] : null));
+    } catch {
+      toast.error('Failed to fetch conversations');
+    } finally {
+      setLoading(false);
+    }
+  }, [sortBy, filterBy]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -84,25 +103,6 @@ export default function Conversations() {
       }
     }
   }, [searchParams, leads]);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const params = { limit: 100, sort_by: sortBy };
-      if (filterBy) params.filter_by = filterBy;
-
-      const [convRes, leadsRes] = await Promise.all([
-        getConversations(params),
-        getLeads({ limit: 500 }),
-      ]);
-      setConversations(convRes.data);
-      setLeads(leadsRes.data);
-      setSelectedConv((prev) => prev || (convRes.data.length > 0 ? convRes.data[0] : null));
-    } catch {
-      toast.error('Failed to fetch conversations');
-    } finally {
-      setLoading(false);
-    }
-  }, [sortBy, filterBy]);
 
   // ---- Helpers ----
 
