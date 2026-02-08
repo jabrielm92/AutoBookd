@@ -17,16 +17,21 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { getAnalytics, getPriorityQueue, getFollowUpQueue, getPipelineActivity } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { STAGE_LABELS, STAGE_COLORS, STAGE_LIGHT_BG } from '@/lib/constants';
 import SetupGuide from '@/components/SetupGuide';
 
-// Stage configuration matching the new simplified system
-const stageConfig = {
-  scraped: { label: 'Scraped', icon: Search, color: 'bg-slate-500', lightBg: 'bg-slate-50 dark:bg-slate-900/30' },
-  enriched: { label: 'Enriched', icon: Mail, color: 'bg-purple-500', lightBg: 'bg-purple-50 dark:bg-purple-900/30' },
-  researched: { label: 'Researched', icon: Brain, color: 'bg-amber-500', lightBg: 'bg-amber-50 dark:bg-amber-900/30' },
-  contacted: { label: 'Contacted', icon: MessageSquare, color: 'bg-blue-500', lightBg: 'bg-blue-50 dark:bg-blue-900/30' },
-  booked: { label: 'Booked', icon: CalendarCheck, color: 'bg-emerald-500', lightBg: 'bg-emerald-50 dark:bg-emerald-900/30' }
+// Stage icons (keep per-page since icons are view-specific)
+const stageIcons = {
+  scraped: Search, enriched: Mail, researched: Brain, contacted: MessageSquare, booked: CalendarCheck,
 };
+
+// Compose stageConfig from shared constants + local icons
+const stageConfig = Object.fromEntries(
+  Object.entries(STAGE_LABELS).map(([key, label]) => [
+    key,
+    { label, icon: stageIcons[key], color: STAGE_COLORS[key], lightBg: STAGE_LIGHT_BG[key] },
+  ])
+);
 
 export default function Dashboard() {
   const { isRunning, autoSendEmails } = useOutletContext();
