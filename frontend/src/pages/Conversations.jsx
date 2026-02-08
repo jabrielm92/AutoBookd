@@ -96,15 +96,13 @@ export default function Conversations() {
       ]);
       setConversations(convRes.data);
       setLeads(leadsRes.data);
-      if (!selectedConv && convRes.data.length > 0) {
-        setSelectedConv(convRes.data[0]);
-      }
+      setSelectedConv((prev) => prev || (convRes.data.length > 0 ? convRes.data[0] : null));
     } catch {
       toast.error('Failed to fetch conversations');
     } finally {
       setLoading(false);
     }
-  }, [sortBy, filterBy, selectedConv]);
+  }, [sortBy, filterBy]);
 
   // ---- Helpers ----
 
