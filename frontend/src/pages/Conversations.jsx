@@ -1,142 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  MessageSquare, 
-  Send,
-  User,
-  Bot,
-  Clock,
-  Mail,
-  Phone,
-  Search,
-  X,
-  Edit3,
-  Plus,
-  Paperclip,
-  Trash2
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MessageSquare, Plus, Search, Trash2, X } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { getConversations, getLeads, createConversation } from '@/lib/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getConversations, getLeads } from '@/lib/api';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 
-// Extracted component to avoid re-render issues
-const ConversationDetail = ({ conv, lead, inModal, newMessage, setNewMessage, onSendMessage, onEditEmail }) => {
-  return (
-    <div className={cn("flex flex-col", inModal ? "h-[70vh]" : "h-full")}>
-      <div className={cn("border-b p-4", inModal ? "border-slate-700" : "border-border")}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-lg text-white">{lead?.business_name}</h3>
-            <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
-              {lead?.email && (
-                <span className="flex items-center gap-1">
-                  <Mail className="w-3 h-3" />
-                  <span className="truncate max-w-[200px]">{lead.email}</span>
-                </span>
-              )}
-              {lead?.phone && (
-                <span className="flex items-center gap-1">
-                  <Phone className="w-3 h-3" />
-                  {lead.phone}
-                </span>
-              )}
-            </div>
-          </div>
-          <Badge>{lead?.category}</Badge>
-        </div>
-      </div>
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {conv.messages.map((message, idx) => (
-            <div
-              key={message.id || idx}
-              className={cn(
-                "flex gap-3",
-                message.direction === 'outbound' ? "flex-row-reverse" : ""
-              )}
-            >
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                message.direction === 'outbound' 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted"
-              )}>
-                {message.direction === 'outbound' ? (
-                  <Bot className="w-4 h-4" />
-                ) : (
-                  <User className="w-4 h-4" />
-                )}
-              </div>
-              <div className={cn(
-                "max-w-[80%] rounded-2xl px-4 py-2",
-                message.direction === 'outbound'
-                  ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "bg-muted rounded-bl-md"
-              )}>
-                <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <p className={cn(
-                    "text-xs",
-                    message.direction === 'outbound' 
-                      ? "text-primary-foreground/70" 
-                      : "text-muted-foreground"
-                  )}>
-                    {format(new Date(message.timestamp), 'h:mm a')}
-                    {message.status === 'draft' && <span className="ml-2 text-amber-300">(Draft)</span>}
-                  </p>
-                  {message.direction === 'outbound' && message.status !== 'sent' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => onEditEmail(message, conv.lead_id)}
-                    >
-                      <Edit3 className="w-3 h-3 mr-1" />
-                      Edit & Send
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
-      <div className={cn("p-4 border-t", inModal ? "border-slate-700" : "border-border")}>
-        <div className="flex gap-2">
-          <Textarea
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            className={cn("min-h-[60px] resize-none", inModal && "bg-slate-800 border-slate-700")}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                onSendMessage();
-              }
-            }}
-          />
-          <Button 
-            onClick={onSendMessage}
-            disabled={!newMessage.trim()}
-            className="self-end"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import ConversationDetail from '@/components/conversations/ConversationDetail';
+import ConversationListItem from '@/components/conversations/ConversationListItem';
+import ComposeEmailDialog from '@/components/conversations/ComposeEmailDialog';
+import EditEmailDialog from '@/components/conversations/EditEmailDialog';
 
 export default function Conversations() {
   const [searchParams] = useSearchParams();
@@ -146,13 +23,21 @@ export default function Conversations() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sending, setSending] = useState(false);
+
+  // Mobile detail modal
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+
+  // Edit email modal
   const [editEmailOpen, setEditEmailOpen] = useState(false);
   const [editingEmail, setEditingEmail] = useState({ subject: '', body: '', leadId: '' });
-  const [sending, setSending] = useState(false);
+
+  // Compose modal
   const [newEmailOpen, setNewEmailOpen] = useState(false);
   const [newEmail, setNewEmail] = useState({ to: '', subject: '', body: '', businessName: '', leadId: '' });
   const [attachments, setAttachments] = useState([]);
+
+  // Bulk delete
   const [selectedForDelete, setSelectedForDelete] = useState([]);
   const [deleteMode, setDeleteMode] = useState(false);
 
@@ -160,18 +45,18 @@ export default function Conversations() {
     fetchData();
   }, []);
 
-  // Handle ?new=leadId param to start conversation for specific lead
+  // Open compose dialog when navigated with ?new=leadId
   useEffect(() => {
     const newLeadId = searchParams.get('new');
     if (newLeadId && leads.length > 0) {
-      const lead = leads.find(l => l.id === newLeadId);
-      if (lead && lead.email) {
+      const lead = leads.find((l) => l.id === newLeadId);
+      if (lead?.email) {
         setNewEmail({
           to: lead.email,
           subject: '',
           body: '',
           businessName: lead.business_name || '',
-          leadId: lead.id
+          leadId: lead.id,
         });
         setNewEmailOpen(true);
       }
@@ -182,94 +67,69 @@ export default function Conversations() {
     try {
       const [convRes, leadsRes] = await Promise.all([
         getConversations({ limit: 100 }),
-        getLeads({ limit: 500 })
+        getLeads({ limit: 500 }),
       ]);
       setConversations(convRes.data);
       setLeads(leadsRes.data);
       if (convRes.data.length > 0) {
         setSelectedConv(convRes.data[0]);
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch conversations');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteConversation = async (convId) => {
-    if (!confirm('Delete this conversation?')) return;
-    try {
-      await api.delete(`/conversations/${convId}`);
-      toast.success('Conversation deleted');
-      setConversations(prev => prev.filter(c => c.id !== convId));
-      if (selectedConv?.id === convId) {
-        setSelectedConv(null);
-      }
-    } catch (error) {
-      toast.error('Failed to delete conversation');
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedForDelete.length === 0) return;
-    if (!confirm(`Delete ${selectedForDelete.length} conversation(s)?`)) return;
-    try {
-      await api.post('/conversations/bulk-delete', { ids: selectedForDelete });
-      toast.success(`${selectedForDelete.length} conversation(s) deleted`);
-      setConversations(prev => prev.filter(c => !selectedForDelete.includes(c.id)));
-      if (selectedForDelete.includes(selectedConv?.id)) {
-        setSelectedConv(null);
-      }
-      setSelectedForDelete([]);
-      setDeleteMode(false);
-    } catch (error) {
-      toast.error('Failed to delete conversations');
-    }
-  };
-
-  const toggleSelectForDelete = (convId) => {
-    setSelectedForDelete(prev => 
-      prev.includes(convId) 
-        ? prev.filter(id => id !== convId)
-        : [...prev, convId]
-    );
-  };
+  // ---- Helpers ----
 
   const getLeadForConv = (conv) => {
-    // Handle manual conversations that don't have a lead
     if (conv.is_manual || conv.lead_id?.startsWith('manual_')) {
       return {
         id: conv.lead_id,
         business_name: conv.recipient_name || 'Manual Email',
         email: conv.recipient_email,
-        category: 'Manual'
+        category: 'Manual',
       };
     }
-    return leads.find(l => l.id === conv.lead_id);
+    return leads.find((l) => l.id === conv.lead_id);
+  };
+
+  const filteredConversations = conversations.filter((conv) => {
+    const lead = getLeadForConv(conv);
+    const name = lead?.business_name || conv.recipient_name || 'Unknown';
+    return name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  // ---- Actions ----
+
+  const handleSelectConversation = (conv) => {
+    setSelectedConv(conv);
+    if (window.innerWidth < 1024) {
+      setIsMobileDetailOpen(true);
+    }
   };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConv) return;
-
     try {
-      // Get original subject from first message for "Re:" prefix
       const firstMsg = selectedConv.messages?.[0]?.content || '';
       const subjectMatch = firstMsg.match(/^Subject:\s*(.+?)(?:\n|$)/);
       const originalSubject = subjectMatch ? subjectMatch[1].trim() : '';
-      const replySubject = originalSubject.startsWith('Re:') ? originalSubject : `Re: ${originalSubject || 'Your inquiry'}`;
-      
-      // Send email directly via the send endpoint
+      const replySubject = originalSubject.startsWith('Re:')
+        ? originalSubject
+        : `Re: ${originalSubject || 'Your inquiry'}`;
+
       await api.post(`/conversations/${selectedConv.lead_id}/send`, {
         subject: replySubject,
-        body: newMessage
+        body: newMessage,
       });
-      
-      // Refresh conversations
+
       const { data } = await getConversations({ limit: 100 });
       setConversations(data);
-      const updated = data.find(c => c.lead_id === selectedConv.lead_id);
+      const updated = data.find((c) => c.lead_id === selectedConv.lead_id);
       if (updated) setSelectedConv(updated);
-      
+
       setNewMessage('');
       toast.success('Email sent');
     } catch (error) {
@@ -278,17 +138,14 @@ export default function Conversations() {
   };
 
   const handleEditEmail = (message, leadId) => {
-    // Parse subject and body from message content
     const content = message.content || '';
     let subject = '';
     let body = content;
-    
     if (content.startsWith('Subject:')) {
       const lines = content.split('\n');
       subject = lines[0].replace('Subject:', '').trim();
       body = lines.slice(2).join('\n').trim();
     }
-    
     setEditingEmail({ subject, body, leadId });
     setEditEmailOpen(true);
   };
@@ -298,21 +155,17 @@ export default function Conversations() {
       toast.error('Subject and body are required');
       return;
     }
-    
     setSending(true);
     try {
       await api.post(`/conversations/${editingEmail.leadId}/send`, {
         subject: editingEmail.subject,
-        body: editingEmail.body
+        body: editingEmail.body,
       });
-      
       toast.success('Email sent successfully!');
       setEditEmailOpen(false);
-      
-      // Refresh conversations
       const { data } = await getConversations({ limit: 100 });
       setConversations(data);
-      const updated = data.find(c => c.lead_id === editingEmail.leadId);
+      const updated = data.find((c) => c.lead_id === editingEmail.leadId);
       if (updated) setSelectedConv(updated);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to send email');
@@ -321,60 +174,15 @@ export default function Conversations() {
     }
   };
 
-  const handleFileChange = async (e) => {
-    const files = Array.from(e.target.files);
-    const newAttachments = [];
-    
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error(`${file.name} is too large (max 5MB)`);
-        continue;
-      }
-      
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(file);
-      });
-      
-      newAttachments.push({ filename: file.name, content: base64 });
-    }
-    
-    setAttachments(prev => [...prev, ...newAttachments]);
-  };
-
-  const removeAttachment = (index) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleLeadSelect = (leadId) => {
-    if (leadId) {
-      const lead = leads.find(l => l.id === leadId);
-      if (lead) {
-        setNewEmail(prev => ({
-          ...prev,
-          leadId,
-          to: lead.email || prev.to,
-          businessName: lead.business_name || prev.businessName
-        }));
-      }
-    } else {
-      setNewEmail(prev => ({ ...prev, leadId: '' }));
-    }
-  };
-
   const handleSendNewEmail = async () => {
     if (!newEmail.to || !newEmail.subject || !newEmail.body) {
       toast.error('Recipient, subject, and body are required');
       return;
     }
-    
-    // Basic email validation
     if (!newEmail.to.includes('@')) {
       toast.error('Please enter a valid email address');
       return;
     }
-    
     setSending(true);
     try {
       await api.post('/conversations/manual', {
@@ -383,15 +191,12 @@ export default function Conversations() {
         body: newEmail.body,
         business_name: newEmail.businessName || null,
         lead_id: newEmail.leadId || null,
-        attachments: attachments.length > 0 ? attachments : null
+        attachments: attachments.length > 0 ? attachments : null,
       });
-      
       toast.success('Email sent successfully!');
       setNewEmailOpen(false);
       setNewEmail({ to: '', subject: '', body: '', businessName: '', leadId: '' });
       setAttachments([]);
-      
-      // Refresh conversations
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to send email');
@@ -400,19 +205,30 @@ export default function Conversations() {
     }
   };
 
-  const handleSelectConversation = (conv) => {
-    setSelectedConv(conv);
-    // On mobile, open modal
-    if (window.innerWidth < 1024) {
-      setIsMobileDetailOpen(true);
+  // ---- Bulk delete ----
+
+  const toggleSelectForDelete = (convId) => {
+    setSelectedForDelete((prev) =>
+      prev.includes(convId) ? prev.filter((id) => id !== convId) : [...prev, convId]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedForDelete.length === 0) return;
+    if (!confirm(`Delete ${selectedForDelete.length} conversation(s)?`)) return;
+    try {
+      await api.post('/conversations/bulk-delete', { ids: selectedForDelete });
+      toast.success(`${selectedForDelete.length} conversation(s) deleted`);
+      setConversations((prev) => prev.filter((c) => !selectedForDelete.includes(c.id)));
+      if (selectedForDelete.includes(selectedConv?.id)) setSelectedConv(null);
+      setSelectedForDelete([]);
+      setDeleteMode(false);
+    } catch {
+      toast.error('Failed to delete conversations');
     }
   };
 
-  const filteredConversations = conversations.filter(conv => {
-    const lead = getLeadForConv(conv);
-    const name = lead?.business_name || conv.recipient_name || 'Unknown';
-    return name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  // ---- Render ----
 
   if (loading) {
     return (
@@ -428,6 +244,7 @@ export default function Conversations() {
 
   return (
     <div className="space-y-6" data-testid="conversations-page">
+      {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Conversations</h1>
@@ -436,13 +253,13 @@ export default function Conversations() {
         <div className="flex gap-2">
           {deleteMode ? (
             <>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => { setDeleteMode(false); setSelectedForDelete([]); }}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 variant="destructive"
                 onClick={handleBulkDelete}
                 disabled={selectedForDelete.length === 0}
@@ -453,15 +270,12 @@ export default function Conversations() {
             </>
           ) : (
             <>
-              <Button 
-                variant="outline"
-                onClick={() => setDeleteMode(true)}
-              >
+              <Button variant="outline" onClick={() => setDeleteMode(true)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
               </Button>
-              <Button 
-                onClick={() => setNewEmailOpen(true)} 
+              <Button
+                onClick={() => setNewEmailOpen(true)}
                 className="bg-red-600 hover:bg-red-700"
                 data-testid="new-conversation-btn"
               >
@@ -473,8 +287,9 @@ export default function Conversations() {
         </div>
       </div>
 
+      {/* Main layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-        {/* Conversation List */}
+        {/* Left: conversation list */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-3">
             <div className="relative">
@@ -490,56 +305,18 @@ export default function Conversations() {
           <CardContent className="p-0">
             <ScrollArea className="h-[calc(100vh-340px)]">
               <div className="space-y-1 p-2">
-                {filteredConversations.map((conv) => {
-                  const lead = getLeadForConv(conv);
-                  const lastMessage = conv.messages[conv.messages.length - 1];
-                  const isSelected = selectedForDelete.includes(conv.id);
-                  return (
-                    <div
-                      key={conv.id}
-                      onClick={() => deleteMode ? toggleSelectForDelete(conv.id) : handleSelectConversation(conv)}
-                      className={cn(
-                        "p-3 rounded-lg cursor-pointer transition-colors",
-                        deleteMode && isSelected
-                          ? "bg-red-500/20 border border-red-500/40"
-                          : selectedConv?.id === conv.id 
-                            ? "bg-primary/10 border border-primary/20" 
-                            : "hover:bg-muted"
-                      )}
-                      data-testid={`conversation-item-${conv.id}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        {deleteMode && (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelectForDelete(conv.id)}
-                            className="mt-1 mr-2"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {lead?.business_name || 'Unknown'}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            {lastMessage?.content?.substring(0, 50)}...
-                          </p>
-                        </div>
-                        {!deleteMode && (
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
-                            {conv.messages.length}
-                          </Badge>
-                        )}
-                      </div>
-                      {lastMessage && (
-                        <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {format(new Date(lastMessage.timestamp), 'MMM d, h:mm a')}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {filteredConversations.map((conv) => (
+                  <ConversationListItem
+                    key={conv.id}
+                    conv={conv}
+                    lead={getLeadForConv(conv)}
+                    isActive={selectedConv?.id === conv.id}
+                    deleteMode={deleteMode}
+                    isSelectedForDelete={selectedForDelete.includes(conv.id)}
+                    onClick={handleSelectConversation}
+                    onToggleSelect={toggleSelectForDelete}
+                  />
+                ))}
                 {filteredConversations.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -551,11 +328,11 @@ export default function Conversations() {
           </CardContent>
         </Card>
 
-        {/* Desktop: Conversation Detail */}
+        {/* Right: detail (desktop) */}
         <Card className="lg:col-span-2 hidden lg:flex lg:flex-col">
           {selectedConv ? (
-            <ConversationDetail 
-              conv={selectedConv} 
+            <ConversationDetail
+              conv={selectedConv}
               lead={getLeadForConv(selectedConv)}
               inModal={false}
               newMessage={newMessage}
@@ -575,20 +352,26 @@ export default function Conversations() {
         </Card>
       </div>
 
-      {/* Mobile: Conversation Detail Modal */}
+      {/* Mobile detail modal */}
       <Dialog open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
         <DialogContent className="bg-slate-900 border-slate-800 max-w-md p-0 max-h-[90vh]">
           <DialogHeader className="p-4 border-b border-slate-700">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-white">Conversation</DialogTitle>
-              <Button variant="ghost" size="icon" onClick={() => setIsMobileDetailOpen(false)} className="text-slate-400">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileDetailOpen(false)}
+                className="text-slate-400"
+                aria-label="Close conversation"
+              >
                 <X className="w-4 h-4" />
               </Button>
             </div>
           </DialogHeader>
           {selectedConv && (
-            <ConversationDetail 
-              conv={selectedConv} 
+            <ConversationDetail
+              conv={selectedConv}
               lead={getLeadForConv(selectedConv)}
               inModal={true}
               newMessage={newMessage}
@@ -600,177 +383,28 @@ export default function Conversations() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit & Send Email Modal */}
-      <Dialog open={editEmailOpen} onOpenChange={setEditEmailOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-white">Edit & Send Email</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-slate-300">Subject</Label>
-              <Input
-                value={editingEmail.subject}
-                onChange={(e) => setEditingEmail({...editingEmail, subject: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white"
-                placeholder="Email subject..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-slate-300">Body</Label>
-              <Textarea
-                value={editingEmail.body}
-                onChange={(e) => setEditingEmail({...editingEmail, body: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white min-h-[200px]"
-                placeholder="Email body..."
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditEmailOpen(false)} className="border-slate-600">
-              Cancel
-            </Button>
-            <Button onClick={handleSendEditedEmail} disabled={sending} className="bg-red-600 hover:bg-red-700">
-              {sending ? 'Sending...' : 'Send Email'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Edit email modal */}
+      <EditEmailDialog
+        open={editEmailOpen}
+        onOpenChange={setEditEmailOpen}
+        editingEmail={editingEmail}
+        setEditingEmail={setEditingEmail}
+        onSend={handleSendEditedEmail}
+        sending={sending}
+      />
 
-      {/* New Conversation Modal */}
-      <Dialog open={newEmailOpen} onOpenChange={(open) => {
-        setNewEmailOpen(open);
-        if (!open) {
-          setNewEmail({ to: '', subject: '', body: '', businessName: '', leadId: '' });
-          setAttachments([]);
-        }
-      }}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white">New Conversation</DialogTitle>
-            <p className="text-sm text-slate-400">Compose and send a new email</p>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Lead Selection Dropdown */}
-            <div className="space-y-2">
-              <Label className="text-slate-300">Link to Existing Lead (Optional)</Label>
-              <select
-                value={newEmail.leadId}
-                onChange={(e) => handleLeadSelect(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2 text-sm"
-                data-testid="new-email-lead-select"
-              >
-                <option value="">-- Select a lead or enter email manually --</option>
-                {leads.filter(l => l.email).map(lead => (
-                  <option key={lead.id} value={lead.id}>
-                    {lead.business_name} ({lead.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-slate-300">To (Email) *</Label>
-              <Input
-                type="email"
-                value={newEmail.to}
-                onChange={(e) => setNewEmail({...newEmail, to: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white"
-                placeholder="recipient@example.com"
-                data-testid="new-email-to"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-slate-300">Contact/Business Name (Optional)</Label>
-              <Input
-                value={newEmail.businessName}
-                onChange={(e) => setNewEmail({...newEmail, businessName: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white"
-                placeholder="John Smith or Acme Corp"
-                data-testid="new-email-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-slate-300">Subject *</Label>
-              <Input
-                value={newEmail.subject}
-                onChange={(e) => setNewEmail({...newEmail, subject: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white"
-                placeholder="Email subject..."
-                data-testid="new-email-subject"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-slate-300">Body *</Label>
-              <Textarea
-                value={newEmail.body}
-                onChange={(e) => setNewEmail({...newEmail, body: e.target.value})}
-                className="bg-slate-800 border-slate-700 text-white min-h-[150px]"
-                placeholder="Write your message..."
-                data-testid="new-email-body"
-              />
-            </div>
-            
-            {/* Attachments Section */}
-            <div className="space-y-2">
-              <Label className="text-slate-300">Attachments (Optional)</Label>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-md cursor-pointer hover:bg-slate-700 transition-colors">
-                  <Paperclip className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm text-slate-300">Add Files</span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif"
-                    data-testid="new-email-attachments"
-                  />
-                </label>
-                <span className="text-xs text-slate-500">Max 5MB per file</span>
-              </div>
-              {attachments.length > 0 && (
-                <div className="space-y-1 mt-2">
-                  {attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-slate-800 px-3 py-2 rounded-md">
-                      <span className="text-sm text-slate-300 truncate">{att.filename}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeAttachment(idx)}
-                        className="h-6 w-6 p-0 text-slate-400 hover:text-red-400"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setNewEmailOpen(false);
-                setNewEmail({ to: '', subject: '', body: '', businessName: '', leadId: '' });
-                setAttachments([]);
-              }} 
-              className="border-slate-600"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSendNewEmail} 
-              disabled={sending || !newEmail.to || !newEmail.subject || !newEmail.body}
-              className="bg-red-600 hover:bg-red-700"
-              data-testid="send-new-email-btn"
-            >
-              {sending ? 'Sending...' : 'Send Email'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Compose modal */}
+      <ComposeEmailDialog
+        open={newEmailOpen}
+        onOpenChange={setNewEmailOpen}
+        email={newEmail}
+        setEmail={setNewEmail}
+        leads={leads}
+        attachments={attachments}
+        setAttachments={setAttachments}
+        onSend={handleSendNewEmail}
+        sending={sending}
+      />
     </div>
   );
 }

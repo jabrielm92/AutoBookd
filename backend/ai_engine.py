@@ -7,6 +7,7 @@ import asyncio
 import logging
 import json
 import os
+import random
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 import httpx
@@ -535,9 +536,15 @@ PRODUCT-SPECIFIC GUIDELINES:
         
         # NOTE: Calendar link is now sent AFTER positive reply, not in initial sequence
         calendar_context = ""
-        
-        # Calculate delays based on follow_up_days
-        delays = [0, follow_up_days, follow_up_days * 2, follow_up_days * 3]
+
+        # Calculate delays with jitter (±1 day) for more natural sending patterns
+        base_delays = [0, follow_up_days, follow_up_days * 2, follow_up_days * 3]
+        delays = [
+            base_delays[0],
+            max(1, base_delays[1] + random.choice([-1, 0, 1])),
+            max(2, base_delays[2] + random.choice([-1, 0, 1])),
+            max(3, base_delays[3] + random.choice([-1, 0, 1])),
+        ]
         
         # Build dynamic sequence structure based on total_emails
         sequence_instructions = []
@@ -559,6 +566,16 @@ PRODUCT-SPECIFIC GUIDELINES:
         sequence_structure = "\n".join(sequence_instructions)
         json_example = "[\n    " + ",\n    ".join(email_json_examples) + "\n]"
         
+        # Choose a random subject-line style for email 1 to force variation
+        subject_styles = [
+            "A short question referencing their specific service or niche",
+            "A bold claim about a result your product delivers for their industry",
+            "A curiosity-driven subject that references something unique from their website",
+            "A simple, first-name-friendly subject like 'Thought about {business_name}'",
+            "A pain-point subject that names the exact challenge they face",
+        ]
+        chosen_subject_style = random.choice(subject_styles).replace("{business_name}", lead.get("business_name", "your business"))
+
         prompt = f"""You are an expert cold email copywriter. Generate a highly personalized {total_emails}-email sequence.
 
 TARGET BUSINESS:
@@ -584,13 +601,19 @@ SENDER:
 SEQUENCE STRUCTURE (Generate exactly {total_emails} emails):
 {sequence_structure}
 
+SUBJECT LINE STYLE for Email 1: {chosen_subject_style}
+(Follow-up emails should use "Re: [Email 1 subject]" or a fresh angle like "Closing the loop")
+
 CRITICAL REQUIREMENTS:
-- YOU MUST mention the product/service name and its specific features/benefits
-- Each email must reference the PRODUCT-SPECIFIC GUIDELINES above if provided
-- Personalize each email to THIS specific business
-- Sound like a helpful human, not a salesperson
-- Use their actual business name naturally
-- NO generic templates - make each email unique
+1. YOU MUST weave the product/service name and its specific features/benefits naturally into the emails — do NOT just mention the sender company name, explain what the product DOES for THIS business
+2. Each email must follow the PRODUCT-SPECIFIC GUIDELINES above if provided
+3. Each email must follow the EMAIL GUIDELINES above — especially forbidden words, tone, and custom instructions
+4. Personalize each email to THIS specific business using the research insights
+5. Sound like a helpful human, not a salesperson — no "I hope this email finds you well"
+6. Use their actual business name naturally, not every sentence
+7. NO generic templates — each email must feel hand-written for this recipient
+8. Each email in the sequence should take a DIFFERENT angle (don't repeat the same pitch)
+9. NEVER use generic phrases: "I noticed your website", "I came across your business", "Hope you're doing well"
 
 OUTPUT valid JSON array with exactly {total_emails} emails:
 {json_example}"""

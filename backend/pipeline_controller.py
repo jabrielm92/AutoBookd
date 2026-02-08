@@ -451,23 +451,37 @@ class PipelineController:
                 if leads:
                     await self._log_activity("research", f"Researching {len(leads)} leads with AI", "info")
                 
+                # Fetch product and email guidelines once per batch
+                product = None
+                tenant_id = config.get("tenant_id")
+                if config.get("active_product_id"):
+                    product = await self.db.products.find_one(
+                        {"id": config.get("active_product_id"), "tenant_id": tenant_id},
+                        {"_id": 0}
+                    )
+                email_guidelines = config.get("email_guidelines")
+
                 for lead in leads:
                     if not self.is_running:
                         break
-                    
+
                     website_url = lead.get("website")
                     if not website_url:
                         continue
-                    
+
                     await self._log_activity("research", f"Analyzing website for {lead.get('business_name')}", "info", lead.get('business_name'))
-                    
+
                     # Scrape website
                     website_data = await self.website_scraper.scrape_website(website_url)
-                    
+
                     await self._log_activity("research", f"Running AI research on {lead.get('business_name')}", "info", lead.get('business_name'))
-                    
-                    # AI research
-                    research = await self.ai_engine.research_lead(lead, website_data)
+
+                    # AI research — pass product and email guidelines for product-aware insights
+                    research = await self.ai_engine.research_lead(
+                        lead, website_data,
+                        product=product,
+                        email_guidelines=email_guidelines
+                    )
                     
                     # Calculate lead score
                     score = self._calculate_lead_score(lead, research, website_data)
