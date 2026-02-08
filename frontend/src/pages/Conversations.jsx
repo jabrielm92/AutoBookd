@@ -103,6 +103,18 @@ export default function Conversations() {
     }
   }, [searchParams, leads]);
 
+  // Auto-select conversation when navigated with ?lead=leadId
+  useEffect(() => {
+    const leadId = searchParams.get('lead');
+    if (leadId && conversations.length > 0) {
+      const conv = conversations.find((c) => c.lead_id === leadId);
+      if (conv) {
+        setSelectedConv(conv);
+        setMobileShowDetail(true);
+      }
+    }
+  }, [searchParams, conversations]);
+
   // ---- Helpers ----
 
   const getLeadForConv = (conv) => {

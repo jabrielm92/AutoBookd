@@ -216,10 +216,10 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               {priorityLeads.map((lead) => (
-                <div 
-                  key={lead.id} 
+                <div
+                  key={lead.id}
                   className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer"
-                  onClick={() => navigate('/dashboard/leads')}
+                  onClick={() => navigate(`/dashboard/leads?view=${lead.id}`)}
                 >
                   <div className="flex items-center gap-3">
                     <div className={cn(
@@ -256,10 +256,10 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               {followUpLeads.map((lead) => (
-                <div 
-                  key={lead.id} 
+                <div
+                  key={lead.id}
                   className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer"
-                  onClick={() => navigate('/dashboard/leads')}
+                  onClick={() => navigate(`/dashboard/leads?view=${lead.id}`)}
                 >
                   <div className="flex items-center gap-3">
                     <div className={cn(

@@ -264,6 +264,24 @@ export default function Leads() {
     }
   };
 
+  const formatDateShort = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      return format(parseISO(dateStr), 'MMM d');
+    } catch {
+      return '-';
+    }
+  };
+
+  // Handle ?view=leadId to auto-open detail
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+    if (viewId && leads.length > 0) {
+      const lead = leads.find((l) => l.id === viewId);
+      if (lead) setSelectedLead(lead);
+    }
+  }, [searchParams, leads]);
+
   return (
     <div className="space-y-6" data-testid="leads-page">
       {/* Header */}
@@ -511,6 +529,7 @@ export default function Leads() {
                 <th>Contact</th>
                 <th>Location</th>
                 <th>Emails</th>
+                <th>Added</th>
                 <th>Stage</th>
                 <th className="w-12"></th>
               </tr>
@@ -604,6 +623,11 @@ export default function Leads() {
                     </div>
                   </td>
                   <td>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      {formatDateShort(lead.created_at)}
+                    </span>
+                  </td>
+                  <td>
                     <Badge className={cn("text-xs", stageColors[lead.stage] || stageColors.scraped)}>
                       {stageLabels[lead.stage] || 'Scraped'}
                     </Badge>
@@ -620,7 +644,13 @@ export default function Leads() {
                           <Eye className="w-4 h-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        {lead.email && (
+                        {lead.email && lead.emails_sent > 0 && (
+                          <DropdownMenuItem onClick={() => navigate(`/dashboard/conversations?lead=${lead.id}`)}>
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            View Conversation
+                          </DropdownMenuItem>
+                        )}
+                        {lead.email && !lead.emails_sent && (
                           <DropdownMenuItem onClick={() => navigate(`/dashboard/conversations?new=${lead.id}`)}>
                             <MessageSquare className="w-4 h-4 mr-2" />
                             Start Conversation
@@ -661,7 +691,7 @@ export default function Leads() {
               ))}
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-400">
+                  <td colSpan={9} className="text-center py-12 text-slate-400">
                     {loading ? 'Loading...' : 'No leads found'}
                   </td>
                 </tr>
@@ -705,6 +735,18 @@ export default function Leads() {
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
+                    {lead.email && lead.emails_sent > 0 && (
+                      <DropdownMenuItem onClick={() => navigate(`/dashboard/conversations?lead=${lead.id}`)}>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        View Conversation
+                      </DropdownMenuItem>
+                    )}
+                    {lead.email && !lead.emails_sent && (
+                      <DropdownMenuItem onClick={() => navigate(`/dashboard/conversations?new=${lead.id}`)}>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Start Conversation
+                      </DropdownMenuItem>
+                    )}
                     {lead.stage === 'contacted' && (
                       <DropdownMenuItem onClick={() => handleToggleFollowups(lead.id, !lead.pause_followups)}>
                         {lead.pause_followups ? (
@@ -733,7 +775,7 @@ export default function Leads() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              
+
               <div className="mt-3 space-y-2 text-sm">
                 {lead.email && (
                   <div className="flex items-center gap-2 text-slate-300">
@@ -748,12 +790,15 @@ export default function Leads() {
               </div>
               
               <div className="mt-3 flex items-center justify-between">
-                <Badge className={cn("text-xs", stageColors[lead.stage] || stageColors.scraped)}>
-                  {stageLabels[lead.stage] || 'Scraped'}
-                </Badge>
-                {lead.emails_sent > 0 && (
-                  <span className="text-xs text-blue-400">{lead.emails_sent}/{lead.emails_total || 4} sent</span>
-                )}
+                <div className="flex items-center gap-2">
+                  <Badge className={cn("text-xs", stageColors[lead.stage] || stageColors.scraped)}>
+                    {stageLabels[lead.stage] || 'Scraped'}
+                  </Badge>
+                  {lead.emails_sent > 0 && (
+                    <span className="text-xs text-blue-400">{lead.emails_sent}/{lead.emails_total || 4} sent</span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500">{formatDateShort(lead.created_at)}</span>
               </div>
             </CardContent>
           </Card>
