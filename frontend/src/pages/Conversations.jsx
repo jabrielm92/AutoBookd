@@ -65,7 +65,7 @@ export default function Conversations() {
 
   useEffect(() => {
     fetchData();
-  }, [sortBy, filterBy]);
+  }, [fetchData]);
 
   // Open compose dialog when navigated with ?new=leadId
   useEffect(() => {
