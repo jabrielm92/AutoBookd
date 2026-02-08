@@ -804,23 +804,6 @@ export default function Discovery() {
 
               <Separator />
 
-              {/* Custom AI Instructions */}
-              <div className="space-y-3">
-                <Label>Custom AI Instructions</Label>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Detailed instructions for the AI when writing emails. This is injected into every email generation prompt.
-                </p>
-                <Textarea
-                  value={emailGuidelines.custom_prompt || ''}
-                  onChange={(e) => setEmailGuidelines({...emailGuidelines, custom_prompt: e.target.value})}
-                  placeholder="e.g., You are writing cold outbound emails to HVAC companies..."
-                  rows={12}
-                  className="font-mono text-sm"
-                />
-              </div>
-
-              <Separator />
-
               {/* Note about product-specific guidelines */}
               <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
                 <p className="text-sm text-blue-300">
