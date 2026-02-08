@@ -16,17 +16,24 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
 # JWT Config
-JWT_SECRET = os.environ.get("JWT_SECRET", "autobookd_secret_key")
+JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable is required. Never use a default secret in production.")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
 
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "jabriel@arisolutionsinc.com")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+if not ADMIN_EMAIL:
+    raise RuntimeError("ADMIN_EMAIL environment variable is required.")
 
 
 def hash_password(password: str) -> str:
@@ -76,12 +83,12 @@ def generate_verification_token() -> str:
 async def send_verification_email(email: str, token: str, resend_api_key: str):
     """Send verification email via Resend"""
     if not resend_api_key:
-        print(f"[DEV] Verification link: /verify-email?token={token}")
+        logger.warning("Resend API key not set. Verification link: /verify-email?token=%s", token)
         return True
     
     base_url = os.environ.get("FRONTEND_URL")
     if not base_url:
-        print(f"[DEV] FRONTEND_URL not set. Verification link: /verify-email?token={token}")
+        logger.warning("FRONTEND_URL not set. Verification link: /verify-email?token=%s", token)
         return True
     verify_url = f"{base_url}/verify-email?token={token}"
     
@@ -126,7 +133,7 @@ async def send_verification_email(email: str, token: str, resend_api_key: str):
 async def send_contact_email(name: str, email: str, message: str, resend_api_key: str):
     """Send contact form submission via Resend"""
     if not resend_api_key:
-        print(f"[DEV] Contact from {name} ({email}): {message}")
+        logger.warning("Resend API key not set. Contact from %s (%s): %s", name, email, message)
         return True
     
     async with httpx.AsyncClient() as client:

@@ -5,14 +5,20 @@ Stripe Integration for AutoBookd SaaS
 - Trial management
 """
 import os
+import logging
 import stripe
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 PRICE_AMOUNT = 2999  # $29.99 in cents
 TRIAL_DAYS = 1  # 24-hour trial
+
+# Module-level cache so we only resolve once per process
+_cached_price_id: Optional[str] = None
 
 
 async def create_stripe_customer(email: str, name: str) -> str:
@@ -25,32 +31,49 @@ async def create_stripe_customer(email: str, name: str) -> str:
     return customer.id
 
 
-async def create_checkout_session(customer_id: str, user_id: str, success_url: str, cancel_url: str) -> str:
-    """Create Stripe checkout session for subscription"""
+def _resolve_price_id() -> str:
+    """Resolve (and cache) the Stripe price ID, creating product/price only if needed."""
+    global _cached_price_id
+    if _cached_price_id:
+        return _cached_price_id
+
     price_id = os.environ.get("STRIPE_PRICE_ID")
-    
-    # If no price ID exists, create one dynamically
-    if not price_id or price_id == "price_autobookd_monthly":
-        # Check if product exists
-        products = stripe.Product.list(limit=1, active=True)
-        if products.data:
-            product_id = products.data[0].id
-        else:
-            product = stripe.Product.create(
-                name="AutoBookd Pro",
-                description="AI-Powered Lead Automation Platform - Full Access"
-            )
-            product_id = product.id
-        
-        # Create price
+    if price_id and price_id != "price_autobookd_monthly":
+        _cached_price_id = price_id
+        return _cached_price_id
+
+    # Look up or create the product/price once
+    products = stripe.Product.list(limit=1, active=True)
+    if products.data:
+        product_id = products.data[0].id
+    else:
+        product = stripe.Product.create(
+            name="AutoBookd Pro",
+            description="AI-Powered Lead Automation Platform - Full Access"
+        )
+        product_id = product.id
+
+    # Check for an existing price on this product before creating a new one
+    existing_prices = stripe.Price.list(product=product_id, active=True, limit=1)
+    if existing_prices.data:
+        _cached_price_id = existing_prices.data[0].id
+    else:
         price = stripe.Price.create(
             product=product_id,
             unit_amount=PRICE_AMOUNT,
             currency="usd",
             recurring={"interval": "month"}
         )
-        price_id = price.id
-    
+        _cached_price_id = price.id
+
+    logger.info("Resolved Stripe price ID: %s", _cached_price_id)
+    return _cached_price_id
+
+
+async def create_checkout_session(customer_id: str, user_id: str, success_url: str, cancel_url: str) -> str:
+    """Create Stripe checkout session for subscription"""
+    price_id = _resolve_price_id()
+
     session = stripe.checkout.Session.create(
         customer=customer_id,
         payment_method_types=["card"],
@@ -88,7 +111,7 @@ async def cancel_subscription(subscription_id: str) -> bool:
         )
         return True
     except Exception as e:
-        print(f"Error cancelling subscription: {e}")
+        logger.error("Error cancelling subscription: %s", e)
         return False
 
 
@@ -103,7 +126,7 @@ async def get_subscription_status(subscription_id: str) -> Dict[str, Any]:
             "trial_end": datetime.fromtimestamp(sub.trial_end, tz=timezone.utc).isoformat() if sub.trial_end else None
         }
     except Exception as e:
-        print(f"Error getting subscription: {e}")
+        logger.error("Error getting subscription: %s", e)
         return None
 
 

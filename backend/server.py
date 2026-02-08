@@ -457,7 +457,7 @@ async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = 
         return None
     try:
         return await get_current_user(credentials)
-    except:
+    except Exception:
         return None
 
 def get_user_tenant_filter(user: dict) -> dict:
@@ -2600,7 +2600,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=os.environ.get('CORS_ORIGINS', '').split(',') if os.environ.get('CORS_ORIGINS') else ["http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -2610,6 +2610,17 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+@app.on_event("startup")
+async def startup_validation():
+    """Validate critical configuration on startup"""
+    warnings = []
+    if not os.environ.get('CORS_ORIGINS'):
+        warnings.append("CORS_ORIGINS not set — defaulting to localhost only. Set this for production.")
+    if not os.environ.get('FRONTEND_URL'):
+        warnings.append("FRONTEND_URL not set — email verification links will not work.")
+    for w in warnings:
+        logger.warning(w)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

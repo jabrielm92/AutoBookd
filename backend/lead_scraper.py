@@ -700,10 +700,10 @@ class WebsiteScraper:
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 return self._extract_text(soup), response.text
-        except:
-            pass
+        except Exception as e:
+            logger.debug("Error scraping page %s: %s", url, e)
         return "", ""
-    
+
     async def _scrape_page(self, url: str) -> str:
         """Scrape a single page and return text content"""
         try:
@@ -711,8 +711,8 @@ class WebsiteScraper:
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 return self._extract_text(soup)
-        except:
-            pass
+        except Exception as e:
+            logger.debug("Error scraping page %s: %s", url, e)
         return ""
     
     def _extract_text(self, soup: BeautifulSoup, max_length: int = 3000) -> str:

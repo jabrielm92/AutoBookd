@@ -27,55 +27,37 @@ import {
 import { getLeads, updateLead, markLeadBooked, deleteLead, toggleLeadFollowups } from '@/lib/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { LEAD_STAGES, STAGE_LABELS, STAGE_COLORS, STAGE_LIGHT_BG } from '@/lib/constants';
 
-// Stage configuration with icons and colors
-const stages = [
-  { 
-    id: 'scraped', 
-    label: 'Scraped', 
-    icon: Search, 
-    color: 'bg-slate-500',
-    bgLight: 'bg-slate-50 dark:bg-slate-900/50',
-    borderColor: 'border-slate-300 dark:border-slate-700',
-    description: 'Discovered, no email'
-  },
-  { 
-    id: 'enriched', 
-    label: 'Enriched', 
-    icon: Mail, 
-    color: 'bg-purple-500',
-    bgLight: 'bg-purple-50 dark:bg-purple-900/30',
-    borderColor: 'border-purple-300 dark:border-purple-700',
-    description: 'Has email address'
-  },
-  { 
-    id: 'researched', 
-    label: 'Researched', 
-    icon: Brain, 
-    color: 'bg-amber-500',
-    bgLight: 'bg-amber-50 dark:bg-amber-900/30',
-    borderColor: 'border-amber-300 dark:border-amber-700',
-    description: 'AI analyzed'
-  },
-  { 
-    id: 'contacted', 
-    label: 'Contacted', 
-    icon: MessageSquare, 
-    color: 'bg-blue-500',
-    bgLight: 'bg-blue-50 dark:bg-blue-900/30',
-    borderColor: 'border-blue-300 dark:border-blue-700',
-    description: 'Email(s) sent'
-  },
-  { 
-    id: 'booked', 
-    label: 'Booked', 
-    icon: CalendarCheck, 
-    color: 'bg-emerald-500',
-    bgLight: 'bg-emerald-50 dark:bg-emerald-900/30',
-    borderColor: 'border-emerald-300 dark:border-emerald-700',
-    description: 'Meeting scheduled'
-  },
-];
+// Stage icons and descriptions are view-specific
+const stageIcons = {
+  scraped: Search, enriched: Mail, researched: Brain, contacted: MessageSquare, booked: CalendarCheck,
+};
+const stageDescriptions = {
+  scraped: 'Discovered, no email',
+  enriched: 'Has email address',
+  researched: 'AI analyzed',
+  contacted: 'Email(s) sent',
+  booked: 'Meeting scheduled',
+};
+const stageBorderColors = {
+  scraped: 'border-slate-300 dark:border-slate-700',
+  enriched: 'border-purple-300 dark:border-purple-700',
+  researched: 'border-amber-300 dark:border-amber-700',
+  contacted: 'border-blue-300 dark:border-blue-700',
+  booked: 'border-emerald-300 dark:border-emerald-700',
+};
+
+// Compose stages array from shared constants + local view-specific data
+const stages = LEAD_STAGES.map((id) => ({
+  id,
+  label: STAGE_LABELS[id],
+  icon: stageIcons[id],
+  color: STAGE_COLORS[id],
+  bgLight: STAGE_LIGHT_BG[id],
+  borderColor: stageBorderColors[id],
+  description: stageDescriptions[id],
+}));
 
 function LeadCard({ lead, onViewDetails, onMarkBooked, onDelete, onToggleFollowups }) {
   const getScoreColor = (score) => {
