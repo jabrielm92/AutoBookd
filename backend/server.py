@@ -1986,11 +1986,37 @@ async def create_conversation(message: MessageCreate, user: dict = Depends(get_c
     return conv
 
 @api_router.get("/conversations", response_model=List[Conversation])
-async def get_conversations(lead_id: Optional[str] = None, limit: int = 50, user: dict = Depends(get_current_user)):
+async def get_conversations(
+    lead_id: Optional[str] = None,
+    limit: int = 50,
+    sort_by: Optional[str] = "recent",
+    filter_by: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
     query = {"tenant_id": user["id"]}
     if lead_id:
         query['lead_id'] = lead_id
-    convs = await db.conversations.find(query, {"_id": 0}).limit(limit).to_list(limit)
+
+    # Apply filters
+    if filter_by == "has_replies":
+        query["reply_count"] = {"$gt": 0}
+    elif filter_by == "positive":
+        query["current_sentiment"] = {"$gt": 0.2}
+    elif filter_by == "negative":
+        query["current_sentiment"] = {"$lt": -0.2}
+    elif filter_by == "drafts":
+        query["messages.status"] = "draft"
+
+    # Apply sorting
+    sort_field = [("updated_at", -1)]  # default: recent first
+    if sort_by == "oldest":
+        sort_field = [("updated_at", 1)]
+    elif sort_by == "sentiment_best":
+        sort_field = [("current_sentiment", -1)]
+    elif sort_by == "sentiment_worst":
+        sort_field = [("current_sentiment", 1)]
+
+    convs = await db.conversations.find(query, {"_id": 0}).sort(sort_field).limit(limit).to_list(limit)
     return convs
 
 @api_router.get("/conversations/{lead_id}", response_model=Conversation)

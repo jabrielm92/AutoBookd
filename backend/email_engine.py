@@ -322,6 +322,8 @@ class SequenceManager:
             tracking_id=tracking_id
         )
         
+        is_draft = result.get("test_mode", False)
+
         if result["success"]:
             # Store tracking record for open/click attribution
             await self.db.email_tracking.insert_one({
@@ -330,18 +332,19 @@ class SequenceManager:
                 "lead_id": lead["id"],
                 "sequence_id": sequence["id"],
                 "step": current_step,
+                "is_draft": is_draft,
                 "created_at": datetime.now(timezone.utc).isoformat()
             })
-            
+
             # Calculate next send time
             next_step = current_step + 1
             next_send_at = None
-            
+
             if next_step < len(emails):
                 next_email = emails[next_step]
                 delay_days = next_email.get("delay_days", 3)
                 next_send_at = (datetime.now(timezone.utc) + timedelta(days=delay_days)).isoformat()
-            
+
             # Update sequence
             update_data = {
                 "current_step": next_step,
@@ -350,39 +353,46 @@ class SequenceManager:
                     "sent_emails": {
                         "step": current_step,
                         "message_id": result["message_id"],
-                        "sent_at": datetime.now(timezone.utc).isoformat()
+                        "sent_at": datetime.now(timezone.utc).isoformat(),
+                        "is_draft": is_draft
                     }
                 }
             }
-            
+
             if next_send_at:
                 update_data["next_send_at"] = next_send_at
-                # Also update lead's next_email_at for easy querying
                 await self.db.leads.update_one(
                     {"id": lead["id"]},
                     {"$set": {"next_email_at": next_send_at}}
                 )
             else:
                 update_data["status"] = "completed"
-                # Clear lead's next_email_at when sequence is done
                 await self.db.leads.update_one(
                     {"id": lead["id"]},
                     {"$set": {"next_email_at": None}}
                 )
-            
+
             await self.db.sequences.update_one(
                 {"id": sequence["id"]},
                 {"$set": {k: v for k, v in update_data.items() if k != "$push"}}
             )
-            
+
             if "$push" in update_data:
                 await self.db.sequences.update_one(
                     {"id": sequence["id"]},
                     {"$push": update_data["$push"]}
                 )
-            
-            # Update lead
-            if current_step == 0:
+
+            # Update lead — only mark "contacted" if actually sent (not draft)
+            if is_draft:
+                await self.db.leads.update_one(
+                    {"id": lead["id"]},
+                    {"$set": {
+                        "has_draft": True,
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+            elif current_step == 0:
                 await self.db.leads.update_one(
                     {"id": lead["id"]},
                     {"$set": {
@@ -401,28 +411,32 @@ class SequenceManager:
                     },
                     "$inc": {"follow_up_count": 1, "emails_sent": 1}}
                 )
-            
-            # Create conversation record
-            await self._record_sent_email(lead, email_template, subject, result["message_id"])
-            
-            logger.info(f"Sent email {current_step + 1}/{len(emails)} to {lead['email']}")
-        
+
+            # Create conversation record — mark as draft if test_mode
+            await self._record_sent_email(
+                lead, email_template, subject, result["message_id"],
+                is_draft=is_draft
+            )
+
+            label = "[DRAFT] " if is_draft else ""
+            logger.info(f"{label}Email {current_step + 1}/{len(emails)} to {lead['email']}")
+
         return result
-    
+
     async def _record_sent_email(
         self,
         lead: Dict,
         email_template: Dict,
         subject: str,
-        message_id: str
+        message_id: str,
+        is_draft: bool = False
     ):
-        """Record sent email in conversation history"""
-        
+        """Record sent or draft email in conversation history"""
+
         tenant_id = lead.get("tenant_id")
-        
-        # Check if conversation exists for this lead and tenant
+
         conversation = await self.db.conversations.find_one({"lead_id": lead["id"], "tenant_id": tenant_id}, {"_id": 0})
-        
+
         message = {
             "id": str(uuid.uuid4()),
             "message_id": message_id,
@@ -430,9 +444,10 @@ class SequenceManager:
             "direction": "outbound",
             "channel": "email",
             "email_type": email_template.get("type", "unknown"),
+            "status": "draft" if is_draft else "sent",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        
+
         if conversation:
             await self.db.conversations.update_one(
                 {"lead_id": lead["id"], "tenant_id": tenant_id},
